@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevHabit.Api", "DevHabit.Api\DevHabit.Api.csproj", "{E30F4CBC-B9C1-47A6-843B-4F953D59CED3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F86CBAE4-0817-4D7E-A26E-011620FB08AC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{04B4A96C-825F-44E5-9924-3C873453D7E7}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{666B539D-57AF-4701-AFE1-0C2830143CE0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E30F4CBC-B9C1-47A6-843B-4F953D59CED3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E30F4CBC-B9C1-47A6-843B-4F953D59CED3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E30F4CBC-B9C1-47A6-843B-4F953D59CED3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E30F4CBC-B9C1-47A6-843B-4F953D59CED3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E30F4CBC-B9C1-47A6-843B-4F953D59CED3} = {F86CBAE4-0817-4D7E-A26E-011620FB08AC}
+	EndGlobalSection
+EndGlobal

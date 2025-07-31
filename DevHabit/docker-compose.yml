@@ -1,0 +1,23 @@
+services:
+  devhabit.api:
+    image: ${DOCKER_REGISTRY-}devhabitapi
+    build:
+      context: .
+      dockerfile: DevHabit.Api/Dockerfile
+    ports:
+      - 5000:8080
+      - 5001:8081
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://devhabit.seq:5341/ingest/otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    
+  devhabit.seq:
+    image: datalust/seq:latest
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_FIRSTRUN_ADMINPASSWORD: DevHabit123! # new one is  DevHabit123!@
+    volumes:
+      - ././containers/seq_data:/data
+    ports:
+      - 8080:80
+      - 5341:5341  
