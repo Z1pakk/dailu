@@ -22,9 +22,4 @@
         <Link>.dockerignore</Link>
       </Content>
     </ItemGroup>
-    <ItemGroup>
-        <SonarQubeSetting Include="sonar.exclusions">
-            <Value>**/Migrations/*</Value>
-        </SonarQubeSetting>
-    </ItemGroup>
 </Project>
