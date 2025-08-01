@@ -10,9 +10,20 @@ services:
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://devhabit.seq:5341/ingest/otlp
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-    
+  
+  devhabit.postgres:
+    image: postgres:17.5
+    environment:
+      POSTGRES_DB: devhabit
+      POSTGRES_USER: devhabit
+      POSTGRES_PASSWORD: DevHabit123!@
+    volumes:
+      - ././containers/postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  
   devhabit.seq:
-    image: datalust/seq:latest
+    image: datalust/seq:2025.2
     environment:
       ACCEPT_EULA: Y
       SEQ_FIRSTRUN_ADMINPASSWORD: DevHabit123! # new one is  DevHabit123!@
