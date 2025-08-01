@@ -10,7 +10,13 @@ using OpenTelemetry.Trace;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder
+    .Services.AddControllers(options =>
+    {
+        // Configure the API to return 406 Not Acceptable if the requested format(Accept header) is not supported
+        options.ReturnHttpNotAcceptable = true;
+    })
+    .AddXmlSerializerFormatters();
 
 builder.Services.AddOpenApi();
 

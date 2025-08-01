@@ -15,9 +15,6 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="Controllers\" />
-    </ItemGroup>
-    <ItemGroup>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
