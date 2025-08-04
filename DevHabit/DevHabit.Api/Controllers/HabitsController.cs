@@ -54,10 +54,7 @@ public class HabitsController(ApplicationDbContext dbContext) : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<HabitDto>> UpdateHabit(
-        string id,
-        [FromBody] UpdateHabitDto updateHabitDto
-    )
+    public async Task<ActionResult> UpdateHabit(string id, [FromBody] UpdateHabitDto updateHabitDto)
     {
         Habit? habit = await dbContext.Habits.FirstOrDefaultAsync(h => h.Id == id);
 
@@ -74,10 +71,7 @@ public class HabitsController(ApplicationDbContext dbContext) : ControllerBase
     }
 
     [HttpPatch("{id}")]
-    public async Task<ActionResult<HabitDto>> PatchHabit(
-        string id,
-        JsonPatchDocument<HabitDto> patchDocument
-    )
+    public async Task<ActionResult> PatchHabit(string id, JsonPatchDocument<HabitDto> patchDocument)
     {
         Habit? habit = await dbContext.Habits.FirstOrDefaultAsync(h => h.Id == id);
         if (habit is null)
