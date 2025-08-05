@@ -1,12 +1,6 @@
 using DevHabit.Api.Entities;
-using Newtonsoft.Json;
 
 namespace DevHabit.Api.DTOs.Habits;
-
-public sealed record HabitCollectionDto
-{
-    public required IEnumerable<HabitDto> Data { get; init; }
-}
 
 public sealed record HabitDto
 {

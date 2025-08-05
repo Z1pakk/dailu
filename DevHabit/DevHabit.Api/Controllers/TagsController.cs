@@ -1,8 +1,8 @@
 using DevHabit.Api.Database;
+using DevHabit.Api.DTOs.Common;
 using DevHabit.Api.DTOs.Tags;
 using DevHabit.Api.Entities;
 using FluentValidation;
-using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,13 +13,13 @@ namespace DevHabit.Api.Controllers;
 public sealed class TagsController(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<TagCollectionDto>> GetTags()
+    public async Task<ActionResult<PaginationResult<TagDto>>> GetTags()
     {
-        List<TagDto> tags = await dbContext.Tags.Select(TagQueries.ProjectToDto()).ToListAsync();
+        IQueryable<TagDto> query = dbContext.Tags.Select(TagQueries.ProjectToDto());
 
-        var response = new TagCollectionDto { Data = tags };
+        var paginationResult = await PaginationResult<TagDto>.CreateAsync(query);
 
-        return Ok(response);
+        return Ok(paginationResult);
     }
 
     [HttpGet]
