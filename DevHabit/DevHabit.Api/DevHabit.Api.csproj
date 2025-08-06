@@ -3,6 +3,7 @@
       <UserSecretsId>44030d80-a33e-4f64-8123-d7fb929d9f3d</UserSecretsId>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Asp.Versioning.Mvc" />
         <PackageReference Include="EFCore.NamingConventions" />
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
         <PackageReference Include="Microsoft.AspNetCore.JsonPatch" />

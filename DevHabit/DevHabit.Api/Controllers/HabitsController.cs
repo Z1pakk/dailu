@@ -1,4 +1,5 @@
 using System.Dynamic;
+using Asp.Versioning;
 using DevHabit.Api.Database;
 using DevHabit.Api.DTOs.Common;
 using DevHabit.Api.DTOs.Habits;
@@ -14,6 +15,7 @@ namespace DevHabit.Api.Controllers;
 
 [ApiController]
 [Route("habits")]
+[ApiVersion(1.0)]
 public class HabitsController(ApplicationDbContext dbContext, LinkService linkService)
     : ControllerBase
 {
@@ -104,6 +106,7 @@ public class HabitsController(ApplicationDbContext dbContext, LinkService linkSe
 
     [HttpGet]
     [Route("{id}")]
+    [ApiVersion(1.0)]
     public async Task<IActionResult> GetHabit(
         [FromRoute] string id,
         [FromQuery] string? fields,
@@ -121,6 +124,46 @@ public class HabitsController(ApplicationDbContext dbContext, LinkService linkSe
 
         HabitWithTagsDto? habitDto = await dbContext
             .Habits.Select(HabitQueries.ProjectToDtoWithTags())
+            .FirstOrDefaultAsync(h => h.Id == id);
+
+        if (habitDto == null)
+        {
+            return NotFound();
+        }
+
+        ExpandoObject shapedHabitDto = dataShapingService.ShapeData(habitDto, fields);
+
+        bool isLinksIncluded = acceptHeader == CustomMediaTypeNames.Application.HateoasJson;
+        if (isLinksIncluded)
+        {
+            IEnumerable<LinkDto> links = CreateLinksForHabit(id, fields);
+
+            shapedHabitDto.TryAdd("links", links);
+        }
+
+        return Ok(shapedHabitDto);
+    }
+
+    [HttpGet]
+    [Route("{id}")]
+    [ApiVersion(2.0)]
+    public async Task<IActionResult> GetHabitV2(
+        [FromRoute] string id,
+        [FromQuery] string? fields,
+        [FromHeader(Name = "Accept")] string acceptHeader,
+        [FromServices] DataShapingService dataShapingService
+    )
+    {
+        if (!dataShapingService.Validate<HabitWithTagsDtoV2>(fields))
+        {
+            return Problem(
+                detail: $"The fields parameter is invalid: {fields}",
+                statusCode: StatusCodes.Status400BadRequest
+            );
+        }
+
+        HabitWithTagsDtoV2? habitDto = await dbContext
+            .Habits.Select(HabitQueries.ProjectToDtoWithTagsV2())
             .FirstOrDefaultAsync(h => h.Id == id);
 
         if (habitDto == null)
