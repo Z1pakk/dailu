@@ -67,11 +67,12 @@ internal static class HabitMappings
         };
     }
 
-    public static Habit ToEntity(this CreateHabitDto createHabitDto)
+    public static Habit ToEntity(this CreateHabitDto createHabitDto, string userId)
     {
         return new Habit
         {
             Id = $"h_{Guid.CreateVersion7()}",
+            UserId = userId,
             Name = createHabitDto.Name,
             Description = createHabitDto.Description,
             Type = createHabitDto.Type,

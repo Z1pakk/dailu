@@ -33,6 +33,8 @@ public sealed class TokenProvider(IOptions<JwtAuthOptions> options)
         [
             new Claim(JwtRegisteredClaimNames.Sub, request.UserId),
             new Claim(JwtRegisteredClaimNames.Email, request.Email),
+            new Claim(ClaimTypes.NameIdentifier, request.UserId),
+            .. request.Roles.Select(role => new Claim(ClaimTypes.Role, role)),
         ];
 
         var tokenDescriptor = new SecurityTokenDescriptor

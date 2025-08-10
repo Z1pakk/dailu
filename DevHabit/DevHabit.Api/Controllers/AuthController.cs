@@ -38,15 +38,34 @@ public sealed class AuthController(
             Email = registerUserDto.Email,
         };
 
-        IdentityResult result = await userManager.CreateAsync(
+        IdentityResult createUserResult = await userManager.CreateAsync(
             identityUser,
             registerUserDto.Password
         );
-        if (!result.Succeeded)
+        if (!createUserResult.Succeeded)
         {
             var extensions = new Dictionary<string, object?>()
             {
-                ["errors"] = result.Errors.ToDictionary(e => e.Code, e => e.Description),
+                ["errors"] = createUserResult.Errors.ToDictionary(e => e.Code, e => e.Description),
+            };
+
+            return Problem(
+                detail: "Unable to register user",
+                statusCode: StatusCodes.Status400BadRequest,
+                extensions: extensions
+            );
+        }
+
+        IdentityResult addToRoleResult = await userManager.AddToRoleAsync(
+            identityUser,
+            Roles.Member
+        );
+
+        if (!addToRoleResult.Succeeded)
+        {
+            var extensions = new Dictionary<string, object?>()
+            {
+                ["errors"] = addToRoleResult.Errors.ToDictionary(e => e.Code, e => e.Description),
             };
 
             return Problem(
@@ -63,7 +82,7 @@ public sealed class AuthController(
         await dbContext.SaveChangesAsync();
 
         AccessTokenDto accessTokens = tokenProvider.Create(
-            new TokenRequest(identityUser.Id, identityUser.Email)
+            new TokenRequest(identityUser.Id, identityUser.Email, [Roles.Member])
         );
 
         var refreshToken = new RefreshToken
@@ -94,6 +113,8 @@ public sealed class AuthController(
             );
         }
 
+        IEnumerable<string> roles = await userManager.GetRolesAsync(identityUser);
+
         bool isPasswordValid = await userManager.CheckPasswordAsync(
             identityUser,
             loginUserDto.Password
@@ -107,7 +128,7 @@ public sealed class AuthController(
         }
 
         AccessTokenDto accessTokens = tokenProvider.Create(
-            new TokenRequest(identityUser.Id, identityUser.Email!)
+            new TokenRequest(identityUser.Id, identityUser.Email!, roles)
         );
 
         var refreshToken = new RefreshToken
@@ -148,8 +169,10 @@ public sealed class AuthController(
             return Problem(detail: "User not found", statusCode: StatusCodes.Status404NotFound);
         }
 
+        IEnumerable<string> roles = await userManager.GetRolesAsync(identityUser);
+
         AccessTokenDto accessTokens = tokenProvider.Create(
-            new TokenRequest(identityUser.Id, identityUser.Email!)
+            new TokenRequest(identityUser.Id, identityUser.Email!, roles)
         );
 
         // Update the existing refresh token

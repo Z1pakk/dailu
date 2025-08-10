@@ -442,3 +442,4 @@ dotnet_diagnostic.S6781.severity = none
 [**/Migrations/**]
 dotnet_diagnostic.IDE0161.severity = none
 resharper_arrange_namespace_body_highlighting = none
+dotnet_diagnostic.CA1861.severity = none
