@@ -9,9 +9,9 @@ using DevHabit.Api.Services;
 using DevHabit.Api.Services.Sorting;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SystemTextJsonPatch;
 
 namespace DevHabit.Api.Controllers;
 
@@ -286,7 +286,7 @@ public class HabitsController(
 
         HabitDto habitDto = habit.ToDto();
 
-        patchDocument.ApplyTo(habitDto, ModelState);
+        patchDocument.ApplyTo(habitDto);
 
         if (!TryValidateModel(habitDto))
         {

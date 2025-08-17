@@ -1,4 +1,6 @@
+using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using Asp.Versioning;
 using DevHabit.Api.Database;
 using DevHabit.Api.DTOs.Habits;
@@ -15,7 +17,6 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Serialization;
 using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -33,25 +34,26 @@ public static class DependencyInjection
             {
                 // Configure the API to return 406 Not Acceptable if the requested format(Accept header) is not supported
                 options.ReturnHttpNotAcceptable = true;
+                options.RespectBrowserAcceptHeader = true;
             })
-            .AddNewtonsoftJson(options =>
-                options.SerializerSettings.ContractResolver =
-                    new CamelCasePropertyNamesContractResolver()
-            )
-            .AddXmlSerializerFormatters();
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+            })
+            .AddXmlSerializerFormatters()
+            .AddMvcOptions(options =>
+            {
+                SystemTextJsonOutputFormatter formatter = options
+                    .OutputFormatters.OfType<SystemTextJsonOutputFormatter>()
+                    .First();
 
-        builder.Services.Configure<MvcOptions>(options =>
-        {
-            NewtonsoftJsonOutputFormatter formatter = options
-                .OutputFormatters.OfType<NewtonsoftJsonOutputFormatter>()
-                .First();
-
-            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.JsonV1);
-            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.JsonV2);
-            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJson);
-            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJsonV1);
-            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJsonV2);
-        });
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.JsonV1);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.JsonV2);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJson);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJsonV1);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJsonV2);
+            });
 
         builder
             .Services.AddApiVersioning(options =>
@@ -173,6 +175,23 @@ public static class DependencyInjection
 
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<UserContext>();
+
+        builder.Services.AddScoped<GitHubAccessTokenService>();
+        builder.Services.AddTransient<GitHubService>();
+
+        builder
+            .Services.AddHttpClient<GitHubService>()
+            .ConfigureHttpClient(client =>
+            {
+                client.BaseAddress = new Uri("https://api.github.com/");
+
+                client.DefaultRequestHeaders.UserAgent.Add(
+                    new ProductInfoHeaderValue("DevHabit", "1.0")
+                );
+                client.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/vnd.github+json")
+                );
+            });
 
         return builder;
     }

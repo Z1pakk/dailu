@@ -1,5 +1,4 @@
 using DevHabit.Api.DTOs.Common;
-using Newtonsoft.Json;
 
 namespace DevHabit.Api.DTOs.Tags;
 
