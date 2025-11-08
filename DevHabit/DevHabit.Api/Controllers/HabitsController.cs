@@ -72,8 +72,11 @@ public class HabitsController(
         {
             query = query.Where(h =>
                 h.Name.ToLower().Contains(queryParams.SearchQuery)
-                || h.Description != null
+                // ReSharper disable once ArrangeRedundantParentheses
+                || (
+                    h.Description != null
                     && h.Description.ToLower().Contains(queryParams.SearchQuery)
+                )
             );
         }
 

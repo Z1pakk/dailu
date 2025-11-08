@@ -5,6 +5,7 @@ import { routes } from './app.routes';
 import { provideStore } from '@ngxs/store';
 import { environment } from '../environments/environment';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import Aura from '@primeuix/themes/aura';
 import { providePrimeNG } from 'primeng/config';
 
 export const appConfig: ApplicationConfig = {
@@ -16,6 +17,6 @@ export const appConfig: ApplicationConfig = {
       developmentMode: !environment.production
     }),
     provideAnimationsAsync(),
-    providePrimeNG()
+    providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } })
   ]
 };

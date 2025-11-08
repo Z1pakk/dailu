@@ -18,6 +18,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{666B539D-57AF-4701-AFE1-0C2830143CE0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{236A89B5-0144-4DD2-A47D-B7C11337E778}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ADR", "ADR", "{30EF2FD2-306D-4637-B545-5F2FF33635A9}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\001_database.md = docs\adr\001_database.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,5 +38,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E30F4CBC-B9C1-47A6-843B-4F953D59CED3} = {F86CBAE4-0817-4D7E-A26E-011620FB08AC}
+		{0C04692B-AA5A-4524-A938-DA39C308D32A} = {F86CBAE4-0817-4D7E-A26E-011620FB08AC}
+		{236A89B5-0144-4DD2-A47D-B7C11337E778} = {F86CBAE4-0817-4D7E-A26E-011620FB08AC}
+		{30EF2FD2-306D-4637-B545-5F2FF33635A9} = {236A89B5-0144-4DD2-A47D-B7C11337E778}
 	EndGlobalSection
 EndGlobal
