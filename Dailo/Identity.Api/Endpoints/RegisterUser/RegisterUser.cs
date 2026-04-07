@@ -4,17 +4,16 @@ using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using SharedKernel.Endpoint;
 
 namespace Identity.Api.Endpoints.RegisterUser;
 
-public sealed record RegisterUserResponse(AccessTokenModel accessTokens);
+internal sealed record RegisterUserResponse(AccessTokenModel AccessTokens);
 
-public sealed class RegisterUser : IEndpoint<RegisterUserCommand, IResult>
+internal static class RegisterUser
 {
-    public void MapEndpoint(IEndpointRouteBuilder app)
+    internal static IEndpointConventionBuilder MapRegisterEndpoint(this IEndpointRouteBuilder app)
     {
-        app.MapPost(
+        return app.MapPost(
                 "/register",
                 async (
                     RegisterUserCommand payload,
@@ -23,11 +22,12 @@ public sealed class RegisterUser : IEndpoint<RegisterUserCommand, IResult>
                 ) => await HandleAsync(payload, sender, cancellationToken)
             )
             .Produces<RegisterUserResponse>(StatusCodes.Status201Created)
+            .AllowAnonymous()
             .WithTags(nameof(Identity))
             .WithName("Register user");
     }
 
-    public async Task<IResult> HandleAsync(
+    private static async Task<IResult> HandleAsync(
         RegisterUserCommand request,
         ISender sender,
         CancellationToken cancellationToken = default
@@ -39,7 +39,7 @@ public sealed class RegisterUser : IEndpoint<RegisterUserCommand, IResult>
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new RegisterUserResponse(commandResult.Value!.AccessToken);
+        var response = new RegisterUserResponse(commandResult.Value!.AccessTokens);
         return TypedResults.Ok(response);
     }
 }

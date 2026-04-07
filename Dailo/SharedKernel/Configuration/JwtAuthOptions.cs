@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using SharedKernel.Configuration;
 
-namespace Identity.Application.Configuration;
+namespace SharedKernel.Configuration;
 
 public class JwtAuthOptions : IOptions
 {

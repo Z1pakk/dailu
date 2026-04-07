@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace Dailo.Infrastructure.ProblemDetails;
 
-public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService)
-    : IExceptionHandler
+public sealed class GlobalExceptionHandler(
+    IProblemDetailsService problemDetailsService,
+    IHostEnvironment environment
+) : IExceptionHandler
 {
     public ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -12,6 +15,20 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
         CancellationToken cancellationToken
     )
     {
+        var extensions = new Dictionary<string, object?>
+        {
+            ["requestId"] = httpContext.TraceIdentifier,
+        };
+
+        if (environment.IsDevelopment())
+        {
+            extensions["stackTrace"] = exception.StackTrace;
+            extensions["exceptionType"] = exception.GetType().FullName;
+            extensions["exception"] = exception.ToString();
+        }
+
+        httpContext.Response.ContentType = "application/problem+json";
+
         return problemDetailsService.TryWriteAsync(
             new ProblemDetailsContext
             {
@@ -23,6 +40,7 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
                     Detail =
                         "An unexpected error occurred while processing your request. Please try again later.",
                     Status = StatusCodes.Status500InternalServerError,
+                    Extensions = extensions,
                 },
             }
         );

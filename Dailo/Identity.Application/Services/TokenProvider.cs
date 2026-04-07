@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Identity.Application.Configuration;
 using Identity.Application.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using SharedKernel.Configuration;
 
 namespace Identity.Application.Services;
 
@@ -48,7 +48,7 @@ public sealed class TokenProvider(IOptions<JwtAuthOptions> options, TimeProvider
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = timeProvider.GetUtcNow().DateTime.AddMinutes(_options.ExpirationInMinutes),
+            Expires = timeProvider.GetLocalNow().DateTime.AddMinutes(_options.ExpirationInMinutes),
             SigningCredentials = credentials,
             Issuer = _options.Issuer,
             Audience = _options.Audience,

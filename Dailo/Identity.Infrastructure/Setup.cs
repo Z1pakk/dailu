@@ -1,7 +1,6 @@
 using System.Text;
 using Identity.Api;
 using Identity.Application;
-using Identity.Application.Configuration;
 using Identity.Application.Persistence;
 using Identity.Application.Services;
 using Identity.Domain.Entities;
@@ -33,7 +32,7 @@ public static class Setup
     {
         var connectionString = configuration.GetConnectionString(IdentityDbConnectionString);
 
-        services.AddDbContext<IdentityDbContext>(opt =>
+        services.AddDbContext<IIdentityDbContext, IdentityDbContext>(opt =>
             opt.UseNpgsql(
                     connectionString,
                     b =>
@@ -57,54 +56,16 @@ public static class Setup
                 .UseSnakeCaseNamingConvention()
         );
 
-        services.AddScoped<IIdentityDbContext>(sp => sp.GetRequiredService<IdentityDbContext>());
-
         services
-            .AddIdentity<User, Role>()
+            .AddIdentityCore<User>()
+            .AddRoles<Role>()
             .AddEntityFrameworkStores<IdentityDbContext>()
-            .AddDefaultTokenProviders();
-
-        services.AddScoped<IDataSeeder, RoleSeeder>();
-
-        services.AddValidateOptions<JwtAuthOptions>();
-        var jwtOptions = services.GetOptions<JwtAuthOptions>();
+            .AddDefaultTokenProviders()
+            .AddSignInManager();
 
         services.AddScoped<ITokenProvider, TokenProvider>();
 
-        services
-            .AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters()
-                {
-                    ValidIssuer = jwtOptions.Issuer,
-                    ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtOptions.Key)
-                    ),
-                };
-            });
-
-        services.AddAuthorization();
-
-        services.ConfigureApplicationCookie(options =>
-        {
-            options.Events.OnRedirectToLogin = context =>
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return Task.CompletedTask;
-            };
-
-            options.Events.OnRedirectToAccessDenied = context =>
-            {
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                return Task.CompletedTask;
-            };
-        });
+        services.AddScoped<IDataSeeder, RoleSeeder>();
 
         services.AddEndpoints(assemblies: IdentityApiRoot.Assembly);
 

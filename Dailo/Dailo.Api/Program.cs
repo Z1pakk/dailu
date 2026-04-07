@@ -1,7 +1,6 @@
-using System.Reflection;
 using Dailo.Api.Extensions;
+using Dailo.Infrastructure;
 using Dailo.Infrastructure.Database;
-using Dailo.Infrastructure.User;
 using Habit.Infrastructure;
 using Identity.Infrastructure;
 using Scalar.AspNetCore;
@@ -10,7 +9,7 @@ using Tag.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddUserServices();
+builder.Services.AddInfrastructure();
 builder.Services.AddHttpClient();
 
 builder
@@ -19,8 +18,6 @@ builder
     .AddIdentityModule(builder.Configuration);
 
 builder.Services.AddMediator(opt => opt.ServiceLifetime = ServiceLifetime.Scoped);
-
-builder.Services.AddProblemDetails();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -47,10 +44,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapEndpoints();
+app.MapEndpointGroups();
 
 await app.RunAsync();

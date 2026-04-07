@@ -7,14 +7,16 @@ using SharedKernel.Endpoint;
 
 namespace Habit.Api.Endpoints.CreateHabit;
 
-public sealed record CreateHabitResponse(Guid Id);
+internal sealed record CreateHabitResponse(Guid Id);
 
-public sealed class CreateHabit : IEndpoint<CreateHabitCommand, IResult>
+internal static class CreateHabit
 {
-    public void MapEndpoint(IEndpointRouteBuilder app)
+    internal static IEndpointConventionBuilder MapCreateHabitEndpoint(
+        this IEndpointRouteBuilder app
+    )
     {
-        app.MapPost(
-                "/habits",
+        return app.MapPost(
+                "/",
                 async (
                     CreateHabitCommand payload,
                     ISender sender,
@@ -22,11 +24,12 @@ public sealed class CreateHabit : IEndpoint<CreateHabitCommand, IResult>
                 ) => await HandleAsync(payload, sender, cancellationToken)
             )
             .Produces<CreateHabitResponse>(StatusCodes.Status201Created)
+            .RequireAuthorization()
             .WithTags(nameof(Habit))
             .WithName("Create Basket");
     }
 
-    public async Task<IResult> HandleAsync(
+    private static async Task<IResult> HandleAsync(
         CreateHabitCommand request,
         ISender sender,
         CancellationToken cancellationToken = default

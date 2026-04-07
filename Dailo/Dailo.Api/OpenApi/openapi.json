@@ -35,7 +35,47 @@
         }
       }
     },
-    "/api/register": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Identity"
+        ],
+        "operationId": "Login user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginUserCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
       "post": {
         "tags": [
           "Identity"
@@ -172,6 +212,32 @@
       "HabitType": {
         "type": "integer"
       },
+      "LoginUserCommand": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginUserResponse": {
+        "required": [
+          "accessTokens"
+        ],
+        "type": "object",
+        "properties": {
+          "accessTokens": {
+            "$ref": "#/components/schemas/AccessTokenModel"
+          }
+        }
+      },
       "Milestone": {
         "required": [
           "target",
@@ -194,6 +260,44 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

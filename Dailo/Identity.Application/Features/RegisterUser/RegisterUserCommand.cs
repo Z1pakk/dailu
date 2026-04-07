@@ -16,7 +16,7 @@ public sealed record RegisterUserCommand(
     string LastName
 ) : ICommand<Result<RegisterUserCommandResponse>>;
 
-public sealed record RegisterUserCommandResponse(AccessTokenModel AccessToken);
+public sealed record RegisterUserCommandResponse(AccessTokenModel AccessTokens);
 
 public sealed class RegisterUserCommandHandler(
     IIdentityDbContext identityDbContext,
