@@ -12,6 +12,10 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
 
     defaults:
       run:
@@ -41,6 +45,19 @@ jobs:
 
       - name: Test
         run: dotnet test Dailo.slnx --configuration Release --no-restore --no-build
+
+      - name: 'Qodana Scan'
+        uses: JetBrains/qodana-action@v2026.1
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          # When pr-mode is set to true, Qodana analyzes only the files that have been changed
+          pr-mode: false
+          use-caches: true
+          post-pr-comment: true
+          use-annotations: true
+          # Upload Qodana results (SARIF, other artifacts, logs) as an artifact to the job
+          upload-result: false
 
       - name: Publish
         run: dotnet publish Dailo.slnx --configuration Release --no-restore --no-build
