@@ -1,4 +1,5 @@
 using Dailo.Api.Extensions;
+using Dailo.Api.Middleware;
 using Dailo.Infrastructure;
 using Dailo.Infrastructure.Database;
 using Habit.Infrastructure;

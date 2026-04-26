@@ -11,7 +11,13 @@ public class Result<T>
     [MemberNotNullWhen(false, nameof(Value))]
     public bool IsFailure => !IsSuccess;
     public T? Value { get; }
-    public string? Error { get; }
+
+    [AllowNull]
+    public string Error
+    {
+        get => field ?? "An error occurred.";
+    } = null;
+
     public ResultType Type { get; }
 
     protected Result(bool isSuccess, T? value, string? error, ResultType type)

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Habit.Api;
 using Habit.Application;
 using Habit.Application.Persistence;
@@ -45,6 +46,8 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
+
+        services.AddValidatorsFromAssemblyContaining<IHabitApplicationRoot>();
 
         services.AddEndpoints(assemblies: HabitApiRoot.Assembly);
 

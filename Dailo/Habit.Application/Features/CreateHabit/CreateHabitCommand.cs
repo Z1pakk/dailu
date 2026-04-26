@@ -46,7 +46,7 @@ public sealed class CreateHabitCommandHandler(
 
         if (habitResult.IsFailure)
         {
-            return Result<CreateHabitCommandResponse>.BadRequest(habitResult.Error!);
+            return Result<CreateHabitCommandResponse>.BadRequest(habitResult.Error);
         }
 
         var entity = habitResult.Value.ToEntity();
@@ -55,6 +55,8 @@ public sealed class CreateHabitCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result<CreateHabitCommandResponse>.Success(new CreateHabitCommandResponse(entity.Id.ToGuid()));
+        return Result<CreateHabitCommandResponse>.Success(
+            new CreateHabitCommandResponse(entity.Id.ToGuid())
+        );
     }
 }

@@ -1,5 +1,5 @@
 import { HabitModel } from '@habits/models/habit.model';
 
-export interface GetHabitsResponse {
+export interface GetHabitsResponseModel {
   habits: HabitModel[];
 }

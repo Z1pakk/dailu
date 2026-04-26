@@ -18,3 +18,7 @@ export class AuthRegister {
 export class AuthRefresh {
   static readonly type = `${scope} Refresh`;
 }
+
+export class AuthLogout {
+  static readonly type = `${scope} Logout`;
+}

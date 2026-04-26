@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Tag.Domain\Tag.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FluentValidation" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
   </ItemGroup>
 </Project>

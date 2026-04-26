@@ -13,22 +13,18 @@ internal sealed record GetHabitsResponse(IEnumerable<HabitModel> Habits);
 
 internal static class GetHabits
 {
-    internal static IEndpointConventionBuilder MapGetHabitsEndpoint(
-        this IEndpointRouteBuilder app
-    )
+    internal static IEndpointConventionBuilder MapGetHabitsEndpoint(this IEndpointRouteBuilder app)
     {
         return app.MapGet(
                 "/",
-                async (
-                    ISender sender,
-                    CancellationToken cancellationToken
-                ) => await HandleAsync(sender, cancellationToken)
+                async (ISender sender, CancellationToken cancellationToken) =>
+                    await HandleAsync(sender, cancellationToken)
             )
             .Produces<GetHabitsResponse>(StatusCodes.Status200OK)
             .RequireAuthorization()
             .WithTags(nameof(Habit))
             .WithName("GetHabits")
-            .WithDescription("Get habits");
+            .WithDescription("Get habits for the current authenticated user.");
     }
 
     private static async Task<IResult> HandleAsync(

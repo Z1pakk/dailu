@@ -1,7 +1,12 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SharedKernel.CQRS;
+using SharedKernel.Endpoint;
+using Tag.Api;
+using Tag.Application;
 using Tag.Application.Persistence;
 using Tag.Infrastructure.Database;
 
@@ -28,19 +33,22 @@ public static class Setup
                                 HistoryRepository.DefaultTableName,
                                 TagSchema.NAME
                             );
-                        // Enable retry on failure for transient errors
                         b.EnableRetryOnFailure(
                             maxRetryCount: 3,
                             maxRetryDelay: TimeSpan.FromSeconds(30),
                             errorCodesToAdd: null
                         );
-
-                        // Set command timeout for long-running queries
                         b.CommandTimeout(60);
                     }
                 )
                 .UseSnakeCaseNamingConvention()
         );
+
+        services.AddValidatorsFromAssemblyContaining<ITagApplicationRoot>();
+
+        services.AddEndpoints(assemblies: TagApiRoot.Assembly);
+
+        services.AddHandlerAssembly<ITagApplicationRoot>();
 
         return services;
     }

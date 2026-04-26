@@ -10,9 +10,10 @@ import { provideStore } from '@ngxs/store';
 import { environment } from '@environment';
 import { providePrimeNG } from 'primeng/config';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { credentialsInterceptor } from '@main/interceptors/credentials.interceptor';
+import { credentialsInterceptor } from '@auth/interceptors/credentials.interceptor';
 import { authInterceptor } from '@auth/interceptors/auth.interceptor';
 import { jwtInterceptor } from '@auth/interceptors/jwt.interceptor';
+import { problemDetailsInterceptor } from '@shared/lib/api/interceptors/problem-details.interceptor';
 import { DefaultPreset } from './default-preset';
 import { provideInitialAuth } from '@auth/providers/provide-initial-auth.provider';
 import { states } from '@main/state';
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([
         credentialsInterceptor,
         jwtInterceptor,
+        problemDetailsInterceptor,
         authInterceptor,
       ]),
     ),

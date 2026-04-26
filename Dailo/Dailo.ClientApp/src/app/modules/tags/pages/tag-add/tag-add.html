@@ -1,0 +1,39 @@
+<form [formGroup]="addTagForm" class="flex flex-col gap-4" novalidate>
+  <div class="flex flex-col gap-2">
+    <label for="name" class="block">Name</label>
+    <div>
+      <input [formControl]="addTagForm.controls.name"
+             [invalid]="!!addTagForm.controls.name.getError('serverError') || (!!addTagForm.controls.name.errors && addTagForm.controls.name.dirty)"
+             name="name"
+             type="text"
+             id="name"
+             pInputText
+             fluid />
+      @if (addTagForm.controls.name.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (addTagForm.controls.name.getError('issue') && addTagForm.controls.name.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ addTagForm.controls.name.getError('issue') }}
+        </small>
+      }
+    </div>
+  </div>
+  <div class="flex flex-col gap-2">
+    <label for="description" class="block">Description</label>
+    <textarea [formControl]="addTagForm.controls.description"
+              [invalid]="!!addTagForm.controls.description.getError('serverError') || (!!addTagForm.controls.description.errors && addTagForm.controls.description.dirty)"
+              name="description"
+              id="description"
+              pInputTextarea
+              fluid></textarea>
+    @if (addTagForm.controls.description.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (addTagForm.controls.description.getError('issue') && addTagForm.controls.description.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ addTagForm.controls.description.getError('issue') }}
+      </small>
+    }
+  </div>
+</form>

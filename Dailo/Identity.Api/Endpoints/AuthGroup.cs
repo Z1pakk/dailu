@@ -1,4 +1,5 @@
 using Identity.Api.Endpoints.LoginUser;
+using Identity.Api.Endpoints.Logout;
 using Identity.Api.Endpoints.Refresh;
 using Identity.Api.Endpoints.RegisterUser;
 using Microsoft.AspNetCore.Builder;
@@ -16,5 +17,6 @@ public sealed class AuthGroup : IEndpointGroup
         group.MapLoginEndpoint();
         group.MapRegisterEndpoint();
         group.MapRefreshEndpoint();
+        group.MapLogoutEndpoint();
     }
 }

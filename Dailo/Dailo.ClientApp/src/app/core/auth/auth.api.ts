@@ -36,4 +36,8 @@ export class AuthApi {
       {},
     );
   }
+
+  public logout(): Observable<void> {
+    return this._http.post<void>(`${this._baseUrl}/auth/logout`, {});
+  }
 }

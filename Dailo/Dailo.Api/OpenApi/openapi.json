@@ -10,7 +10,7 @@
         "tags": [
           "Habit"
         ],
-        "description": "Creates a new habit for the authenticated user.",
+        "description": "Creates a new habit for the current authenticated user.",
         "operationId": "CreateHabit",
         "requestBody": {
           "content": {
@@ -39,7 +39,7 @@
         "tags": [
           "Habit"
         ],
-        "description": "Get habits",
+        "description": "Get habits for the current authenticated user.",
         "operationId": "GetHabits",
         "responses": {
           "200": {
@@ -48,6 +48,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetHabitsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tags": {
+      "post": {
+        "tags": [
+          "Tag"
+        ],
+        "description": "Creates a new tag for the current authenticated user.",
+        "operationId": "CreateTag",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTagResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Tag"
+        ],
+        "description": "Get tags for the current authenticated user.",
+        "operationId": "GetTags",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTagsResponse"
                 }
               }
             }
@@ -173,6 +223,30 @@
           }
         }
       }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Identity"
+        ],
+        "description": "Invalidates the current refresh token and clears the session cookie.",
+        "operationId": "Logout",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -258,6 +332,36 @@
           }
         }
       },
+      "CreateTagCommand": {
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CreateTagResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "FrequencyModel": {
         "required": [
           "type",
@@ -291,6 +395,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/HabitModel"
+            }
+          }
+        }
+      },
+      "GetTagsResponse": {
+        "required": [
+          "tags"
+        ],
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagModel"
             }
           }
         }
@@ -476,6 +594,39 @@
           }
         }
       },
+      "TagModel": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModifiedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "TargetModel": {
         "required": [
           "value",
@@ -501,6 +652,9 @@
   "tags": [
     {
       "name": "Habit"
+    },
+    {
+      "name": "Tag"
     },
     {
       "name": "Identity"

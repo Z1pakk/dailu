@@ -1,1 +1,22 @@
-<p>tag-list works!</p>
+<div>
+  <div class="flex justify-between">
+    <h2 class="text-3xl font-bold">My Tags</h2>
+    <p-button (click)="addTag()" label="Create New Tag" />
+  </div>
+  <p-data-view [value]="$tags()" layout="list" class="mt-4">
+    <ng-template #list let-tags>
+      <div class="flex flex-col gap-4">
+        @for (tag of tags; track tag.id) {
+          <div
+            class="border border-(--surface-border) rounded-lg p-4 flex flex-col gap-2 shadow-sm hover:shadow-md cursor-pointer transition-shadow">
+            <div>
+              <p class="text-2xl font-semibold">{{ tag.name }}</p>
+              <span class="text-surface-400">{{ tag.description }}</span>
+            </div>
+            <div></div>
+          </div>
+        }
+      </div>
+    </ng-template>
+  </p-data-view>
+</div>

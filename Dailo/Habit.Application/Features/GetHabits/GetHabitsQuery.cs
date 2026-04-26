@@ -3,6 +3,7 @@ using Habit.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;
 using SharedKernel.ResultPattern;
+using SharedKernel.User;
 
 namespace Habit.Application.Features.GetHabits;
 
@@ -10,8 +11,10 @@ public sealed class GetHabitsQuery : IQuery<Result<GetHabitsQueryResponse>> { }
 
 public sealed record GetHabitsQueryResponse(IEnumerable<HabitModel> Habits);
 
-public sealed class GetHabitsQueryHandler(IHabitDbContext habitDbContext)
-    : IQueryHandler<GetHabitsQuery, Result<GetHabitsQueryResponse>>
+public sealed class GetHabitsQueryHandler(
+    IHabitDbContext habitDbContext,
+    ICurrentUserService currentUserService
+) : IQueryHandler<GetHabitsQuery, Result<GetHabitsQueryResponse>>
 {
     public async ValueTask<Result<GetHabitsQueryResponse>> Handle(
         GetHabitsQuery request,
@@ -19,7 +22,8 @@ public sealed class GetHabitsQueryHandler(IHabitDbContext habitDbContext)
     )
     {
         var habits = await habitDbContext
-            .Habits.Select(h => new HabitModel()
+            .Habits.Where(h => h.UserId == currentUserService.UserId)
+            .Select(h => new HabitModel()
             {
                 Id = h.Id.ToGuid(),
                 Name = h.Name,

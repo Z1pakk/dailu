@@ -27,7 +27,7 @@ internal static class CreateHabit
             .RequireAuthorization()
             .WithTags(nameof(Habit))
             .WithName("CreateHabit")
-            .WithDescription("Creates a new habit for the authenticated user.");
+            .WithDescription("Creates a new habit for the current authenticated user.");
     }
 
     private static async Task<IResult> HandleAsync(
@@ -42,7 +42,7 @@ internal static class CreateHabit
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new CreateHabitResponse(commandResult.Value!.Id);
+        var response = new CreateHabitResponse(commandResult.Value.Id);
 
         return TypedResults.Created($"{EndpointConfig.BaseApiPath}/habits/{response.Id}", response);
     }

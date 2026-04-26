@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Menu } from 'primeng/menu';
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
+import { Store } from '@ngxs/store';
+import { AuthLogout } from '@auth/state/auth.action';
 
 @Component({
   selector: 'app-main-topbar',
@@ -10,6 +12,8 @@ import { MenuItem } from 'primeng/api';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MainTopbar {
+  private readonly _store = inject(Store);
+
   protected readonly profileMenuItems: MenuItem[] = [
     {
       label: 'Profile',
@@ -22,6 +26,9 @@ export class MainTopbar {
     {
       label: 'Log out',
       icon: 'pi pi-power-off',
+      command: (_: MenuItemCommandEvent) => {
+        this._store.dispatch(new AuthLogout());
+      },
     },
   ];
 }

@@ -14,4 +14,9 @@ public class CookieService(IHttpContextAccessor httpContextAccessor) : ICookieSe
     {
         httpContextAccessor.HttpContext?.Response.Cookies.Append(key, value, options);
     }
+
+    public void DeleteCookie(string key)
+    {
+        httpContextAccessor.HttpContext?.Response.Cookies.Delete(key);
+    }
 }

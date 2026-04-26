@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Dailo.Infrastructure.ProblemDetails;
 
 public sealed class GlobalExceptionHandler(
     IProblemDetailsService problemDetailsService,
-    IHostEnvironment environment
+    IHostEnvironment environment,
+    ILogger<GlobalExceptionHandler> logger
 ) : IExceptionHandler
 {
     public ValueTask<bool> TryHandleAsync(
@@ -15,6 +17,8 @@ public sealed class GlobalExceptionHandler(
         CancellationToken cancellationToken
     )
     {
+        logger.LogError(exception, "An unhandled exception occurred while processing the request");
+
         var extensions = new Dictionary<string, object?>
         {
             ["requestId"] = httpContext.TraceIdentifier,

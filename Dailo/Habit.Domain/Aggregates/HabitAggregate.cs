@@ -8,7 +8,7 @@ namespace Habit.Domain.Aggregates;
 
 public sealed class HabitAggregate : Aggregate
 {
-    private Id<HabitEntity> Id { get; set; }
+    private Id<HabitAggregate> Id { get; set; }
 
     private Guid UserId { get; set; }
 
@@ -75,7 +75,7 @@ public sealed class HabitAggregate : Aggregate
         return Result<HabitAggregate>.Success(
             new HabitAggregate
             {
-                Id = Id<HabitEntity>.NewId(),
+                Id = Id<HabitAggregate>.NewId(),
                 UserId = userId,
                 Name = name,
                 Description = description,
@@ -93,7 +93,7 @@ public sealed class HabitAggregate : Aggregate
     internal static HabitAggregate Restore(HabitEntity entity) =>
         new()
         {
-            Id = entity.Id,
+            Id = entity.Id.ToId(),
             UserId = entity.UserId,
             Name = entity.Name,
             Description = entity.Description,
@@ -110,7 +110,7 @@ public sealed class HabitAggregate : Aggregate
     public HabitEntity ToEntity() =>
         new()
         {
-            Id = Id,
+            Id = Id.ToId(),
             UserId = UserId,
             Name = Name,
             Description = Description,

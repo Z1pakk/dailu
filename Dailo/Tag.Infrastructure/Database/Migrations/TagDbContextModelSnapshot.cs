@@ -23,7 +23,7 @@ namespace Tag.Infrastructure.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Tag.Domain.Entities.Tag", b =>
+            modelBuilder.Entity("Tag.Domain.Entities.TagEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()

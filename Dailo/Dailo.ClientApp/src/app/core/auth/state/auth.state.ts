@@ -1,6 +1,12 @@
 import { inject, Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { Action, State, StateContext } from '@ngxs/store';
-import { AuthLogin, AuthRefresh, AuthRegister } from '@auth/state/auth.action';
+import {
+  AuthLogin,
+  AuthLogout,
+  AuthRefresh,
+  AuthRegister,
+} from '@auth/state/auth.action';
 import { AuthApi } from '@auth/auth.api';
 import { finalize, tap } from 'rxjs';
 import { LoginResponse } from '@auth/responses/login.response';
@@ -23,6 +29,7 @@ const defaultState: AuthStateModel = {
 @State<AuthStateModel>({ name: 'authState', defaults: defaultState })
 export class AuthState {
   private readonly _authApi = inject(AuthApi);
+  private readonly _router = inject(Router);
 
   @Action(AuthLogin)
   public login(ctx: StateContext<AuthStateModel>, action: AuthLogin) {
@@ -63,7 +70,7 @@ export class AuthState {
   }
 
   @Action(AuthRefresh)
-  public refresh(ctx: StateContext<AuthStateModel>, action: AuthRefresh) {
+  public refresh(ctx: StateContext<AuthStateModel>, _: AuthRefresh) {
     ctx.patchState({
       isLoading: true,
     });
@@ -78,6 +85,22 @@ export class AuthState {
         },
       }),
       finalize(() => ctx.patchState({ isLoading: false })),
+    );
+  }
+
+  @Action(AuthLogout)
+  public logout(ctx: StateContext<AuthStateModel>) {
+    ctx.patchState({ isLoading: true });
+
+    return this._authApi.logout().pipe(
+      tap({
+        next: () => ctx.setState(defaultState),
+        error: () => ctx.setState(defaultState),
+      }),
+      finalize(() => {
+        ctx.patchState({ isLoading: false });
+        this._router.navigate(['/login']);
+      }),
     );
   }
 }

@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Persistence;
+using Tag.Domain.Entities;
 
 namespace Tag.Application.Persistence;
 
 public interface ITagDbContext : IAppDbContextBase
 {
-    DbSet<Domain.Entities.Tag> Tags { get; }
+    DbSet<TagEntity> Tags { get; }
 }

@@ -2,18 +2,19 @@ using Microsoft.EntityFrameworkCore;
 using SharedKernel.Persistence;
 using SharedKernel.User;
 using Tag.Application.Persistence;
+using Tag.Domain.Entities;
 
 namespace Tag.Infrastructure.Database;
 
 public sealed class TagDbContext(
-    DbContextOptions options,
+    DbContextOptions<TagDbContext> options,
     ICurrentUserService? currentUserService = null,
     TimeProvider? timeProvider = null
 ) : AppDbContextBase(options, currentUserService, timeProvider), ITagDbContext
 {
     public string Schema => TagSchema.NAME;
 
-    public DbSet<Domain.Entities.Tag> Tags => Set<Domain.Entities.Tag>();
+    public DbSet<TagEntity> Tags => Set<TagEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
