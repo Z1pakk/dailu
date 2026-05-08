@@ -22,3 +22,7 @@ export class AuthRefresh {
 export class AuthLogout {
   static readonly type = `${scope} Logout`;
 }
+
+export class AuthLogoutLocal {
+  static readonly type = `${scope} Logout Local`;
+}

@@ -449,9 +449,18 @@ dotnet_diagnostic.S6605.severity = none
 dotnet_diagnostic.S6781.severity = none
 
 [**/Migrations/**]
+# Disable IDE analyzers
 dotnet_diagnostic.IDE0161.severity = none
 resharper_arrange_namespace_body_highlighting = none
+
+# Disable CA analyzers
 dotnet_diagnostic.CA1861.severity = none
+
+# Disable all SonarQube analyzers for migrations
+generated_code = true
+dotnet_analyzer_diagnostic.category-Style.severity = none
+dotnet_analyzer_diagnostic.category-CodeQuality.severity = none
+dotnet_diagnostic.S.severity = none
 
 [{*.props,*.csproj}]
 # This file is used to configure code analysis rules for .props files, which are MSBuild project files.

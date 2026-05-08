@@ -26,7 +26,8 @@
       "@dashboard/*": ["./src/app/modules/dashboard/*"],
       "@auth/*": ["./src/app/core/auth/*"],
       "@habits/*": ["./src/app/modules/habits/*"],
-      "@tags/*": ["./src/app/modules/tags/*"]
+      "@tags/*": ["./src/app/modules/tags/*"],
+      "@habit-entries/*": ["./src/app/modules/habit-entries/*"]
     }
   },
   "angularCompilerOptions": {

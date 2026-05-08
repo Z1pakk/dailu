@@ -6,7 +6,7 @@ import { MilestoneModel } from '@habits/models/milestone.model';
 import { TagModel } from '../../tags/models/tag.model';
 
 export interface HabitModel {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   type: HabitType;

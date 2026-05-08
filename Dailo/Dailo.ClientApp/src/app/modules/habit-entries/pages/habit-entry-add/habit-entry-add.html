@@ -1,0 +1,90 @@
+<form [formGroup]="addHabitEntryForm" class="flex flex-col gap-4" novalidate>
+  <div class="flex flex-col gap-2">
+    <label for="habitId" class="block">Habit</label>
+    <p-select [formControl]="addHabitEntryForm.controls.habitId"
+              [options]="habitSelectItems()"
+              [invalid]="!!addHabitEntryForm.controls.habitId.getError('serverError') || (!!addHabitEntryForm.controls.habitId.errors && addHabitEntryForm.controls.habitId.dirty)"
+              appendTo="body"
+              name="habitId"
+              inputId="habitId"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select a habit"
+              fluid />
+    @if (addHabitEntryForm.controls.habitId.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (addHabitEntryForm.controls.habitId.getError('issue') && addHabitEntryForm.controls.habitId.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ addHabitEntryForm.controls.habitId.getError('issue') }}
+      </small>
+    }
+  </div>
+  @if (!$isBinaryHabit()) {
+    <div class="flex flex-col gap-2">
+      <label for="value" class="block">
+        Value
+        @if ($selectedHabitUnit()) {
+          <span class="text-sm font-normal text-surface-400">({{ $selectedHabitUnit() }})</span>
+        }
+      </label>
+      <p-input-number [formControl]="addHabitEntryForm.controls.value"
+                      [invalid]="!!addHabitEntryForm.controls.value.getError('serverError') || (!!addHabitEntryForm.controls.value.errors && addHabitEntryForm.controls.value.dirty)"
+                      [min]="0"
+                      [max]="99999"
+                      name="value"
+                      inputId="value"
+                      showButtons
+                      fluid />
+      @if (addHabitEntryForm.controls.value.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (addHabitEntryForm.controls.value.getError('issue') && addHabitEntryForm.controls.value.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ addHabitEntryForm.controls.value.getError('issue') }}
+        </small>
+      }
+    </div>
+  }
+  <div class="flex flex-col gap-2">
+    <label for="notes" class="block">
+      Notes
+      <span class="text-sm font-normal text-surface-400">(optional)</span>
+    </label>
+    <textarea [formControl]="addHabitEntryForm.controls.notes"
+              [invalid]="!!addHabitEntryForm.controls.notes.getError('serverError') || (!!addHabitEntryForm.controls.notes.errors && addHabitEntryForm.controls.notes.dirty)"
+              [maxLength]="1000"
+              name="notes"
+              id="notes"
+              pInputTextarea
+              fluid></textarea>
+    @if (addHabitEntryForm.controls.notes.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (addHabitEntryForm.controls.notes.getError('issue') && addHabitEntryForm.controls.notes.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ addHabitEntryForm.controls.notes.getError('issue') }}
+      </small>
+    }
+  </div>
+  <div class="flex flex-col gap-2">
+    <label for="date" class="block">Date</label>
+    <p-datepicker [formControl]="addHabitEntryForm.controls.date"
+                  [invalid]="!!addHabitEntryForm.controls.date.getError('serverError') || (!!addHabitEntryForm.controls.date.errors && addHabitEntryForm.controls.date.dirty)"
+                  [maxDate]="today"
+                  [showButtonBar]="true"
+                  appendTo="body"
+                  name="date"
+                  inputId="date"
+                  dateFormat="dd/mm/yy"
+                  fluid />
+    @if (addHabitEntryForm.controls.date.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (addHabitEntryForm.controls.date.getError('issue') && addHabitEntryForm.controls.date.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ addHabitEntryForm.controls.date.getError('issue') }}
+      </small>
+    }
+  </div>
+  </form>

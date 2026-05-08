@@ -25,7 +25,7 @@ import { catchError, EMPTY, map, Observable, startWith, tap } from 'rxjs';
 import { HabitType } from '@habits/enums/habit-type.enum';
 import { FrequencyType } from '@habits/enums/frequency-type.enum';
 import { Store } from '@ngxs/store';
-import { HabitGetHabits, HabitUpdateHabit } from '@habits/state/habit.action';
+import { HabitFetchHabits, HabitUpdateHabit } from '@habits/state/habit.action';
 import { HttpErrorResponse } from '@angular/common/http';
 import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
 import { UpdateHabitRequestModel } from '@habits/models/requests/update-habit.request';
@@ -145,7 +145,7 @@ export class HabitEditFacadeService {
     return this._store.dispatch(new HabitUpdateHabit(habit.id, request)).pipe(
       tap({
         next: () => {
-          this._store.dispatch(new HabitGetHabits());
+          this._store.dispatch(new HabitFetchHabits());
           this._messageService.add({
             severity: 'success',
             summary: 'Success',

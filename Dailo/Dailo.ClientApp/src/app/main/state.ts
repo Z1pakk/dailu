@@ -1,5 +1,6 @@
 import { AuthState } from '@auth/state/auth.state';
 import { HabitState } from '@habits/state/habit.state';
-import { TagState } from '../modules/tags/state/tag.state';
+import { HabitEntryState } from '@habit-entries/state/habit-entry.state';
+import { TagState } from '@tags/state/tag.state';
 
-export const states = [AuthState, HabitState, TagState];
+export const states = [AuthState, HabitState, HabitEntryState, TagState];

@@ -7,4 +7,8 @@
       <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\10.0.7\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HabitEntry.Application\HabitEntry.Application.csproj" />
+    <ProjectReference Include="..\Habit.DataTransfer\Habit.DataTransfer.csproj" />
+  </ItemGroup>
 </Project>

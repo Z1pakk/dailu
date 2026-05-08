@@ -1,0 +1,15 @@
+<div>
+  <div class="flex justify-between">
+    <h2 class="text-3xl font-bold">My Entries</h2>
+    <p-button (click)="addHabitEntry()" label="Create New Entry" />
+  </div>
+  <p-data-view [value]="$habitEntries()" layout="list" class="mt-4">
+    <ng-template #list let-habitEntries>
+      <div class="flex flex-col gap-4">
+        @for (habitEntry of habitEntries; track habitEntry.id) {
+          <app-habit-entry-list-item [habitEntry]="habitEntry" />
+        }
+      </div>
+    </ng-template>
+  </p-data-view>
+</div>

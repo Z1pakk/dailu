@@ -1,5 +1,5 @@
 using FluentValidation;
-using HabieEntry.Api;
+using HabitEntry.Api;
 using HabitEntry.Application;
 using HabitEntry.Application.Persistence;
 using HabitEntry.Infrastructure.Database;

@@ -1,9 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { Action, State, StateContext } from '@ngxs/store';
 import { HabitModel } from '@habits/models/habit.model';
-import { HabitCreateHabit, HabitGetHabits, HabitUpdateHabit } from '@habits/state/habit.action';
+import {
+  HabitCreateHabit,
+  HabitFetchHabits,
+  HabitGetHabits,
+  HabitUpdateHabit,
+} from '@habits/state/habit.action';
 import { HabitApi } from '@habits/api/habit.api';
-import { finalize, tap } from 'rxjs';
+import { finalize, of, tap } from 'rxjs';
 
 export interface HabitStateModel {
   isLoading: boolean;
@@ -25,6 +30,19 @@ export class HabitState {
 
   @Action(HabitGetHabits)
   public getHabits(ctx: StateContext<HabitStateModel>, action: HabitGetHabits) {
+    const { habits } = ctx.getState();
+    if (habits.length > 0) {
+      return of(habits);
+    }
+
+    return ctx.dispatch(new HabitFetchHabits());
+  }
+
+  @Action(HabitFetchHabits)
+  public fetchHabits(
+    ctx: StateContext<HabitStateModel>,
+    action: HabitFetchHabits,
+  ) {
     ctx.patchState({
       isLoading: true,
     });

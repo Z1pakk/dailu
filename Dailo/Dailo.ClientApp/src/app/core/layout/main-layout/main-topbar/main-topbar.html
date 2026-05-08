@@ -24,6 +24,15 @@
           <i class="pi pi-bell"></i>
         </a>
       </li>
+      <li class="right-sidebar-item">
+        <a (click)="toggleTheme()" class="right-sidebar-button">
+          @if ($isDarkMode()) {
+            <i class="pi pi-sun"></i>
+          } @else {
+            <i class="pi pi-moon"></i>
+          }
+        </a>
+      </li>
       <li class="profile-item static sm:relative">
         <a (click)="profileMenu.toggle($event);" class="right-sidebar-button">
           <i class="pi pi-user"></i>

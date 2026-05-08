@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace HabieEntry.Api;
+namespace HabitEntry.Api;
 
 public static class HabitEntryApiRoot
 {

@@ -2,6 +2,7 @@ using FluentValidation;
 using Habit.Api;
 using Habit.Application;
 using Habit.Application.Persistence;
+using Habit.DataTransfer;
 using Habit.Infrastructure.Database;
 using Habit.Integrations;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +54,8 @@ public static class Setup
         services.AddEndpoints(assemblies: HabitApiRoot.Assembly);
 
         services.AddHandlerAssembly<IHabitApplicationRoot>();
+
+        services.AddHabitTransferServices();
 
         services.AddHabitIntegrations();
 

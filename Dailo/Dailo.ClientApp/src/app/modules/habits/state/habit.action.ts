@@ -3,8 +3,18 @@ import { UpdateHabitRequestModel } from '@habits/models/requests/update-habit.re
 
 const scope = '[Habit]';
 
+/**
+ * Get cached habits or fetch them
+ */
 export class HabitGetHabits {
   static readonly type = `${scope} GetHabits`;
+}
+
+/**
+ * Fetch cases without caching
+ */
+export class HabitFetchHabits {
+  static readonly type = `${scope} FetchHabits`;
 }
 
 export class HabitCreateHabit {
@@ -16,5 +26,8 @@ export class HabitCreateHabit {
 export class HabitUpdateHabit {
   static readonly type = `${scope} UpdateHabit`;
 
-  constructor(public id: number, public payload: UpdateHabitRequestModel) {}
+  constructor(
+    public id: string,
+    public payload: UpdateHabitRequestModel,
+  ) {}
 }

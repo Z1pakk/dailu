@@ -1,6 +1,6 @@
 <form [formGroup]="addTagForm" class="flex flex-col gap-4" novalidate>
   <div class="flex flex-col gap-2">
-    <label for="name" class="block">Name</label>
+    <label for="name" class="block required">Name</label>
     <div>
       <input [formControl]="addTagForm.controls.name"
              [invalid]="!!addTagForm.controls.name.getError('serverError') || (!!addTagForm.controls.name.errors && addTagForm.controls.name.dirty)"

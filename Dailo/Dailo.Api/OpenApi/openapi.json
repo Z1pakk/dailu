@@ -89,6 +89,56 @@
         }
       }
     },
+    "/api/habit-entries": {
+      "post": {
+        "tags": [
+          "HabitEntryModel"
+        ],
+        "description": "Creates a new habit entry for the current authenticated user.",
+        "operationId": "CreateHabitEntry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHabitEntryCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateHabitEntryResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "HabitEntryModel"
+        ],
+        "description": "Get habit entries for the current authenticated user.",
+        "operationId": "GetHabitEntries",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHabitEntriesQueryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tags": {
       "post": {
         "tags": [
@@ -358,6 +408,49 @@
           }
         }
       },
+      "CreateHabitEntryCommand": {
+        "required": [
+          "habitId",
+          "value",
+          "notes",
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "habitId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "CreateHabitEntryResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdOfHabitEntryModel"
+          }
+        }
+      },
       "CreateHabitResponse": {
         "required": [
           "id"
@@ -421,6 +514,20 @@
       "FrequencyType": {
         "type": "integer"
       },
+      "GetHabitEntriesQueryResponse": {
+        "required": [
+          "habitEntries"
+        ],
+        "type": "object",
+        "properties": {
+          "habitEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HabitEntryModel"
+            }
+          }
+        }
+      },
       "GetHabitsResponse": {
         "required": [
           "habits"
@@ -448,6 +555,72 @@
             }
           }
         }
+      },
+      "HabitEntryModel": {
+        "required": [
+          "id",
+          "habitId",
+          "habitName",
+          "value",
+          "source",
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdOfHabitEntryModel"
+          },
+          "habitId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "habitName": {
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/HabitEntrySource"
+          },
+          "externalId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "isArchived": {
+            "type": "boolean"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModifiedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "HabitEntrySource": {
+        "type": "integer"
       },
       "HabitModel": {
         "required": [
@@ -529,6 +702,8 @@
       "HabitType": {
         "type": "integer"
       },
+      "Id": { },
+      "IdOfHabitEntryModel": { },
       "IdOfHabitModel": { },
       "IdOfTagModel": { },
       "LoginUserCommand": {
@@ -780,6 +955,9 @@
   "tags": [
     {
       "name": "Habit"
+    },
+    {
+      "name": "HabitEntryModel"
     },
     {
       "name": "Tag"

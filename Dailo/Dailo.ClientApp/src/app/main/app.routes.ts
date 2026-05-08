@@ -5,8 +5,8 @@ import { authGuard } from '@auth/auth-guard';
 import { habitRoutes } from '@habits/habit.routes';
 import { notAuthGuard } from '@auth/not-auth.guard';
 import { dashboardRoutes } from '@dashboard/dashboard.routes';
-import { tagRoutes } from '../modules/tags/tag.routes';
-import { entryRoutes } from '../modules/entries/entry.routes';
+import { tagRoutes } from '@tags/tag.routes';
+import { habitEntryRoutes } from '@habit-entries/habit-entry.routes';
 
 export const routes: Routes = [
   {
@@ -35,7 +35,7 @@ export const routes: Routes = [
       ...dashboardRoutes,
       ...habitRoutes,
       ...tagRoutes,
-      ...entryRoutes,
+      ...habitEntryRoutes,
     ],
   },
 

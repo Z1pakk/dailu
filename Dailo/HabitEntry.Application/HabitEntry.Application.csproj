@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <Folder Include="Features\" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="StrictId" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HabitEntry.Domain\HabitEntry.Domain.csproj" />

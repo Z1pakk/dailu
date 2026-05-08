@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { Action, State, StateContext } from '@ngxs/store';
+import { Action, NgxsOnInit, State, StateContext, Store } from '@ngxs/store';
 import {
   AuthLogin,
   AuthLogout,
+  AuthLogoutLocal,
   AuthRefresh,
   AuthRegister,
 } from '@auth/state/auth.action';
@@ -12,6 +13,10 @@ import { finalize, tap } from 'rxjs';
 import { LoginResponse } from '@auth/responses/login.response';
 import { RegisterResponse } from '@auth/responses/register.response';
 import { RefreshResponse } from '@auth/responses/refresh.response';
+import { BroadcastService } from '@core/services/broadcast.service';
+
+const LOGOUT_CHANNEL = 'auth';
+const LOGOUT_MESSAGE = 'logout';
 
 export interface AuthStateModel {
   isLoading: boolean;
@@ -27,9 +32,23 @@ const defaultState: AuthStateModel = {
 
 @Injectable()
 @State<AuthStateModel>({ name: 'authState', defaults: defaultState })
-export class AuthState {
+export class AuthState implements NgxsOnInit {
   private readonly _authApi = inject(AuthApi);
   private readonly _router = inject(Router);
+  private readonly _broadcastService = inject(BroadcastService);
+  private readonly _store = inject(Store);
+
+  ngxsOnInit(ctx: StateContext<AuthStateModel>): void {
+    this.watchLogout();
+  }
+
+  private watchLogout(): void {
+    this._broadcastService.messages$(LOGOUT_CHANNEL).subscribe((msg) => {
+      if (msg === LOGOUT_MESSAGE) {
+        this._store.dispatch(new AuthLogoutLocal());
+      }
+    });
+  }
 
   @Action(AuthLogin)
   public login(ctx: StateContext<AuthStateModel>, action: AuthLogin) {
@@ -88,13 +107,22 @@ export class AuthState {
     );
   }
 
+  @Action(AuthLogoutLocal)
+  public logoutLocal(ctx: StateContext<AuthStateModel>) {
+    ctx.setState(defaultState);
+    this._router.navigate(['/login']);
+  }
+
   @Action(AuthLogout)
   public logout(ctx: StateContext<AuthStateModel>) {
     ctx.patchState({ isLoading: true });
 
     return this._authApi.logout().pipe(
       tap({
-        next: () => ctx.setState(defaultState),
+        next: () => {
+          ctx.setState(defaultState);
+          this._broadcastService.post(LOGOUT_CHANNEL, LOGOUT_MESSAGE);
+        },
         error: () => ctx.setState(defaultState),
       }),
       finalize(() => {

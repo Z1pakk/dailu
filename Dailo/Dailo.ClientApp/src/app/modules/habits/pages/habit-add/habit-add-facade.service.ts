@@ -28,11 +28,11 @@ import {
   frequencyTypes,
 } from '@habits/enums/frequency-type.enum';
 import { Store } from '@ngxs/store';
-import { HabitCreateHabit, HabitGetHabits } from '@habits/state/habit.action';
+import { HabitCreateHabit, HabitFetchHabits } from '@habits/state/habit.action';
 import { HttpErrorResponse } from '@angular/common/http';
 import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
 import { CreateHabitRequestModel } from '@habits/models/requests/create-habit.request';
-import { TagStateSelectors } from '../../../tags/state/tag.selector';
+import { TagStateSelectors } from '@tags/state/tag.selector';
 import { SelectItem } from '@shared/lib/select-item/select-item.type';
 import { toLocalDateString } from '@shared/lib/date/to-local-date-string';
 
@@ -135,7 +135,7 @@ export class HabitAddFacadeService {
     return this._store.dispatch(new HabitCreateHabit(request)).pipe(
       tap({
         next: () => {
-          this._store.dispatch(new HabitGetHabits());
+          this._store.dispatch(new HabitFetchHabits());
           this._messageService.add({
             severity: 'success',
             summary: 'Success',

@@ -22,7 +22,10 @@ export class HabitApi {
     return this._http.post<void>(`${this.baseUrl}/habits`, payload);
   }
 
-  public update(id: number, payload: UpdateHabitRequestModel): Observable<void> {
+  public update(
+    id: string,
+    payload: UpdateHabitRequestModel,
+  ): Observable<void> {
     return this._http.put<void>(`${this.baseUrl}/habits/${id}`, payload);
   }
 }

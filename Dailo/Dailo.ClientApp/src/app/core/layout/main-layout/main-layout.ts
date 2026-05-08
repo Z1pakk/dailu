@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { MainSidebar } from '@layout/main-layout/main-sidebar/main-sidebar';
 import { MainTopbar } from '@layout/main-layout/main-topbar/main-topbar';
 import { MainFooter } from '@layout/main-layout/main-footer/main-footer';
-import { MainSidebarService } from '@layout/service/main-sidebar.service';
+import { MainSidebarService } from '@layout/services/main-sidebar.service';
 
 @Component({
   selector: 'app-main-layout',

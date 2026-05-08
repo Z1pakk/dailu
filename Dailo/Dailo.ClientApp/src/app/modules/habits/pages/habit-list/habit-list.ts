@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { DataView } from 'primeng/dataview';
 import { Store } from '@ngxs/store';
-import { HabitGetHabits } from '@habits/state/habit.action';
+import { HabitFetchHabits } from '@habits/state/habit.action';
 import { HabitStateSelectors } from '@habits/state/habit.selector';
 import { Button } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -34,7 +34,7 @@ export class HabitList implements OnInit {
   );
 
   ngOnInit() {
-    this._store.dispatch(new HabitGetHabits());
+    this._store.dispatch(new HabitFetchHabits());
   }
 
   protected addHabit() {

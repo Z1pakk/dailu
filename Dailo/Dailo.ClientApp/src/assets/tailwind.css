@@ -2,6 +2,7 @@
 @import 'tailwindcss-primeui';
 @import './variables/color-palette.css';
 @import './variables/typography.css';
+@import './utilities/utilities.css';
 
 @custom-variant dark (&:where(.app-dark, .app-dark *));
 

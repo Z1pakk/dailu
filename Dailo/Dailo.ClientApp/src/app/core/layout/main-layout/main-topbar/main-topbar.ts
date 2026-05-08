@@ -8,7 +8,8 @@ import { Menu } from 'primeng/menu';
 import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { Store } from '@ngxs/store';
 import { AuthLogout } from '@auth/state/auth.action';
-import { MainSidebarService } from '@layout/service/main-sidebar.service';
+import { MainSidebarService } from '@layout/services/main-sidebar.service';
+import { ThemeService } from '@layout/services/theme.service';
 
 @Component({
   selector: 'app-main-topbar',
@@ -20,8 +21,14 @@ import { MainSidebarService } from '@layout/service/main-sidebar.service';
 export class MainTopbar {
   private readonly _store = inject(Store);
   private readonly _mainSidebarService = inject(MainSidebarService);
+  private readonly _themeService = inject(ThemeService);
 
-  protected readonly $isMenuOpened = computed(() => this._mainSidebarService.$isMenuOpened());
+  protected readonly $isMenuOpened = computed(() =>
+    this._mainSidebarService.$isMenuOpened(),
+  );
+  protected readonly $isDarkMode = computed(() =>
+    this._themeService.$isDarkMode(),
+  );
 
   protected readonly profileMenuItems: MenuItem[] = [
     {
@@ -43,5 +50,9 @@ export class MainTopbar {
 
   protected toggleMenu() {
     this._mainSidebarService.toggleMenu();
+  }
+
+  protected toggleTheme() {
+    this._themeService.toggle();
   }
 }
