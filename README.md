@@ -1,3 +1,3 @@
-# DevHabit
+# Dailu
 
 A developer habit tracking system, built with a pragmatic RESTful API.
