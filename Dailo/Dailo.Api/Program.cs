@@ -4,6 +4,7 @@ using Dailo.Infrastructure;
 using Dailo.Infrastructure.Database;
 using Habit.Infrastructure;
 using HabitEntry.Infrastructure;
+using HabitUser.Infrastructure;
 using Identity.Infrastructure;
 using Scalar.AspNetCore;
 using SharedInfrastructure.Endpoint;
@@ -17,6 +18,7 @@ builder.Services.AddHttpClient();
 builder
     .Services.AddHabitModule(builder.Configuration)
     .AddHabitEntryModule(builder.Configuration)
+    .AddHabitUserModule(builder.Configuration)
     .AddTagModule(builder.Configuration)
     .AddIdentityModule(builder.Configuration);
 

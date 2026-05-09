@@ -30,6 +30,12 @@
     <Project Path="HabitEntry.Infrastructure/HabitEntry.Infrastructure.csproj" />
     <Project Path="HabitEntry.Integrations/HabitEntry.Integrations.csproj" />
   </Folder>
+  <Folder Name="/src/modules/habit-user/">
+    <Project Path="HabitUser.Api/HabitUser.Api.csproj" />
+    <Project Path="HabitUser.Application/HabitUser.Application.csproj" />
+    <Project Path="HabitUser.Domain/HabitUser.Domain.csproj" />
+    <Project Path="HabitUser.Infrastructure/HabitUser.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/modules/habit/">
     <Project Path="Habit.Api/Habit.Api.csproj" />
     <Project Path="Habit.Application/Habit.Application.csproj" />

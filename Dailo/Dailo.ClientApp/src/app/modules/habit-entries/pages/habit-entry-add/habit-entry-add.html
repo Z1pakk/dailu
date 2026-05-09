@@ -25,7 +25,9 @@
       <label for="value" class="block">
         Value
         @if ($selectedHabitUnit()) {
-          <span class="text-sm font-normal text-surface-400">({{ $selectedHabitUnit() }})</span>
+          <span class="text-sm font-normal text-surface-400">
+            ({{ $selectedHabitUnit() }})
+          </span>
         }
       </label>
       <p-input-number [formControl]="addHabitEntryForm.controls.value"
@@ -71,8 +73,11 @@
     <div class="flex items-center justify-between">
       <label for="completedAt" class="block">Date</label>
       <div class="flex items-center gap-2">
-        <label for="includeTime" class="text-sm text-surface-400">Include time</label>
-        <p-toggleswitch inputId="includeTime" [formControl]="addHabitEntryForm.controls.includeTime" />
+        <label for="includeTime" class="text-sm text-surface-400">
+          Include time
+        </label>
+        <p-toggleswitch [formControl]="addHabitEntryForm.controls.includeTime"
+                        inputId="includeTime" />
       </div>
     </div>
     <p-datepicker [formControl]="addHabitEntryForm.controls.completedAt"
@@ -95,4 +100,4 @@
       </small>
     }
   </div>
-  </form>
+</form>

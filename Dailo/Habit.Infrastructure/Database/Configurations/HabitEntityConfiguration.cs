@@ -5,7 +5,7 @@ using SharedInfrastructure.Persistence;
 
 namespace Habit.Infrastructure.Database.Configurations;
 
-internal sealed class HabitConfiguration : BaseEntityTypedConfiguration<HabitEntity>
+internal sealed class HabitEntityConfiguration : BaseEntityTypedConfiguration<HabitEntity>
 {
     protected override void ConfigureEntity(EntityTypeBuilder<HabitEntity> builder)
     {

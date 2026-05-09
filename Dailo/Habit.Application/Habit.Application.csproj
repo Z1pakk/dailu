@@ -8,4 +8,7 @@
     <ProjectReference Include="..\Dailo.Events\Dailo.Events.csproj" />
     <ProjectReference Include="..\Habit.Domain\Habit.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="EventHandlers\" />
+  </ItemGroup>
 </Project>

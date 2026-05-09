@@ -6,7 +6,7 @@ using Tag.Domain.Entities;
 
 namespace Tag.Infrastructure.Database.Configurations;
 
-internal sealed class TagConfiguration : BaseEntityTypedConfiguration<TagEntity>
+internal sealed class TagEntityConfiguration : BaseEntityTypedConfiguration<TagEntity>
 {
     protected override void ConfigureEntity(EntityTypeBuilder<TagEntity> builder)
     {

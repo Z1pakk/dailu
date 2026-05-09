@@ -6,7 +6,7 @@ using StrictId.EFCore.ValueConverters;
 
 namespace HabitEntry.Infrastructure.Database.Configurations;
 
-internal sealed class HabitEntryConfiguration : BaseEntityTypedConfiguration<HabitEntryEntity>
+internal sealed class HabitEntryEntityConfiguration : BaseEntityTypedConfiguration<HabitEntryEntity>
 {
     protected override void ConfigureEntity(EntityTypeBuilder<HabitEntryEntity> builder)
     {

@@ -6,7 +6,7 @@ using Mediator;
 using Microsoft.EntityFrameworkCore;
 using StrictId;
 
-namespace Habit.Application.Features.HabitEntryCreated;
+namespace Habit.Application.EventHandlers.HabitEntryCreated;
 
 public sealed class HabitEntryCreatedIntegrationEventHandler(IHabitDbContext dbContext)
     : INotificationHandler<HabitEntryCompletedIntegrationEvent>

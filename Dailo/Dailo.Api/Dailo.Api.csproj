@@ -46,6 +46,7 @@
     <ProjectReference Include="..\Habit.Api\Habit.Api.csproj" />
     <ProjectReference Include="..\Habit.Infrastructure\Habit.Infrastructure.csproj" />
     <ProjectReference Include="..\HabitEntry.Infrastructure\HabitEntry.Infrastructure.csproj" />
+    <ProjectReference Include="..\HabitUser.Infrastructure\HabitUser.Infrastructure.csproj" />
     <ProjectReference Include="..\Identity.Infrastructure\Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\Tag.Infrastructure\Tag.Infrastructure.csproj" />
   </ItemGroup>
