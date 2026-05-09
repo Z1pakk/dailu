@@ -3,8 +3,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
+using SharedKernel.Endpoint;
 
-namespace SharedKernel.Endpoint;
+namespace SharedInfrastructure.Endpoint;
 
 public static class EndpointExtensions
 {

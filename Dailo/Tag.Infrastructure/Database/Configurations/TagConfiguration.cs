@@ -1,7 +1,7 @@
 using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SharedKernel.Persistence;
+using SharedInfrastructure.Persistence;
 using Tag.Domain.Entities;
 
 namespace Tag.Infrastructure.Database.Configurations;

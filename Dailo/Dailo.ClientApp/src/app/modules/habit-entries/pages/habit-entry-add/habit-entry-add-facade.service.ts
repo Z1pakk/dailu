@@ -20,9 +20,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
 import { CreateHabitEntryRequestModel } from '@habit-entries/models/requests/create-habit-entry.request';
 import { SelectItem } from '@shared/lib/select-item/select-item.type';
-import { toLocalDateString } from '@shared/lib/date/to-local-date-string';
 import {
-  HabitEntryDateSchema,
+  HabitEntryCompletedAtSchema,
   HabitEntryHabitIdSchema,
   HabitEntryNotesSchema,
   HabitEntryValueSchema,
@@ -57,10 +56,11 @@ export class HabitEntryAddFacadeService {
         '',
         valibotValidator(HabitEntryNotesSchema),
       ),
-      date: this._fb.control<Date>(
+      completedAt: this._fb.control<Date>(
         new Date(),
-        valibotValidator(HabitEntryDateSchema),
+        valibotValidator(HabitEntryCompletedAtSchema),
       ),
+      includeTime: this._fb.control<boolean>(false),
     });
 
   private readonly _$selectedHabitId = toSignal(
@@ -70,8 +70,9 @@ export class HabitEntryAddFacadeService {
     { initialValue: '' },
   );
 
-  private readonly _$selectedHabit = computed(() =>
-    this._$habits().find((h) => h.id === this._$selectedHabitId()) ?? null,
+  private readonly _$selectedHabit = computed(
+    () =>
+      this._$habits().find((h) => h.id === this._$selectedHabitId()) ?? null,
   );
 
   public readonly $isBinaryHabit = computed(
@@ -94,14 +95,19 @@ export class HabitEntryAddFacadeService {
     const formValue: HabitEntryAddFormValue =
       this.addHabitEntryForm.getRawValue();
 
-    const { habitId, notes, date } = formValue;
+    const { habitId, notes, includeTime } = formValue;
     const value = this.$isBinaryHabit() ? 1 : formValue.value;
+
+    const completedAt = new Date(formValue.completedAt);
+    if (!includeTime) {
+      completedAt.setHours(0, 0, 0, 0);
+    }
 
     const request = (<CreateHabitEntryRequestModel>{
       habitId,
       value,
       notes: notes || null,
-      date: toLocalDateString(date),
+      completedAt: completedAt.toISOString(),
     }) satisfies CreateHabitEntryRequestModel;
 
     return this._store.dispatch(new HabitEntryCreateHabitEntry(request)).pipe(

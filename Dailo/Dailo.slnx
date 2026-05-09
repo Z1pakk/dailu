@@ -55,6 +55,8 @@
     <Project Path="Tag.UnitTests/Tag.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
+    <Project Path="Dailo.Events/Dailo.Events.csproj" />
+    <Project Path="SharedInfrastructure/SharedInfrastructure.csproj" />
     <Project Path="SharedKernel/SharedKernel.csproj" />
   </Folder>
   <Folder Name="/src/tests/" />

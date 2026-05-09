@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SharedInfrastructure\SharedInfrastructure.csproj" />
     <ProjectReference Include="..\Habit.Api\Habit.Api.csproj" />
     <ProjectReference Include="..\Habit.Application\Habit.Application.csproj" />
     <ProjectReference Include="..\Habit.DataTransfer\Habit.DataTransfer.csproj" />

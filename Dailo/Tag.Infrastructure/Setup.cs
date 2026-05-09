@@ -1,15 +1,17 @@
 using FluentValidation;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SharedKernel.CQRS;
-using SharedKernel.Endpoint;
+using SharedInfrastructure.CQRS;
+using SharedInfrastructure.Endpoint;
 using Tag.Api;
 using Tag.Application;
 using Tag.Application.Persistence;
 using Tag.DataTransfer;
 using Tag.Infrastructure.Database;
+using Tag.Infrastructure.Pipeline;
 
 namespace Tag.Infrastructure;
 
@@ -43,6 +45,11 @@ public static class Setup
                     }
                 )
                 .UseSnakeCaseNamingConvention()
+        );
+
+        services.AddScoped(
+            typeof(IPipelineBehavior<,>),
+            typeof(TagEventDispatchingBehavior<,>)
         );
 
         services.AddValidatorsFromAssemblyContaining<ITagApplicationRoot>();

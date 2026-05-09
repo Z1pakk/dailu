@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
-namespace SharedKernel.Persistence.Conventions;
+namespace SharedInfrastructure.Persistence.Conventions;
 
 public sealed class DefaultStringLengthConvention(int defaultStringLength = 256)
     : IModelFinalizingConvention

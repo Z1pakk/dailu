@@ -1,7 +1,7 @@
+using Dailo.Events;
 using HabitEntry.Domain.Entities;
 using HabitEntry.Domain.Enums;
 using SharedKernel.ResultPattern;
-using StrictId;
 
 namespace HabitEntry.Domain.Aggregates;
 
@@ -11,7 +11,7 @@ public sealed class HabitEntryAggregate : Aggregate
 
     private Guid UserId { get; set; }
 
-    private Id HabitId { get; set; } = default!;
+    private Id HabitId { get; set; }
 
     private int Value { get; set; }
 
@@ -21,9 +21,9 @@ public sealed class HabitEntryAggregate : Aggregate
 
     private string? ExternalId { get; set; }
 
-    private DateOnly Date { get; set; }
-
     private bool IsArchived { get; set; }
+
+    private DateTime CompletedAtUtc { get; set; }
 
     private HabitEntryAggregate() { }
 
@@ -35,12 +35,14 @@ public sealed class HabitEntryAggregate : Aggregate
         string? notes,
         HabitEntrySource source,
         string? externalId,
-        DateOnly date
+        DateTime completedAt
     )
     {
         if (value < 0)
         {
-            return Result<HabitEntryAggregate>.BadRequest("Value must be greater than or equal to zero.");
+            return Result<HabitEntryAggregate>.BadRequest(
+                "Value must be greater than or equal to zero."
+            );
         }
 
         if (habitId == default)
@@ -48,7 +50,7 @@ public sealed class HabitEntryAggregate : Aggregate
             return Result<HabitEntryAggregate>.BadRequest("HabitId is required.");
         }
 
-        if (date > DateOnly.FromDateTime(DateTime.UtcNow))
+        if (completedAt > DateTime.UtcNow)
         {
             return Result<HabitEntryAggregate>.BadRequest("Date cannot be in the future.");
         }
@@ -63,14 +65,15 @@ public sealed class HabitEntryAggregate : Aggregate
                 Notes = notes,
                 Source = source,
                 ExternalId = externalId,
-                Date = date,
+                CompletedAtUtc = completedAt,
                 IsArchived = false,
             }
         );
     }
 
-    public HabitEntryEntity ToEntity() =>
-        new()
+    public HabitEntryEntity ToEntity()
+    {
+        var entity = new HabitEntryEntity
         {
             Id = Id.ToId(),
             UserId = UserId,
@@ -79,7 +82,14 @@ public sealed class HabitEntryAggregate : Aggregate
             Notes = Notes,
             Source = Source,
             ExternalId = ExternalId,
-            Date = Date,
+            CompletedAtUtc = CompletedAtUtc,
             IsArchived = IsArchived,
         };
+
+        entity.AddDomainEvent(
+            new HabitEntryCompletedIntegrationEvent(HabitId, entity.CompletedAtUtc)
+        );
+
+        return entity;
+    }
 }

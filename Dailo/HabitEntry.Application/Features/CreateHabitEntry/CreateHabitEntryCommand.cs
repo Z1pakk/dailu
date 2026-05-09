@@ -14,7 +14,7 @@ public sealed record CreateHabitEntryCommand(
     Id HabitId,
     int Value,
     string? Notes,
-    DateOnly Date
+    DateTime CompletedAt
 ) : ICommand<Result<CreateHabitEntryCommandResponse>>;
 
 public sealed record CreateHabitEntryCommandResponse(Id<HabitEntryModel> Id);
@@ -30,10 +30,7 @@ public sealed class CreateHabitEntryCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        var habits = await habitService.GetByIdsAsync(
-            [request.HabitId],
-            cancellationToken
-        );
+        var habits = await habitService.GetByIdsAsync([request.HabitId], cancellationToken);
 
         if (!habits.ContainsKey(request.HabitId))
         {
@@ -50,7 +47,7 @@ public sealed class CreateHabitEntryCommandHandler(
             request.Notes,
             HabitEntrySource.Manual,
             externalId: null,
-            request.Date
+            request.CompletedAt
         );
 
         if (habitEntryResult.IsFailure)

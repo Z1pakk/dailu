@@ -4,13 +4,15 @@ using Habit.Application;
 using Habit.Application.Persistence;
 using Habit.DataTransfer;
 using Habit.Infrastructure.Database;
+using Habit.Infrastructure.Pipeline;
 using Habit.Integrations;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SharedKernel.CQRS;
-using SharedKernel.Endpoint;
+using SharedInfrastructure.CQRS;
+using SharedInfrastructure.Endpoint;
 
 namespace Habit.Infrastructure;
 
@@ -47,6 +49,11 @@ public static class Setup
                     }
                 )
                 .UseSnakeCaseNamingConvention()
+        );
+
+        services.AddScoped(
+            typeof(IPipelineBehavior<,>),
+            typeof(HabitEventDispatchingBehavior<,>)
         );
 
         services.AddValidatorsFromAssemblyContaining<IHabitApplicationRoot>();

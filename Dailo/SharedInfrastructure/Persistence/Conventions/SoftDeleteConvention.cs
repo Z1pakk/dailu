@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using SharedKernel.Entity;
 
-namespace SharedKernel.Persistence.Conventions;
+namespace SharedInfrastructure.Persistence.Conventions;
 
 public sealed class SoftDeleteConvention : IModelFinalizingConvention
 {
@@ -19,7 +19,6 @@ public sealed class SoftDeleteConvention : IModelFinalizingConvention
                 continue;
             }
 
-            // Build filter expression: entity => !entity.IsDeleted
             var parameter = Expression.Parameter(entity.ClrType, "entity");
             var property = Expression.Property(parameter, nameof(ISoftDeletableEntity.IsDeleted));
             var filter = Expression.Lambda(

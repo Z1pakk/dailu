@@ -4,14 +4,15 @@ import {
   HabitEntryHabitIdSchema,
   HabitEntryValueSchema,
   HabitEntryNotesSchema,
-  HabitEntryDateSchema,
+  HabitEntryCompletedAtSchema,
 } from '@habit-entries/schemas/habit-entry.schemas';
 
 export const HabitEntryAddFormSchema = v.object({
   habitId: HabitEntryHabitIdSchema,
   value: HabitEntryValueSchema,
   notes: HabitEntryNotesSchema,
-  date: HabitEntryDateSchema,
+  completedAt: HabitEntryCompletedAtSchema,
+  includeTime: v.boolean(),
 });
 
 export type HabitEntryAddFormValue = v.InferOutput<
@@ -22,7 +23,8 @@ export type HabitEntryAddForm = {
   habitId: FormControl<string>;
   value: FormControl<number>;
   notes: FormControl<string>;
-  date: FormControl<Date>;
+  completedAt: FormControl<Date>;
+  includeTime: FormControl<boolean>;
 };
 
 export type HabitEntryAddFormGroup = FormGroup<HabitEntryAddForm>;

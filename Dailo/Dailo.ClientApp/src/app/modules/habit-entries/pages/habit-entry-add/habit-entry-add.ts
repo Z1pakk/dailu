@@ -13,12 +13,13 @@ import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { Textarea } from 'primeng/textarea';
 import { DatePicker } from 'primeng/datepicker';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { Store } from '@ngxs/store';
 import { HabitGetHabits } from '@habits/state/habit.action';
 
 @Component({
   selector: 'app-habit-entry-add',
-  imports: [ReactiveFormsModule, Select, InputNumber, Textarea, DatePicker],
+  imports: [ReactiveFormsModule, Select, InputNumber, Textarea, DatePicker, ToggleSwitch],
   providers: [HabitEntryAddFacadeService],
   templateUrl: './habit-entry-add.html',
   styleUrl: './habit-entry-add.scss',

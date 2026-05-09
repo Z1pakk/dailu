@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Configuration;
-using SharedKernel.Options;
+using SharedInfrastructure.Options;
 
 namespace Dailo.Infrastructure.Auth;
 

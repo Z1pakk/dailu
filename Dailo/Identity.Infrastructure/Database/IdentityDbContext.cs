@@ -3,9 +3,11 @@ using Identity.Application.Persistence;
 using Identity.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using SharedKernel.Persistence.Conventions;
-using SharedKernel.Persistence.Extensions;
-using SharedKernel.Persistence.Interceptors;
+using SharedInfrastructure.Persistence.Conventions;
+using SharedInfrastructure.Persistence.Extensions;
+using SharedInfrastructure.Persistence.Interceptors;
+using SharedKernel.Domain;
+using SharedKernel.Event;
 using SharedKernel.User;
 
 namespace Identity.Infrastructure.Database;
@@ -28,6 +30,8 @@ public sealed class IdentityDbContext(
         IIdentityDbContext
 {
     public string Schema => IdentitySchema.Name;
+
+    private readonly List<IEvent> _pendingEvents = [];
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
@@ -62,6 +66,23 @@ public sealed class IdentityDbContext(
         configurationBuilder.Conventions.Add(_ => new TablePluralizationConvention());
         configurationBuilder.Conventions.Add(_ => new DefaultStringLengthConvention());
         configurationBuilder.Conventions.Add(_ => new SoftDeleteConvention());
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries<IHasDomainEvents>().Select(e => e.Entity).ToList();
+
+        _pendingEvents.AddRange(entries.SelectMany(e => e.DomainEvents));
+        entries.ForEach(e => e.ClearDomainEvents());
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    public IReadOnlyList<IEvent> ConsumeEvents()
+    {
+        var events = _pendingEvents.ToList();
+        _pendingEvents.Clear();
+        return events;
     }
 
     public async Task ExecuteTransactionalAsync(

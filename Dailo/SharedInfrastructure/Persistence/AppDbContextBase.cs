@@ -1,11 +1,13 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using SharedKernel.Persistence.Conventions;
-using SharedKernel.Persistence.Interceptors;
+using SharedInfrastructure.Persistence.Conventions;
+using SharedInfrastructure.Persistence.Interceptors;
+using SharedKernel.Domain;
+using SharedKernel.Event;
 using SharedKernel.User;
 
-namespace SharedKernel.Persistence;
+namespace SharedInfrastructure.Persistence;
 
 public abstract class AppDbContextBase(
     DbContextOptions options,
@@ -13,11 +15,12 @@ public abstract class AppDbContextBase(
     TimeProvider? timeProvider = null
 ) : DbContext(options)
 {
+    private readonly List<IEvent> _pendingEvents = [];
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.AddInterceptors(new VersionInterceptor());
 
-        // Only add audit interceptor if dependencies are available (runtime scenario)
         if (currentUserService is not null && timeProvider is not null)
         {
             optionsBuilder.AddInterceptors(new AuditInterceptor(currentUserService, timeProvider));
@@ -30,10 +33,26 @@ public abstract class AppDbContextBase(
     {
         base.ConfigureConventions(configurationBuilder);
 
-        // Order matters: Pluralization must run before SnakeCaseNaming
         configurationBuilder.Conventions.Add(_ => new TablePluralizationConvention());
         configurationBuilder.Conventions.Add(_ => new DefaultStringLengthConvention());
         configurationBuilder.Conventions.Add(_ => new SoftDeleteConvention());
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries<IHasDomainEvents>().Select(e => e.Entity).ToList();
+
+        _pendingEvents.AddRange(entries.SelectMany(e => e.DomainEvents));
+        entries.ForEach(e => e.ClearDomainEvents());
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    public IReadOnlyList<IEvent> ConsumeEvents()
+    {
+        var events = _pendingEvents.ToList();
+        _pendingEvents.Clear();
+        return events;
     }
 
     public async Task ExecuteTransactionalAsync(
@@ -51,7 +70,6 @@ public abstract class AppDbContextBase(
             try
             {
                 await action();
-
                 await SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
             }
@@ -78,10 +96,8 @@ public abstract class AppDbContextBase(
             try
             {
                 var result = await action();
-
                 await SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
-
                 return result;
             }
             catch

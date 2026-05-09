@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SharedKernel.Options;
 
-namespace SharedKernel.Options;
+namespace SharedInfrastructure.Options;
 
 public static class ConfigurationExtensions
 {

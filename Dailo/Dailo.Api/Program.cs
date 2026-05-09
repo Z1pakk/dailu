@@ -6,7 +6,7 @@ using Habit.Infrastructure;
 using HabitEntry.Infrastructure;
 using Identity.Infrastructure;
 using Scalar.AspNetCore;
-using SharedKernel.Endpoint;
+using SharedInfrastructure.Endpoint;
 using Tag.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);

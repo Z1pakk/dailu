@@ -30,7 +30,7 @@ public sealed class HabitAggregate : Aggregate
 
     private Milestone? Milestone { get; set; }
 
-    private DateTime? LastCompletedAtUtc { get; init; }
+    public DateTime? LastCompletedAtUtc { get; private set; }
 
     public IReadOnlyList<HabitTagEntity> Tags { get; private set; } = [];
 
@@ -123,6 +123,56 @@ public sealed class HabitAggregate : Aggregate
         );
     }
 
+    public static HabitAggregate Restore(
+        Id<HabitAggregate> id,
+        Guid userId,
+        string name,
+        string? description,
+        HabitType type,
+        Frequency frequency,
+        Target target,
+        HabitStatus status,
+        bool isArchived,
+        DateOnly? endDate,
+        Milestone? milestone,
+        DateTime? lastCompletedAtUtc,
+        IReadOnlyList<HabitTagEntity> tags,
+        Guid version
+    ) =>
+        new()
+        {
+            Id = id,
+            UserId = userId,
+            Name = name,
+            Description = description,
+            Type = type,
+            Frequency = frequency,
+            Target = target,
+            Status = status,
+            IsArchived = isArchived,
+            EndDate = endDate,
+            Milestone = milestone,
+            LastCompletedAtUtc = lastCompletedAtUtc,
+            Tags = tags,
+            Version = version,
+        };
+
+    public Result Complete(DateTime completedAtUtc)
+    {
+        if (completedAtUtc > DateTime.UtcNow)
+        {
+            return Result.BadRequest("Completion date cannot be in the future.");
+        }
+
+        if (completedAtUtc <= LastCompletedAtUtc)
+        {
+            return Result.Success();
+        }
+
+        LastCompletedAtUtc = completedAtUtc;
+        return Result.Success();
+    }
+
     public HabitEntity ToEntity() =>
         new()
         {
@@ -139,5 +189,6 @@ public sealed class HabitAggregate : Aggregate
             Milestone = Milestone,
             LastCompletedAtUtc = LastCompletedAtUtc,
             Tags = Tags.ToList(),
+            Version = Version,
         };
 }

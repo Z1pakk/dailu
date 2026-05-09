@@ -1,7 +1,7 @@
 using HabitEntry.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SharedKernel.Persistence;
+using SharedInfrastructure.Persistence;
 using StrictId.EFCore.ValueConverters;
 
 namespace HabitEntry.Infrastructure.Database.Configurations;
@@ -20,7 +20,7 @@ internal sealed class HabitEntryConfiguration : BaseEntityTypedConfiguration<Hab
         builder.Property(h => h.Source).IsRequired();
         builder.Property(h => h.ExternalId).HasMaxLength(200);
 
-        builder.Property(h => h.Date).IsRequired();
+        builder.Property(h => h.CompletedAtUtc).IsRequired();
         builder.Property(h => h.IsArchived).HasDefaultValue(false);
 
         builder.HasIndex(h => h.UserId);

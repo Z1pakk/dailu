@@ -2,7 +2,7 @@ using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace SharedKernel.Persistence.Extensions;
+namespace SharedInfrastructure.Persistence.Extensions;
 
 public static class DbContextExtensions
 {
@@ -10,7 +10,6 @@ public static class DbContextExtensions
     {
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
-            // Replace table names
             entity.SetTableName(entity.GetTableName()?.Underscore());
 
             var tableObjectIdentifier = StoreObjectIdentifier.Table(
@@ -18,7 +17,6 @@ public static class DbContextExtensions
                 entity.GetSchema()
             );
 
-            // Replace column names
             foreach (var property in entity.GetProperties())
             {
                 property.SetColumnName(property.GetColumnName(tableObjectIdentifier)?.Underscore());

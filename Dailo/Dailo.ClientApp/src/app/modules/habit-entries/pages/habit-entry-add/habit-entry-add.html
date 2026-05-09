@@ -68,22 +68,30 @@
     }
   </div>
   <div class="flex flex-col gap-2">
-    <label for="date" class="block">Date</label>
-    <p-datepicker [formControl]="addHabitEntryForm.controls.date"
-                  [invalid]="!!addHabitEntryForm.controls.date.getError('serverError') || (!!addHabitEntryForm.controls.date.errors && addHabitEntryForm.controls.date.dirty)"
+    <div class="flex items-center justify-between">
+      <label for="completedAt" class="block">Date</label>
+      <div class="flex items-center gap-2">
+        <label for="includeTime" class="text-sm text-surface-400">Include time</label>
+        <p-toggleswitch inputId="includeTime" [formControl]="addHabitEntryForm.controls.includeTime" />
+      </div>
+    </div>
+    <p-datepicker [formControl]="addHabitEntryForm.controls.completedAt"
+                  [invalid]="!!addHabitEntryForm.controls.completedAt.getError('serverError') || (!!addHabitEntryForm.controls.completedAt.errors && addHabitEntryForm.controls.completedAt.dirty)"
                   [maxDate]="today"
                   [showButtonBar]="true"
+                  [showTime]="addHabitEntryForm.controls.includeTime.value"
+                  [hourFormat]="'24'"
                   appendTo="body"
-                  name="date"
-                  inputId="date"
+                  name="completedAt"
+                  inputId="completedAt"
                   dateFormat="dd/mm/yy"
                   fluid />
-    @if (addHabitEntryForm.controls.date.getError('serverError'); as serverError) {
+    @if (addHabitEntryForm.controls.completedAt.getError('serverError'); as serverError) {
       <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
     }
-    @if (addHabitEntryForm.controls.date.getError('issue') && addHabitEntryForm.controls.date.dirty) {
+    @if (addHabitEntryForm.controls.completedAt.getError('issue') && addHabitEntryForm.controls.completedAt.dirty) {
       <small class="text-sm text-red-500 mt-1">
-        {{ addHabitEntryForm.controls.date.getError('issue') }}
+        {{ addHabitEntryForm.controls.completedAt.getError('issue') }}
       </small>
     }
   </div>

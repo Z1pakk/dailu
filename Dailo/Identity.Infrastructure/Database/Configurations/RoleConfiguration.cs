@@ -2,7 +2,7 @@ using Humanizer;
 using Identity.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SharedKernel.Persistence;
+using SharedInfrastructure.Persistence;
 
 namespace Identity.Infrastructure.Database.Configurations;
 

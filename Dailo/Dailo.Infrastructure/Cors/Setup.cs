@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using SharedKernel.Options;
+using SharedInfrastructure.Options;
 
 namespace Dailo.Infrastructure.Cors;
 

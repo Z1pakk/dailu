@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SharedKernel.Persistence;
+using SharedInfrastructure.Persistence;
 using SharedKernel.User;
 using Tag.Application.Persistence;
 using Tag.Domain.Entities;

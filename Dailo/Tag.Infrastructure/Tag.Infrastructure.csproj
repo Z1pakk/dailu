@@ -17,7 +17,7 @@
     <Folder Include="Database\Migrations\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\SharedInfrastructure\SharedInfrastructure.csproj" />
     <ProjectReference Include="..\Tag.Api\Tag.Api.csproj" />
     <ProjectReference Include="..\Tag.Application\Tag.Application.csproj" />
     <ProjectReference Include="..\Tag.DataTransfer\Tag.DataTransfer.csproj" />

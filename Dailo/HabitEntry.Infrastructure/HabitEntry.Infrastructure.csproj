@@ -22,7 +22,7 @@
     <ProjectReference Include="..\HabitEntry.Application\HabitEntry.Application.csproj" />
     <ProjectReference Include="..\HabitEntry.Domain\HabitEntry.Domain.csproj" />
     <ProjectReference Include="..\HabitEntry.Integrations\HabitEntry.Integrations.csproj" />
-    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\SharedInfrastructure\SharedInfrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="appsettings.Development.json">

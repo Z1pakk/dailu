@@ -1,3 +1,5 @@
+using SharedKernel.Event;
+
 namespace SharedKernel.Persistence;
 
 public interface IAppDbContextBase
@@ -5,6 +7,8 @@ public interface IAppDbContextBase
     string Schema { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    IReadOnlyList<IEvent> ConsumeEvents();
 
     Task ExecuteTransactionalAsync(
         Func<Task> action,

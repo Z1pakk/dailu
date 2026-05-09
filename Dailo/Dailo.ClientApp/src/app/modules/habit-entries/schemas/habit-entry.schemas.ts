@@ -19,7 +19,7 @@ export const HabitEntryNotesSchema = v.pipe(
   v.maxLength(1000, 'Maximum of 1000 characters'),
 );
 
-export const HabitEntryDateSchema = v.pipe(
+export const HabitEntryCompletedAtSchema = v.pipe(
   v.date(),
   v.check(
     (date) => date <= new Date(new Date().setHours(23, 59, 59, 999)),

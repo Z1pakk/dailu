@@ -1,7 +1,7 @@
 using Habit.Application.Persistence;
 using Habit.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using SharedKernel.Persistence;
+using SharedInfrastructure.Persistence;
 using SharedKernel.User;
 
 namespace Habit.Infrastructure.Database;

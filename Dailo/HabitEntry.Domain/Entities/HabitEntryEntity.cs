@@ -16,7 +16,7 @@ public class HabitEntryEntity : BaseEntity<Id<HabitEntryEntity>>
 
     public string? ExternalId { get; set; }
 
-    public required DateOnly Date { get; set; }
+    public required DateTime CompletedAtUtc { get; set; }
 
     public bool IsArchived { get; set; }
 }

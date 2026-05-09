@@ -6,6 +6,8 @@ using Identity.Application.Services;
 using Identity.Domain.Entities;
 using Identity.Infrastructure.Database;
 using Identity.Infrastructure.Database.Seeders;
+using Identity.Infrastructure.Pipeline;
+using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -15,8 +17,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Configuration;
-using SharedKernel.CQRS;
-using SharedKernel.Endpoint;
+using SharedInfrastructure.CQRS;
+using SharedInfrastructure.Endpoint;
 using SharedKernel.Persistence;
 
 namespace Identity.Infrastructure;
@@ -62,6 +64,11 @@ public static class Setup
             .AddEntityFrameworkStores<IdentityDbContext>()
             .AddDefaultTokenProviders()
             .AddSignInManager();
+
+        services.AddScoped(
+            typeof(IPipelineBehavior<,>),
+            typeof(IdentityEventDispatchingBehavior<,>)
+        );
 
         services.AddScoped<ITokenProvider, TokenProvider>();
 

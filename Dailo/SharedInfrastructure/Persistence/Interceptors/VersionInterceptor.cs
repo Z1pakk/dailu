@@ -2,13 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SharedKernel.Entity;
 
-namespace SharedKernel.Persistence.Interceptors;
+namespace SharedInfrastructure.Persistence.Interceptors;
 
-/// <summary>
-/// Interceptor that automatically generates a new GUID for the Version property
-/// on entities that inherit from IEntityVersion when they are added or modified.
-/// This ensures database-independent optimistic concurrency control.
-/// </summary>
 public sealed class VersionInterceptor : SaveChangesInterceptor
 {
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(

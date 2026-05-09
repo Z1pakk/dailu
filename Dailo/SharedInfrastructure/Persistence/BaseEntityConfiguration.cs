@@ -1,29 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SharedKernel.Domain;
 using SharedKernel.Entity;
 using StrictId;
 using StrictId.EFCore;
 using StrictId.EFCore.ValueConverters;
 
-namespace SharedKernel.Persistence;
+namespace SharedInfrastructure.Persistence;
 
 public abstract class BaseEntityConfiguration<TEntity> : IEntityTypeConfiguration<TEntity>
-    where TEntity : class, IEntity, IAuditableEntity, ISoftDeletableEntity, IEntityVersion
+    where TEntity : class, IEntity, IAuditableEntity, ISoftDeletableEntity, IEntityVersion, IHasDomainEvents
 {
     public virtual void Configure(EntityTypeBuilder<TEntity> builder)
     {
         builder.HasKey(b => b.Id);
-
         builder.Property(b => b.Id).ValueGeneratedOnAdd();
-
         builder.Property(b => b.IsDeleted).HasDefaultValue(false);
-
         builder.Property(b => b.Version).IsConcurrencyToken();
-
         builder.HasIndex(b => b.CreatedAtUtc);
-
         builder.HasIndex(b => b.IsDeleted).HasSoftDeleteFilter();
-
+        builder.Ignore(b => b.DomainEvents);
         ConfigureEntity(builder);
     }
 
@@ -35,26 +31,22 @@ public abstract class BaseEntityTypedConfiguration<TEntity> : IEntityTypeConfigu
         IEntity<Id<TEntity>>,
         IAuditableEntity,
         ISoftDeletableEntity,
-        IEntityVersion
+        IEntityVersion,
+        IHasDomainEvents
 {
     public virtual void Configure(EntityTypeBuilder<TEntity> builder)
     {
         builder.HasKey(b => b.Id);
-
         builder
             .Property(b => b.Id)
             .ValueGeneratedOnAdd()
             .HasStrictIdValueGenerator()
             .HasConversion(new IdTypedToGuidConverter<TEntity>());
-
         builder.Property(b => b.IsDeleted).HasDefaultValue(false);
-
         builder.Property(b => b.Version).IsConcurrencyToken();
-
         builder.HasIndex(b => b.CreatedAtUtc);
-
         builder.HasIndex(b => b.IsDeleted).HasSoftDeleteFilter();
-
+        builder.Ignore(b => b.DomainEvents);
         ConfigureEntity(builder);
     }
 

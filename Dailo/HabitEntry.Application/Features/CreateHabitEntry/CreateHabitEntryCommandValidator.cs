@@ -3,8 +3,7 @@ using StrictId;
 
 namespace HabitEntry.Application.Features.CreateHabitEntry;
 
-public sealed class CreateHabitEntryCommandValidator
-    : AbstractValidator<CreateHabitEntryCommand>
+public sealed class CreateHabitEntryCommandValidator : AbstractValidator<CreateHabitEntryCommand>
 {
     public CreateHabitEntryCommandValidator()
     {
@@ -14,6 +13,6 @@ public sealed class CreateHabitEntryCommandValidator
 
         RuleFor(x => x.Notes).MaximumLength(2000).When(x => x.Notes is not null);
 
-        RuleFor(x => x.Date).NotEmpty();
+        RuleFor(x => x.CompletedAt).NotEmpty();
     }
 }

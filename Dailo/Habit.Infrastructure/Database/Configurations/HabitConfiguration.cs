@@ -1,7 +1,7 @@
 using Habit.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SharedKernel.Persistence;
+using SharedInfrastructure.Persistence;
 
 namespace Habit.Infrastructure.Database.Configurations;
 

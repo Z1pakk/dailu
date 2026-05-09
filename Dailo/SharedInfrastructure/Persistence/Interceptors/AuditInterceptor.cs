@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using SharedKernel.Entity;
 using SharedKernel.User;
 
-namespace SharedKernel.Persistence.Interceptors;
+namespace SharedInfrastructure.Persistence.Interceptors;
 
 public class AuditInterceptor(ICurrentUserService currentUserService, TimeProvider dateTimeProvider)
     : SaveChangesInterceptor
@@ -53,8 +53,6 @@ public class AuditInterceptor(ICurrentUserService currentUserService, TimeProvid
                 case EntityState.Modified:
                     entry.Entity.LastModifiedAtUtc = now;
                     entry.Entity.LastModifiedByUserId = userId;
-
-                    // Prevent modification of creation fields
                     entry.Property(x => x.CreatedAtUtc).IsModified = false;
                     entry.Property(x => x.CreatedByUserId).IsModified = false;
                     break;

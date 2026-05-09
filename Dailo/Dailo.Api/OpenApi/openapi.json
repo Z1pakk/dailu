@@ -413,7 +413,7 @@
           "habitId",
           "value",
           "notes",
-          "date"
+          "completedAt"
         ],
         "type": "object",
         "properties": {
@@ -434,9 +434,9 @@
               "string"
             ]
           },
-          "date": {
+          "completedAt": {
             "type": "string",
-            "format": "date"
+            "format": "date-time"
           }
         }
       },
@@ -563,7 +563,7 @@
           "habitName",
           "value",
           "source",
-          "date"
+          "completedAtUtc"
         ],
         "type": "object",
         "properties": {
@@ -599,9 +599,9 @@
               "string"
             ]
           },
-          "date": {
+          "completedAtUtc": {
             "type": "string",
-            "format": "date"
+            "format": "date-time"
           },
           "isArchived": {
             "type": "boolean"

@@ -27,7 +27,7 @@ public sealed class GetHabitEntriesQueryHandler(
         var entries = await habitEntryDbContext
             .HabitEntries.AsNoTracking()
             .Where(h => h.UserId == currentUserService.UserId)
-            .OrderByDescending(h => h.Date)
+            .OrderByDescending(h => h.CompletedAtUtc)
             .ThenByDescending(h => h.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
@@ -45,7 +45,7 @@ public sealed class GetHabitEntriesQueryHandler(
                 Notes = e.Notes,
                 Source = e.Source,
                 ExternalId = e.ExternalId,
-                Date = e.Date,
+                CompletedAtUtc = e.CompletedAtUtc,
                 IsArchived = e.IsArchived,
                 CreatedAtUtc = e.CreatedAtUtc,
                 LastModifiedAtUtc = e.LastModifiedAtUtc,
