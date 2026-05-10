@@ -70,12 +70,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Cache node_modules
+      - name: Cache npm dependencies
         uses: actions/cache@v5
-        id: node-cache
         with:
-          path: Dailo/Dailo.ClientApp/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('Dailo/Dailo.ClientApp/package-lock.json') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('Dailo/Dailo.ClientApp/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
       - name: Cache Angular build cache
         uses: actions/cache@v5
@@ -86,7 +87,6 @@ jobs:
             ${{ runner.os }}-angular-
 
       - name: Install dependencies
-        if: steps.node-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Build
