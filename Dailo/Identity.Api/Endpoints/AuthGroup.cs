@@ -1,3 +1,4 @@
+using Identity.Api.Endpoints.Altcha;
 using Identity.Api.Endpoints.LoginUser;
 using Identity.Api.Endpoints.Logout;
 using Identity.Api.Endpoints.Refresh;
@@ -19,5 +20,6 @@ public sealed class AuthGroup : IEndpointGroup
         group.MapRegisterEndpoint();
         group.MapRefreshEndpoint();
         group.MapLogoutEndpoint();
+        group.MapAltchaChallengeEndpoint();
     }
 }

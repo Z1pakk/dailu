@@ -1,6 +1,6 @@
-using System.Text;
 using Identity.Api;
 using Identity.Application;
+using Identity.Application.Configuration;
 using Identity.Application.Persistence;
 using Identity.Application.Services;
 using Identity.Domain.Entities;
@@ -8,17 +8,14 @@ using Identity.Infrastructure.Database;
 using Identity.Infrastructure.Database.Seeders;
 using Identity.Infrastructure.Pipeline;
 using Mediator;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using SharedKernel.Configuration;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Options;
 using SharedKernel.Persistence;
 
 namespace Identity.Infrastructure;
@@ -70,7 +67,11 @@ public static class Setup
             typeof(IdentityEventDispatchingBehavior<,>)
         );
 
+        services.AddValidateOptions<AltchaOptions>();
+        services.AddMemoryCache();
+
         services.AddScoped<ITokenProvider, TokenProvider>();
+        services.AddScoped<IAltchaService, AltchaService>();
 
         services.AddScoped<IDataSeeder, RoleSeeder>();
 

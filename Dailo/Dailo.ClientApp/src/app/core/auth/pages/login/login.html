@@ -1,87 +1,85 @@
-<section class="min-h-screen flex items-center lg:items-start lg:py-20 justify-center animate-fadein animate-duration-300 animate-ease-in max-w-400 mx-auto">
+<section
+  class="min-h-screen flex items-center lg:items-start lg:py-20 justify-center animate-fadein animate-duration-300 animate-ease-in max-w-400 mx-auto">
   <div class="flex w-full h-full justify-center gap-12">
     <div class="flex flex-col py-20 lg:min-w-120">
       <a routerLink="/"
-         class="flex items-center justify-center lg:justify-start mb-8"
-      >
+         class="flex items-center justify-center lg:justify-start mb-8">
         <app-logo-widget />
       </a>
       <div class="flex flex-col justify-center grow">
         <div class="max-w-md mx-auto w-full">
           <h2 class="text-4xl font-medium text-center lg:text-left">Login</h2>
-          <p class="body-small mt-3.5 text-center lg:text-left">Please enter your details</p>
-
-          <p-button
-            class="mt-8 inline-block w-full"
-            label="Sign in with Google"
-            severity="secondary"
-            variant="outlined"
-            icon="pi pi-google"
-            fluid
-          />
-
-          <p-button
-            class="mt-4 inline-block w-full"
-            label="Sign in with Facebook"
-            severity="secondary"
-            variant="outlined"
-            icon="pi pi-facebook"
-            fluid
-          />
-
+          <p class="body-small mt-3.5 text-center lg:text-left">
+            Please enter your details
+          </p>
+          <p-button class="mt-8 inline-block w-full"
+                    label="Sign in with Google"
+                    severity="secondary"
+                    variant="outlined"
+                    icon="pi pi-google"
+                    fluid />
+          <p-button class="mt-4 inline-block w-full"
+                    label="Sign in with Facebook"
+                    severity="secondary"
+                    variant="outlined"
+                    icon="pi pi-facebook"
+                    fluid />
           <div class="flex items-center gap-3.5 my-7">
             <span class="flex-1 h-px bg-surface-200 dark:bg-surface-800"></span>
-            <span class="body-small text-surface-400 dark:text-surface-600">or</span>
+            <span class="body-small text-surface-400 dark:text-surface-600">
+              or
+            </span>
             <span class="flex-1 h-px bg-surface-200 dark:bg-surface-800"></span>
           </div>
-
-          <form [formGroup]="loginForm" novalidate (ngSubmit)="login()">
-            <input
-              [formControl]="loginForm.controls.email"
-              pInputText
-              type="email"
-              class="w-full"
-              placeholder="Email"
-              name="email"
-              (input)="emailInput($event)"
-            />
-
+          <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+            <input [formControl]="loginForm.controls.email"
+                   (input)="emailInput($event)"
+                   type="email"
+                   class="w-full"
+                   placeholder="Email"
+                   name="email"
+                   pInputText />
             @if (loginForm.controls.email.invalid && loginForm.controls.email.touched) {
               <div class="text-sm text-red-500 mt-1">
                 {{ loginForm.controls.email.getError('issue') }}
               </div>
             }
-
-            <p-password
-              [formControl]="loginForm.controls.password"
-              type="password"
-              class="w-full mt-4"
-              fluid
-              placeholder="Password"
-              [feedback]="false"
-              autocomplete="off"
-              name="password"
-            />
-
+            <p-password [formControl]="loginForm.controls.password"
+                        [feedback]="false"
+                        type="password"
+                        class="w-full mt-4"
+                        placeholder="Password"
+                        autocomplete="off"
+                        name="password"
+                        fluid />
             @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
               <div class="text-sm text-red-500 mt-1">
                 {{ loginForm.controls.password.getError('issue') }}
               </div>
             }
-
             <div class="my-8 flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <p-checkbox [formControl]="loginForm.controls.isRememberMe" [binary]="true" inputId="rememberMe"/>
+                <p-checkbox [formControl]="loginForm.controls.isRememberMe"
+                            [binary]="true"
+                            inputId="rememberMe" />
                 <label for="rememberMe" class="body-small">Remember me</label>
               </div>
-              <a routerLink="/auth/forgot-password" class="body-small text-primary-500 hover:underline">Forgot password?</a>
+              <a routerLink="/auth/forgot-password"
+                 class="body-small text-primary-500 hover:underline">
+                Forgot password?
+              </a>
             </div>
-
-            <p-button type="submit" fluid>
+            <altcha-widget #altchaWidget
+                           [attr.challenge]="altchaService.challengeUrl"
+                           (statechange)="altchaService.onStateChange($event)"
+                           auto="onload"
+                           display="invisible" />
+            <p-button [disabled]="!altchaService.$isSolved()"
+                      type="submit"
+                      fluid>
               Submit
             </p-button>
           </form>
-
           <div class="mt-8 body-small text-center lg:text-left">
             <span>Not registered?</span>
             <a routerLink="/register" class="text-primary-500 hover:underline">

@@ -5,6 +5,7 @@
     <PackageReference Include="StrictId" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Dailo.Events\Dailo.Events.csproj" />
     <ProjectReference Include="..\HabitUser.Domain\HabitUser.Domain.csproj" />
     <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>

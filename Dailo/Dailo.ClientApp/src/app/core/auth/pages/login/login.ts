@@ -1,4 +1,11 @@
-import { Component, inject } from '@angular/core';
+import 'altcha';
+import {
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Password } from 'primeng/password';
 import { Checkbox } from 'primeng/checkbox';
@@ -18,7 +25,10 @@ import {
 import { AuthLogin } from '@auth/state/auth.action';
 import { LoginRequest } from '@auth/requests/login.request';
 import { AuthRouterService } from '@auth/services/auth-router.service';
+import { AltchaService } from '@auth/services/altcha.service';
 import { markAllAsDirty } from '@shared/lib/form/mark-as-dirty';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-login',
@@ -31,6 +41,8 @@ import { markAllAsDirty } from '@shared/lib/form/mark-as-dirty';
     LogoWidget,
     Password,
   ],
+  providers: [AltchaService],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -38,6 +50,10 @@ export class Login {
   private readonly _store = inject(Store);
   private readonly _authRouterService = inject(AuthRouterService);
   private readonly _fb = inject(NonNullableFormBuilder);
+  private readonly _messageService = inject(MessageService);
+  protected readonly altchaService = inject(AltchaService);
+
+  private readonly _$altchaWidgetRef = viewChild<ElementRef>('altchaWidget');
 
   protected readonly loginForm: LoginFormGroup = this._fb.group<LoginForm>({
     email: this._fb.control<string>('', {
@@ -58,19 +74,37 @@ export class Login {
   protected login() {
     markAllAsDirty(this.loginForm);
 
-    if (this.loginForm.valid) {
-      const value: LoginFormValue = this.loginForm.getRawValue();
-
-      const loginRequest = (<LoginRequest>{
-        email: value.email,
-        password: value.password,
-      }) satisfies LoginRequest;
-
-      this._store.dispatch(new AuthLogin(loginRequest)).subscribe({
-        next: () => {
-          this._authRouterService.goToMainAppPage();
-        },
-      });
+    if (!this.altchaService.$isSolved() || !this.loginForm.valid) {
+      return;
     }
+
+    const value: LoginFormValue = this.loginForm.getRawValue();
+
+    const loginRequest = (<LoginRequest>{
+      email: value.email,
+      password: value.password,
+      captchaPayload: this.altchaService.$captchaPayload()!,
+    }) satisfies LoginRequest;
+
+    this._store.dispatch(new AuthLogin(loginRequest)).subscribe({
+      next: () => {
+        this._authRouterService.goToMainAppPage();
+      },
+      error: (error: HttpErrorResponse) => {
+        this._resetCaptcha();
+        this._messageService.add({
+          severity: 'error',
+          summary: 'Login failed',
+          detail: error.error?.detail ?? 'Invalid email or password.',
+          life: 5000,
+        });
+      },
+    });
+  }
+
+  private _resetCaptcha(): void {
+    const widget = this._$altchaWidgetRef()?.nativeElement;
+    widget?.reset();
+    widget?.verify();
   }
 }

@@ -1,3 +1,4 @@
+using Dailo.Events;
 using Identity.Application.Models;
 using Identity.Application.Persistence;
 using Identity.Application.Services;
@@ -14,7 +15,8 @@ public sealed record RegisterUserCommand(
     string Email,
     string Password,
     string FirstName,
-    string LastName
+    string LastName,
+    string CaptchaPayload
 ) : ICommand<Result<RegisterUserCommandResponse>>;
 
 public sealed record RegisterUserCommandResponse(AccessTokenModel AccessTokens);
@@ -22,7 +24,8 @@ public sealed record RegisterUserCommandResponse(AccessTokenModel AccessTokens);
 public sealed class RegisterUserCommandHandler(
     IIdentityDbContext identityDbContext,
     ITokenProvider tokenProvider,
-    UserManager<User> userManager
+    UserManager<User> userManager,
+    IAltchaService altchaService
 ) : ICommandHandler<RegisterUserCommand, Result<RegisterUserCommandResponse>>
 {
     public async ValueTask<Result<RegisterUserCommandResponse>> Handle(
@@ -30,6 +33,11 @@ public sealed class RegisterUserCommandHandler(
         CancellationToken cancellationToken
     )
     {
+        if (!await altchaService.VerifyPayloadAsync(request.CaptchaPayload, cancellationToken))
+        {
+            return Result<RegisterUserCommandResponse>.Failure("Captcha verification failed.");
+        }
+
         User user = request.ToEntity();
 
         var result = await identityDbContext.ExecuteTransactionalAsync(
@@ -60,6 +68,8 @@ public sealed class RegisterUserCommandHandler(
                 };
 
                 identityDbContext.RefreshTokens.Add(refreshToken);
+
+                user.AddDomainEvent(new IdentityUserCreatedIntegrationEvent(user.Id));
 
                 var response = new RegisterUserCommandResponse(accessTokens);
                 return Result<RegisterUserCommandResponse>.Success(response);

@@ -9,7 +9,7 @@ using StrictId;
 
 namespace Identity.Application.Features.LoginUser;
 
-public sealed record LoginUserCommand(string Email, string Password)
+public sealed record LoginUserCommand(string Email, string Password, string CaptchaPayload)
     : ICommand<Result<LoginUserCommandResponse>>;
 
 public sealed record LoginUserCommandResponse(AccessTokenModel AccessTokens);
@@ -18,7 +18,8 @@ public sealed class LoginUserCommandHandler(
     IIdentityDbContext identityDbContext,
     UserManager<User> userManager,
     SignInManager<User> signInManager,
-    ITokenProvider tokenProvider
+    ITokenProvider tokenProvider,
+    IAltchaService altchaService
 ) : ICommandHandler<LoginUserCommand, Result<LoginUserCommandResponse>>
 {
     public async ValueTask<Result<LoginUserCommandResponse>> Handle(
@@ -26,6 +27,11 @@ public sealed class LoginUserCommandHandler(
         CancellationToken cancellationToken
     )
     {
+        if (!await altchaService.VerifyPayloadAsync(request.CaptchaPayload, cancellationToken))
+        {
+            return Result<LoginUserCommandResponse>.Unauthorized("Captcha verification failed.");
+        }
+
         var identityUser = await userManager.FindByEmailAsync(request.Email);
         if (identityUser is null)
         {

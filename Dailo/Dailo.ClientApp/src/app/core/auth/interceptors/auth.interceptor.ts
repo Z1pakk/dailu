@@ -10,6 +10,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  if (req.url.includes('/auth/login')) {
+    return next(req);
+  }
+
   const store = inject(Store);
   const router = inject(Router);
 

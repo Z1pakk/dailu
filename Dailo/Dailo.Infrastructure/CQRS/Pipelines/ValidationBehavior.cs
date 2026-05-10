@@ -1,7 +1,7 @@
 using FluentValidation;
 using Mediator;
 
-namespace Dailo.Infrastructure.CQRS;
+namespace Dailo.Infrastructure.CQRS.Pipelines;
 
 public sealed class ValidationBehavior<TMessage, TResponse>(
     IEnumerable<IValidator<TMessage>> validators

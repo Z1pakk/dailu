@@ -122,7 +122,7 @@
               </small>
             }
 
-            <div class="my-8 ">
+            <div class="my-8">
               <div class="flex items-center gap-2">
                 <p-checkbox [formControl]="registerForm.controls.isAcceptedPrivacyTerms" [binary]="true" inputId="isAcceptedPrivacyTerms"/>
                 <label for="isAcceptedPrivacyTerms" class="body-small"><b>I have read</b> the Terms and Conditions</label>
@@ -135,7 +135,13 @@
               }
             </div>
 
-            <p-button type="submit" fluid>
+            <altcha-widget #altchaWidget
+                           [attr.challenge]="altcha.challengeUrl"
+                           (statechange)="altcha.onStateChange($event)"
+                           auto="onload"
+                           display="invisible" />
+
+            <p-button type="submit" fluid [disabled]="!altcha.$isSolved()">
               Submit
             </p-button>
           </form>
