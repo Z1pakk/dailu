@@ -7,31 +7,40 @@ import {
 } from '@user-profile/models/integration-summary.model';
 import { GithubIntegrationConfig } from '@user-profile/models/integration-config.model';
 import {
+  UserProfileFetchGithubProfile,
   UserProfileFetchIntegrationConfigs,
   UserProfileFetchProfile,
+  UserProfileGetGithubProfile,
   UserProfileGetIntegrationConfigs,
   UserProfileGetProfile,
   UserProfileRevokeIntegrationConfig,
   UserProfileSaveIntegrationConfig,
   UserProfileUpdateProfile,
 } from '@user-profile/state/user-profile.action';
+import { GitHubUserProfileModel } from '@user-profile/models/github-user-profile.model';
 import { UserProfileApi } from '@user-profile/api/user-profile.api';
-import { finalize, of, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, of, tap } from 'rxjs';
 
 export interface UserProfileStateModel {
   isLoading: boolean;
   isLoadingIntegrations: boolean;
   isSavingIntegration: boolean;
+  isLoadingGithubProfile: boolean;
+  githubProfileError: boolean;
   profile: UserProfileModel | null;
   integrationSummaries: IntegrationSummary[] | null;
+  githubProfile: GitHubUserProfileModel | null;
 }
 
 const defaultState: UserProfileStateModel = {
   isLoading: false,
   isLoadingIntegrations: false,
   isSavingIntegration: false,
+  isLoadingGithubProfile: false,
+  githubProfileError: false,
   profile: null,
   integrationSummaries: null,
+  githubProfile: null,
 };
 
 @Injectable()
@@ -126,6 +135,7 @@ export class UserProfileState {
               integrationSummaries: integrationSummaries.filter(
                 (s) => s.type !== action.provider,
               ),
+              ...(action.provider === 'github' ? { githubProfile: null, githubProfileError: false } : {}),
             });
           }
         },
@@ -149,11 +159,41 @@ export class UserProfileState {
             const rest = integrationSummaries.filter(
               (s) => s.type !== action.payload.type,
             );
-            ctx.patchState({ integrationSummaries: [...rest, summary] });
+            ctx.patchState({
+              integrationSummaries: [...rest, summary],
+              ...(action.payload.type === 'github' ? { githubProfile: null, githubProfileError: false } : {}),
+            });
           }
         },
       }),
       finalize(() => ctx.patchState({ isSavingIntegration: false })),
+    );
+  }
+
+  @Action(UserProfileGetGithubProfile)
+  public getGithubProfile(ctx: StateContext<UserProfileStateModel>) {
+    const { githubProfile } = ctx.getState();
+    if (githubProfile !== null) {
+      return of(githubProfile);
+    }
+    return ctx.dispatch(new UserProfileFetchGithubProfile());
+  }
+
+  @Action(UserProfileFetchGithubProfile)
+  public fetchGithubProfile(ctx: StateContext<UserProfileStateModel>) {
+    ctx.patchState({ isLoadingGithubProfile: true, githubProfileError: false });
+
+    return this._api.getGithubProfile().pipe(
+      tap({
+        next: (response) => {
+          ctx.patchState({ githubProfile: response.profile });
+        },
+      }),
+      catchError(() => {
+        ctx.patchState({ githubProfileError: true });
+        return EMPTY;
+      }),
+      finalize(() => ctx.patchState({ isLoadingGithubProfile: false })),
     );
   }
 }

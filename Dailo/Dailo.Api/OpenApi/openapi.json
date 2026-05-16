@@ -225,6 +225,27 @@
         }
       }
     },
+    "/api/habit-user/integrations/github/profile": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get the GitHub profile for the current authenticated user.",
+        "operationId": "GetGithubProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGithubProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/habit-user/integrations/{provider}": {
       "delete": {
         "tags": [
@@ -695,6 +716,17 @@
       "FrequencyType": {
         "type": "integer"
       },
+      "GetGithubProfileResponse": {
+        "required": [
+          "profile"
+        ],
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/GitHubUserProfileModel"
+          }
+        }
+      },
       "GetHabitEntriesQueryResponse": {
         "required": [
           "habitEntries"
@@ -759,6 +791,67 @@
         "properties": {
           "profile": {
             "$ref": "#/components/schemas/UserProfileModel"
+          }
+        }
+      },
+      "GitHubUserProfileModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "login": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "publicRepos": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "followers": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "following": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

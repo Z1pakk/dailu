@@ -6,6 +6,7 @@ import { GetUserProfileResponseModel } from '@user-profile/models/responses/get-
 import { GetIntegrationConfigsResponseModel } from '@user-profile/models/responses/get-integration-configs.response';
 import { UpdateUserProfileRequestModel } from '@user-profile/models/requests/update-user-profile.request';
 import { IntegrationConfig } from '@user-profile/models/integration-config.model';
+import { GitHubUserProfileModel } from '@user-profile/models/github-user-profile.model';
 
 @Injectable({
   providedIn: 'root',
@@ -37,5 +38,11 @@ export class UserProfileApi {
 
   public revokeIntegrationConfig(provider: string): Observable<void> {
     return this._http.delete<void>(`${this.baseUrl}/habit-user/integrations/${provider}`);
+  }
+
+  public getGithubProfile(): Observable<{ profile: GitHubUserProfileModel }> {
+    return this._http.get<{ profile: GitHubUserProfileModel }>(
+      `${this.baseUrl}/habit-user/integrations/github/profile`,
+    );
   }
 }

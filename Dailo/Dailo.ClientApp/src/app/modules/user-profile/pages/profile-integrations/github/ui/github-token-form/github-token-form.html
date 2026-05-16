@@ -1,0 +1,93 @@
+<form [formGroup]="form"
+      class="self-stretch flex flex-col items-end gap-6"
+      autocomplete="off"
+      novalidate>
+  <div class="self-stretch flex flex-col items-end gap-6">
+    <div class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
+      <div class="w-full md:w-[283px] flex flex-col gap-2">
+        <div
+          class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+          Personal Access Token
+        </div>
+        <p class="text-sm text-surface-500 dark:text-surface-400">
+          Generate a token from
+          <span class="font-medium text-surface-700 dark:text-surface-300">
+            GitHub → Settings → Developer settings → Personal access tokens
+          </span>
+          .
+        </p>
+      </div>
+      <div class="flex-1 w-full flex flex-col gap-2">
+        <div class="relative w-full">
+          <input [formControl]="form.controls.accessToken"
+                 [invalid]="!!form.controls.accessToken.getError('serverError') || (!!form.controls.accessToken.errors && form.controls.accessToken.dirty)"
+                 [maxLength]="255"
+                 type="text"
+                 class="w-full !rounded-[6px] pr-10"
+                 autocomplete="off"
+                 spellcheck="false"
+                 pInputText />
+        </div>
+        @if (form.controls.accessToken.getError('serverError'); as serverError) {
+          <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+        }
+        @if (form.controls.accessToken.getError('issue') && form.controls.accessToken.dirty) {
+          <small class="text-sm text-red-500 mt-1">
+            {{ form.controls.accessToken.getError('issue') }}
+          </small>
+        }
+      </div>
+    </div>
+    <div
+      class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
+  </div>
+  <div class="self-stretch flex flex-col items-end gap-6">
+    <div class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
+      <div class="w-full md:w-[283px] flex flex-col gap-2">
+        <div
+          class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+          Expires In (days)
+        </div>
+        <p class="text-sm text-surface-500 dark:text-surface-400">
+          Optional. Number of days until the token expires (1–365). Leave empty for no expiry.
+        </p>
+      </div>
+      <div class="flex-1 w-full flex flex-col gap-2">
+        <p-inputnumber [formControl]="form.controls.expiresInDays"
+                       [invalid]="!!form.controls.expiresInDays.getError('serverError') || (!!form.controls.expiresInDays.errors && form.controls.expiresInDays.dirty)"
+                       [min]="1"
+                       [max]="365"
+                       [showButtons]="false"
+                       placeholder="e.g. 90"
+                       fluid />
+        @if (form.controls.expiresInDays.getError('serverError'); as serverError) {
+          <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+        }
+        @if (form.controls.expiresInDays.getError('issue') && form.controls.expiresInDays.dirty) {
+          <small class="text-sm text-red-500 mt-1">
+            {{ form.controls.expiresInDays.getError('issue') }}
+          </small>
+        }
+      </div>
+    </div>
+    <div
+      class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
+  </div>
+  <div
+    class="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4 w-full sm:w-auto">
+    @if ($showCancel()) {
+      <p-button [disabled]="$isSaving()"
+                (click)="cancel()"
+                label="Cancel"
+                type="button"
+                variant="outlined"
+                severity="secondary"
+                class="w-full sm:w-auto" />
+    }
+    <p-button [loading]="$isSaving()"
+              (click)="save()"
+              label="Save"
+              type="submit"
+              class="w-full sm:w-auto" />
+  </div>
+</form>

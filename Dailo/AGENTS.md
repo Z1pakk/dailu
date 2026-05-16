@@ -95,6 +95,14 @@ Always use braces, even for single-line bodies. This is enforced as a build erro
 ```csharp
 if (result.IsFailure)
     return Result.BadRequest(result.Error!);
+
+if (user is null)
+    return null;
+else
+    return user.Name;
+
+foreach (var item in items)
+    Process(item);
 ```
 
 **Good:**
@@ -103,7 +111,23 @@ if (result.IsFailure)
 {
     return Result.BadRequest(result.Error!);
 }
+
+if (user is null)
+{
+    return null;
+}
+else
+{
+    return user.Name;
+}
+
+foreach (var item in items)
+{
+    Process(item);
+}
 ```
+
+This applies to all control-flow statements: `if`, `else`, `else if`, `for`, `foreach`, `while`, `do`.
 
 ---
 

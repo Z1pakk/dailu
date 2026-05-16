@@ -36,3 +36,11 @@ export class UserProfileRevokeIntegrationConfig {
 
   constructor(public provider: string) {}
 }
+
+export class UserProfileGetGithubProfile {
+  static readonly type = `${scope} GetGithubProfile`;
+}
+
+export class UserProfileFetchGithubProfile {
+  static readonly type = `${scope} FetchGithubProfile`;
+}

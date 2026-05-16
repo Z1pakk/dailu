@@ -1,0 +1,33 @@
+<p-confirmpopup />
+<div
+  class="self-stretch flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  <div class="flex items-center gap-3">
+    <div
+      class="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30">
+      <i class="pi pi-check text-green-600 dark:text-green-400"></i>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-surface-950 dark:text-surface-0 font-medium">Connected</span>
+      @if ($expiryInfo(); as expiry) {
+        <span [class]="expiry.cssClass" class="text-sm">{{ expiry.text }}</span>
+      }
+    </div>
+  </div>
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <p-button [disabled]="$isRevoking()"
+              (click)="updateClicked.emit()"
+              label="Update"
+              type="button"
+              variant="outlined"
+              severity="secondary"
+              class="w-full sm:w-auto" />
+    <p-button [loading]="$isRevoking()"
+              [disabled]="$isSaving()"
+              (click)="revoke($event)"
+              label="Revoke"
+              type="button"
+              variant="outlined"
+              severity="danger"
+              class="w-full sm:w-auto" />
+  </div>
+</div>

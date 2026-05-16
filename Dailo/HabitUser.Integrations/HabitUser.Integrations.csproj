@@ -12,4 +12,3 @@
     <ProjectReference Include="..\Identity.DataTransfer\Identity.DataTransfer.csproj" />
   </ItemGroup>
 </Project>
-
