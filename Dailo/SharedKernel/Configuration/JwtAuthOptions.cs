@@ -8,13 +8,13 @@ public class JwtAuthOptions : IOptions
     public string SectionName => "Jwt";
 
     [Required]
-    public string Issuer { get; set; }
+    public string Issuer { get; set; } = null!;
 
     [Required]
-    public string Audience { get; set; }
+    public string Audience { get; set; } = null!;
 
     [Required]
-    public string Key { get; set; }
+    public string Key { get; set; } = null!;
 
     [Range(0, 1000)]
     public int ExpirationInMinutes { get; set; }

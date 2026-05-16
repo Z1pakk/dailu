@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -10,10 +11,8 @@ internal sealed class HabitUserDbContextDesignFactory
 {
     public HabitUserDbContext CreateDbContext(string[] args)
     {
-        // Get the base path for the Infrastructure project
         var basePath = Directory.GetCurrentDirectory();
 
-        // Build configuration from the startup project's appsettings
         var configuration = new ConfigurationBuilder()
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.Development.json", optional: true)
@@ -42,7 +41,7 @@ internal sealed class HabitUserDbContextDesignFactory
             )
             .UseSnakeCaseNamingConvention();
 
-        // Return context with null services for design-time only
-        return new HabitUserDbContext(optionsBuilder.Options);
+        // EphemeralDataProtectionProvider is safe for design-time — migrations don't process data.
+        return new HabitUserDbContext(optionsBuilder.Options, new EphemeralDataProtectionProvider());
     }
 }

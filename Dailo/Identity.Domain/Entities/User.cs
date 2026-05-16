@@ -17,8 +17,8 @@ public class User
     [NotMapped]
     private readonly List<IEvent> _domainEvents = [];
 
-    public required string FirstName { get; init; }
-    public required string LastName { get; init; }
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
 
     public DateTime CreatedAtUtc { get; set; }
     public Guid? CreatedByUserId { get; set; }

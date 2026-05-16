@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Identity.DataTransfer\Identity.DataTransfer.csproj" />
     <ProjectReference Include="..\SharedInfrastructure\SharedInfrastructure.csproj" />
     <ProjectReference Include="..\Identity.Api\Identity.Api.csproj" />
     <ProjectReference Include="..\Identity.Application\Identity.Application.csproj" />

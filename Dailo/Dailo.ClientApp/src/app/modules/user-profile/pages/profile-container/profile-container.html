@@ -1,0 +1,58 @@
+<div class="flex flex-col xl:flex-row h-full card overflow-hidden !p-0">
+  <div
+    class="hidden xl:flex w-80 bg-surface-0 dark:bg-surface-900 rounded-tl-3xl rounded-bl-3xl flex-col overflow-hidden border-r border-surface-200 dark:border-surface-700">
+    <div class="px-6 py-5 border-b border-surface-200 dark:border-surface-700">
+      <h1
+        class="text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+        Your profile
+      </h1>
+    </div>
+    <div class="p-6 flex flex-col gap-4">
+      <span
+        class="text-surface-500 dark:text-surface-400 text-sm font-medium leading-tight">
+        Menu
+      </span>
+      @for (menuItem of profileMenuItems; track menuItem.routerLink) {
+        <p-button #rla="routerLinkActive"
+                  [routerLink]="menuItem.routerLink"
+                  [routerLinkActive]="['bg-primary!', 'text-surface-0!']"
+                  [icon]="`pi ${menuItem.icon}`"
+                  [severity]="rla.isActive ? 'primary' : 'secondary'"
+                  [variant]="rla.isActive ? undefined : 'text'"
+                  [pt]="{ root: { class: 'justify-start' } }"
+                  type="button"
+                  label="{{ menuItem.label }}"
+                  class="text-sm font-normal flex gap-2 items-center rounded-xl transition-colors whitespace-nowrap"
+                  fluid />
+      }
+    </div>
+  </div>
+  <div
+    class="xl:hidden bg-surface-0 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700">
+    <div class="px-4 py-3 border-b border-surface-200 dark:border-surface-700">
+      <h1
+        class="text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+        Your profile
+      </h1>
+    </div>
+    <div class="overflow-x-auto">
+      <div class="flex gap-2 p-4 min-w-max">
+        @for (menuItem of profileMenuItems; track menuItem.routerLink) {
+          <p-button #rla="routerLinkActive"
+                    [routerLink]="menuItem.routerLink"
+                    [routerLinkActive]="['bg-primary!', 'text-surface-0!']"
+                    [icon]="`pi ${menuItem.icon}`"
+                    [severity]="rla.isActive ? 'primary' : 'secondary'"
+                    type="button"
+                    label="{{ menuItem.label }}"
+                    size="small"
+                    class="text-sm font-normal flex gap-2 items-center rounded-xl transition-colors whitespace-nowrap" />
+        }
+      </div>
+    </div>
+  </div>
+  <div
+    class="flex-1 rounded-tr-3xl rounded-br-3xl bg-surface-0 dark:bg-surface-900 overflow-auto">
+    <router-outlet />
+  </div>
+</div>

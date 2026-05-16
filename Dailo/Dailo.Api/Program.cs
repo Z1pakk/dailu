@@ -1,5 +1,4 @@
 using Dailo.Api.Extensions;
-using Dailo.Api.Middleware;
 using Dailo.Infrastructure;
 using Dailo.Infrastructure.Database;
 using Habit.Infrastructure;
@@ -34,6 +33,10 @@ if (!builder.IsOpenApiExecution())
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+app.UseHsts();
+app.UseHttpsRedirection();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -46,11 +49,9 @@ if (app.Environment.IsDevelopment())
     );
 }
 
-app.UseHttpsRedirection();
-app.UseCors();
-
-app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

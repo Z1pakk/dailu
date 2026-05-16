@@ -4,6 +4,7 @@ using HabitUser.Application;
 using HabitUser.Application.Persistence;
 using HabitUser.Infrastructure.Database;
 using HabitUser.Infrastructure.Pipeline;
+using HabitUser.Integrations;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -56,6 +57,8 @@ public static class Setup
         services.AddEndpoints(assemblies: HabitUserApiRoot.Assembly);
 
         services.AddHandlerAssembly<IHabitUserApplicationRoot>();
+
+        services.AddHabitUserIntegrations();
 
         return services;
     }

@@ -3,6 +3,7 @@ using Identity.Application;
 using Identity.Application.Configuration;
 using Identity.Application.Persistence;
 using Identity.Application.Services;
+using Identity.DataTransfer;
 using Identity.Domain.Entities;
 using Identity.Infrastructure.Database;
 using Identity.Infrastructure.Database.Seeders;
@@ -78,6 +79,8 @@ public static class Setup
         services.AddEndpoints(assemblies: IdentityApiRoot.Assembly);
 
         services.AddHandlerAssembly<IIdentityApplicationRoot>();
+
+        services.AddIdentityDataTransferServices();
 
         return services;
     }

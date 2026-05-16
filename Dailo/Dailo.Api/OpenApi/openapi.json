@@ -139,6 +139,119 @@
         }
       }
     },
+    "/api/habit-user/profile": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get user profile for the current authenticated user.",
+        "operationId": "GetUserProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Updates user profile for the current authenticated user.",
+        "operationId": "UpdateUserProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get integration summaries for the current authenticated user.",
+        "operationId": "GetIntegrationConfigs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetIntegrationConfigsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Saves integration config for the current authenticated user.",
+        "operationId": "SaveIntegrationConfig",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/{provider}": {
+      "delete": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Revokes an integration config for the current authenticated user.",
+        "operationId": "DeleteIntegrationConfig",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
     "/api/tags": {
       "post": {
         "tags": [
@@ -610,6 +723,20 @@
           }
         }
       },
+      "GetIntegrationConfigsResponse": {
+        "required": [
+          "summaries"
+        ],
+        "type": "object",
+        "properties": {
+          "summaries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationSummary"
+            }
+          }
+        }
+      },
       "GetTagsResponse": {
         "required": [
           "tags"
@@ -621,6 +748,17 @@
             "items": {
               "$ref": "#/components/schemas/TagModel"
             }
+          }
+        }
+      },
+      "GetUserProfileResponse": {
+        "required": [
+          "profile"
+        ],
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/UserProfileModel"
           }
         }
       },
@@ -774,6 +912,124 @@
       "IdOfHabitEntryModel": { },
       "IdOfHabitModel": { },
       "IdOfTagModel": { },
+      "IntegrationConfig": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IntegrationConfigGithubIntegrationConfig"
+          },
+          {
+            "$ref": "#/components/schemas/IntegrationConfigStravaIntegrationConfig"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "github": "#/components/schemas/IntegrationConfigGithubIntegrationConfig",
+            "strava": "#/components/schemas/IntegrationConfigStravaIntegrationConfig"
+          }
+        }
+      },
+      "IntegrationConfigGithubIntegrationConfig": {
+        "required": [
+          "accessToken",
+          "expiresInDays"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "github"
+            ],
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresInDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "IntegrationConfigStravaIntegrationConfig": {
+        "required": [
+          "clientId",
+          "clientSecret"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "strava"
+            ],
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": "string"
+          }
+        }
+      },
+      "IntegrationSummary": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IntegrationSummaryGithubIntegrationSummary"
+          },
+          {
+            "$ref": "#/components/schemas/IntegrationSummaryStravaIntegrationSummary"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "github": "#/components/schemas/IntegrationSummaryGithubIntegrationSummary",
+            "strava": "#/components/schemas/IntegrationSummaryStravaIntegrationSummary"
+          }
+        }
+      },
+      "IntegrationSummaryGithubIntegrationSummary": {
+        "required": [
+          "expiresAt"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "github"
+            ],
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "IntegrationSummaryStravaIntegrationSummary": {
+        "properties": {
+          "type": {
+            "enum": [
+              "strava"
+            ],
+            "type": "string"
+          }
+        }
+      },
       "LoginUserCommand": {
         "required": [
           "email",
@@ -1025,6 +1281,45 @@
             "type": "array"
           }
         }
+      },
+      "UpdateUserProfileRequest": {
+        "required": [
+          "firstName",
+          "lastName"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          }
+        }
+      },
+      "UserProfileModel": {
+        "required": [
+          "id",
+          "email",
+          "firstName",
+          "lastName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          }
+        }
       }
     }
   },
@@ -1034,6 +1329,9 @@
     },
     {
       "name": "HabitEntryModel"
+    },
+    {
+      "name": "HabitUser"
     },
     {
       "name": "Tag"

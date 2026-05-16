@@ -34,6 +34,7 @@ export class MainTopbar {
     {
       label: 'Profile',
       icon: 'pi pi-user',
+      routerLink: 'profile',
     },
     {
       label: 'Settings',

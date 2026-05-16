@@ -9,6 +9,5 @@ public class CorsOptions: IOptions
 
     public const string PolicyName = "DailuCorsPolicy";
 
-    [Required]
-    public string[] AllowedOrigins { get; set; }
+    [Required] public string[] AllowedOrigins { get; set; } = [];
 }

@@ -73,6 +73,90 @@ namespace HabitUser.Infrastructure.Database.Migrations
 
                     b.ToTable("habit_users", "habit_users");
                 });
+
+            modelBuilder.Entity("HabitUser.Domain.Entities.IntegrationConfigEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Config")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("config");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("HabitUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("habit_user_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_modified_at_utc");
+
+                    b.Property<Guid?>("LastModifiedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_modified_by_user_id");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("provider");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_integration_configs");
+
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("ix_integration_configs_created_at_utc");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_integration_configs_is_deleted")
+                        .HasFilter("\"is_deleted\" = false");
+
+                    b.HasIndex("HabitUserId", "Provider")
+                        .IsUnique()
+                        .HasDatabaseName("ix_integration_configs_habit_user_id_provider")
+                        .HasFilter("is_deleted = false");
+
+                    b.ToTable("integration_configs", "habit_users");
+                });
+
+            modelBuilder.Entity("HabitUser.Domain.Entities.IntegrationConfigEntity", b =>
+                {
+                    b.HasOne("HabitUser.Domain.Entities.HabitUserEntity", "HabitUser")
+                        .WithMany("IntegrationConfigs")
+                        .HasForeignKey("HabitUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_integration_configs_habit_users_habit_user_id");
+
+                    b.Navigation("HabitUser");
+                });
+
+            modelBuilder.Entity("HabitUser.Domain.Entities.HabitUserEntity", b =>
+                {
+                    b.Navigation("IntegrationConfigs");
+                });
 #pragma warning restore 612, 618
         }
     }

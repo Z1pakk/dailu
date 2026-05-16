@@ -23,11 +23,15 @@ export class ThemeService {
   private readonly _broadcastService = inject(BroadcastService);
 
   private readonly _$isDarkMode = signal(
-    this._localStorageService.get(THEME_KEY) === DARK_THEME_MESSAGE || false,
+    this._localStorageService.get(THEME_KEY) === DARK_THEME_MESSAGE,
   );
 
   private readonly _$themeBroadcast = toSignal(
     this._broadcastService.messages$(THEME_KEY),
+    {
+      initialValue:
+        this._localStorageService.get(THEME_KEY) || LIGHT_THEME_MESSAGE,
+    },
   );
   private readonly _$themeMessageKey = computed(() => {
     return this._$isDarkMode() ? DARK_THEME_MESSAGE : LIGHT_THEME_MESSAGE;

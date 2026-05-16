@@ -4,6 +4,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Habit.Application\Habit.Application.csproj" />
-    <ProjectReference Include="..\Tag.DataTransfer\Tag.DataTransfer.csproj" />
   </ItemGroup>
 </Project>

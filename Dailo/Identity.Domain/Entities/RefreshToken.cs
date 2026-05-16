@@ -11,5 +11,5 @@ public class RefreshToken : BaseEntity<Id<RefreshToken>>
 
     public required DateTime ExpiresAtUtc { get; set; }
 
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

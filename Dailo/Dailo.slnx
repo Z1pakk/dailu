@@ -35,6 +35,7 @@
     <Project Path="HabitUser.Application/HabitUser.Application.csproj" />
     <Project Path="HabitUser.Domain/HabitUser.Domain.csproj" />
     <Project Path="HabitUser.Infrastructure/HabitUser.Infrastructure.csproj" />
+    <Project Path="HabitUser.Integrations/HabitUser.Integrations.csproj" />
   </Folder>
   <Folder Name="/src/modules/habit/">
     <Project Path="Habit.Api/Habit.Api.csproj" />
@@ -48,6 +49,7 @@
   <Folder Name="/src/modules/identity/">
     <Project Path="Identity.Api/Identity.Api.csproj" />
     <Project Path="Identity.Application/Identity.Application.csproj" />
+    <Project Path="Identity.DataTransfer/Identity.DataTransfer.csproj" />
     <Project Path="Identity.Domain/Identity.Domain.csproj" />
     <Project Path="Identity.Infrastructure/Identity.Infrastructure.csproj" />
   </Folder>

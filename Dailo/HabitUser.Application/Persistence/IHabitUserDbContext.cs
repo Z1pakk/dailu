@@ -7,4 +7,5 @@ namespace HabitUser.Application.Persistence;
 public interface IHabitUserDbContext : IAppDbContextBase
 {
     DbSet<HabitUserEntity> HabitUsers { get; }
+    DbSet<IntegrationConfigEntity> IntegrationConfigs { get; }
 }

@@ -29,5 +29,5 @@ public class HabitModel
 
     public DateTime? LastCompletedAtUtc { get; set; }
 
-    public IEnumerable<TagModel> Tags { get; set; }
+    public IEnumerable<TagModel> Tags { get; set; } = [];
 }

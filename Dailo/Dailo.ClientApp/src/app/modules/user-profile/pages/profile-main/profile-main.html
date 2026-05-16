@@ -1,0 +1,108 @@
+<div
+  class="flex-1 self-stretch xl:rounded-tr-3xl xl:rounded-br-3xl flex flex-col overflow-hidden">
+  <div
+    class="self-stretch px-4 sm:px-6 xl:pl-8 xl:pr-6 pt-6 pb-4 flex items-center gap-4">
+    <div
+      class="flex-1 text-surface-950 dark:text-surface-0 text-xl font-medium leading-7">
+      Main Information
+    </div>
+  </div>
+  <div class="self-stretch px-4 sm:px-6 flex flex-col gap-[9.14px]">
+    <div
+      class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
+  </div>
+  <form [formGroup]="profileForm"
+        class="self-stretch p-4 sm:p-6 xl:p-8 flex flex-col items-end gap-6"
+        autocomplete="off"
+        novalidate>
+    <div class="self-stretch flex flex-col items-end gap-6">
+      <div
+        class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
+        <div class="w-full md:w-[283px] flex flex-col gap-2">
+          <div
+            class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+            Email
+          </div>
+        </div>
+        <div class="flex-1 w-full flex flex-col gap-2">
+          <input [value]="$profile()?.email ?? ''"
+                 class="w-full !rounded-[6px]"
+                 autocomplete="off"
+                 pInputText
+                 disabled />
+        </div>
+      </div>
+      <div
+        class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
+    </div>
+    <div class="self-stretch flex flex-col items-end gap-6">
+      <div
+        class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
+        <div class="w-full md:w-[283px] flex flex-col gap-2">
+          <div
+            class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+            First Name
+          </div>
+        </div>
+        <div class="flex-1 w-full flex flex-col gap-2">
+          <input [formControl]="profileForm.controls.firstName"
+                 [invalid]="!!profileForm.controls.firstName.getError('serverError') || (!!profileForm.controls.firstName.errors && profileForm.controls.firstName.dirty)"
+                 [maxLength]="100"
+                 class="w-full !rounded-[6px]"
+                 pInputText />
+          @if (profileForm.controls.firstName.getError('serverError'); as serverError) {
+            <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+          }
+          @if (profileForm.controls.firstName.getError('issue') && profileForm.controls.firstName.dirty) {
+            <small class="text-sm text-red-500 mt-1">
+              {{ profileForm.controls.firstName.getError('issue') }}
+            </small>
+          }
+        </div>
+      </div>
+      <div
+        class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
+    </div>
+    <div class="self-stretch flex flex-col items-end gap-6">
+      <div
+        class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
+        <div class="w-full md:w-[283px] flex flex-col gap-2">
+          <div
+            class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
+            Last Name
+          </div>
+        </div>
+        <div class="flex-1 w-full flex flex-col gap-2">
+          <input [formControl]="profileForm.controls.lastName"
+                 [invalid]="!!profileForm.controls.lastName.getError('serverError') || (!!profileForm.controls.lastName.errors && profileForm.controls.lastName.dirty)"
+                 [maxLength]="100"
+                 class="w-full !rounded-[6px]"
+                 pInputText />
+          @if (profileForm.controls.lastName.getError('serverError'); as serverError) {
+            <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+          }
+          @if (profileForm.controls.lastName.getError('issue') && profileForm.controls.lastName.dirty) {
+            <small class="text-sm text-red-500 mt-1">
+              {{ profileForm.controls.lastName.getError('issue') }}
+            </small>
+          }
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4 w-full sm:w-auto">
+      <p-button [disabled]="$isLoading()"
+                (click)="cancelEdit()"
+                label="Cancel"
+                type="button"
+                variant="outlined"
+                severity="secondary"
+                class="w-full sm:w-auto" />
+      <p-button [loading]="$isLoading()"
+                (click)="save()"
+                label="Save"
+                class="w-full sm:w-auto"
+                type="submit" />
+    </div>
+  </form>
+</div>

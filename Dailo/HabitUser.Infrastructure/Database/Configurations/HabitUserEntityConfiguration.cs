@@ -12,5 +12,11 @@ internal sealed class HabitUserEntityConfiguration : BaseEntityTypedConfiguratio
         builder.ToTable("habit_users");
 
         builder.Property(h => h.IdentityUserId).IsRequired();
+
+        builder
+            .HasMany(t => t.IntegrationConfigs)
+            .WithOne(t => t.HabitUser)
+            .HasForeignKey(b => b.HabitUserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

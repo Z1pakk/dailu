@@ -7,6 +7,7 @@ import { notAuthGuard } from '@auth/not-auth.guard';
 import { dashboardRoutes } from '@dashboard/dashboard.routes';
 import { tagRoutes } from '@tags/tag.routes';
 import { habitEntryRoutes } from '@habit-entries/habit-entry.routes';
+import { userProfileRoutes } from '../modules/user-profile/user-profile.routes';
 
 export const routes: Routes = [
   {
@@ -36,6 +37,7 @@ export const routes: Routes = [
       ...habitRoutes,
       ...tagRoutes,
       ...habitEntryRoutes,
+      ...userProfileRoutes,
     ],
   },
 

@@ -30,7 +30,8 @@
       "@auth/*": ["./src/app/core/auth/*"],
       "@habits/*": ["./src/app/modules/habits/*"],
       "@tags/*": ["./src/app/modules/tags/*"],
-      "@habit-entries/*": ["./src/app/modules/habit-entries/*"]
+      "@habit-entries/*": ["./src/app/modules/habit-entries/*"],
+      "@user-profile/*": ["./src/app/modules/user-profile/*"]
     }
   },
   "angularCompilerOptions": {

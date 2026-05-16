@@ -10,5 +10,5 @@ public class HabitTagEntity : BaseEntity<Id<HabitTagEntity>>
 
     public required Guid UserId { get; set; }
 
-    public virtual HabitEntity Habit { get; set; }
+    public virtual HabitEntity Habit { get; set; } = null!;
 }

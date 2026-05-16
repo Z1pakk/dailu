@@ -11,23 +11,10 @@ public sealed class HabitUserAggregate : Aggregate
     private HabitUserAggregate() { }
 
     public static HabitUserAggregate Create(Guid identityUserId) =>
-        new()
-        {
-            Id = Id<HabitUserAggregate>.NewId(),
-            IdentityUserId = identityUserId,
-        };
+        new() { Id = Id<HabitUserAggregate>.NewId(), IdentityUserId = identityUserId };
 
     internal static HabitUserAggregate Restore(HabitUserEntity entity) =>
-        new()
-        {
-            Id = entity.Id.ToId(),
-            IdentityUserId = entity.IdentityUserId,
-        };
+        new() { Id = entity.Id.ToId(), IdentityUserId = entity.IdentityUserId };
 
-    public HabitUserEntity ToEntity() =>
-        new()
-        {
-            Id = Id.ToId(),
-            IdentityUserId = IdentityUserId,
-        };
+    public HabitUserEntity ToEntity() => new() { Id = Id.ToId(), IdentityUserId = IdentityUserId };
 }

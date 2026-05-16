@@ -21,6 +21,7 @@
     <ProjectReference Include="..\HabitUser.Api\HabitUser.Api.csproj" />
     <ProjectReference Include="..\HabitUser.Application\HabitUser.Application.csproj" />
     <ProjectReference Include="..\HabitUser.Domain\HabitUser.Domain.csproj" />
+    <ProjectReference Include="..\HabitUser.Integrations\HabitUser.Integrations.csproj" />
     <ProjectReference Include="..\SharedInfrastructure\SharedInfrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>

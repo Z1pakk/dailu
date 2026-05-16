@@ -15,19 +15,6 @@ import {
   HabitTagIdsSchema,
 } from '@habits/schemas/habit.schemas';
 
-export {
-  HabitNameSchema,
-  HabitDescriptionSchema,
-  HabitTypeSchema,
-  HabitFrequencyTypeSchema,
-  HabitFrequencyTimesPerPeriodSchema,
-  HabitTargetValueSchema,
-  HabitTargetUnitSchema,
-  HabitMilestoneTargetSchema,
-  HabitEndDateSchema,
-  HabitTagIdsSchema,
-};
-
 export const HabitAddFormSchema = v.object({
   name: HabitNameSchema,
   description: HabitDescriptionSchema,
