@@ -40,9 +40,16 @@ export class UserProfileApi {
     return this._http.delete<void>(`${this.baseUrl}/habit-user/integrations/${provider}`);
   }
 
+  public getStravaConnectUrl(): Observable<{ authUrl: string }> {
+    return this._http.get<{ authUrl: string }>(
+      `${this.baseUrl}/habit-user/integrations/strava/connect`,
+    );
+  }
+
   public getGithubProfile(): Observable<{ profile: GitHubUserProfileModel }> {
     return this._http.get<{ profile: GitHubUserProfileModel }>(
       `${this.baseUrl}/habit-user/integrations/github/profile`,
     );
   }
+
 }

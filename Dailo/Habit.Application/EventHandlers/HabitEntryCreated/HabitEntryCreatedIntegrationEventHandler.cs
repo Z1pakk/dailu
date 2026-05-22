@@ -41,7 +41,8 @@ public sealed class HabitEntryCreatedIntegrationEventHandler(IHabitDbContext dbC
             entity.Milestone,
             entity.LastCompletedAtUtc,
             entity.Tags.ToList(),
-            entity.Version // preserves version so ToEntity() passes the concurrency check
+            entity.Version, // preserves version so ToEntity() passes the concurrency check,
+            entity.AutomationSource
         );
 
         var result = aggregate.Complete(notification.CompletedAtUtc);

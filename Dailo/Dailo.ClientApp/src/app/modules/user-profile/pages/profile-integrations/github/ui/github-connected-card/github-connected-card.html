@@ -7,9 +7,16 @@
       <i class="pi pi-check text-green-600 dark:text-green-400"></i>
     </div>
     <div class="flex flex-col">
-      <span class="text-surface-950 dark:text-surface-0 font-medium">Connected</span>
+      <span class="text-surface-950 dark:text-surface-0 font-medium">
+        Connected
+      </span>
       @if ($expiryInfo(); as expiry) {
-        <span [class]="expiry.cssClass" class="text-sm">{{ expiry.text }}</span>
+        <span [class]="expiry.cssClass"
+              [pTooltip]="expiry.tooltip ?? undefined"
+              tooltipPosition="bottom"
+              class="text-sm">
+          {{ expiry.text }}
+        </span>
       }
     </div>
   </div>

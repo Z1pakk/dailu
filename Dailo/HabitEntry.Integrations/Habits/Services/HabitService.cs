@@ -1,7 +1,11 @@
+using Dailo.Events;
+using Habit.DataTransfer.Models;
 using Habit.DataTransfer.Services;
+using Habit.Domain.Enums;
 using HabitEntry.Application.IntegratedServices;
 using HabitEntry.Application.Models;
 using StrictId;
+using HabitEntryHabitType = HabitEntry.Application.Enums.HabitType;
 
 namespace HabitEntry.Integrations.Habits.Services;
 
@@ -12,18 +16,39 @@ public class HabitService(IHabitDataTransferService habitDataTransferService) : 
         CancellationToken cancellationToken = default
     )
     {
-        var targetIds = ids.Select(id => new Id<Habit.DataTransfer.Models.HabitModel>(id.Value));
+        var targetIds = ids.Select(id => new Id<HabitModel>(id.Value));
 
         var responseHabits = await habitDataTransferService.GetByIdsAsync(
             targetIds,
             cancellationToken
         );
 
-        var result = responseHabits.ToDictionary(
+        return responseHabits.ToDictionary(
             kvp => new Id(kvp.Key.Value),
-            kvp => new HabitInfoModel(new Id(kvp.Key.Value), kvp.Value.Name)
+            kvp => new HabitInfoModel(new Id(kvp.Key.Value), kvp.Value.Name, (HabitEntryHabitType)kvp.Value.Type)
+        );
+    }
+
+    public async Task<IReadOnlyList<HabitInfoModel>> GetByAutomationSourceAsync(
+        Guid userId,
+        IntegrationActivitySource source,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var automationSource = source switch
+        {
+            IntegrationActivitySource.Github => AutomationSource.Github,
+            _ => throw new ArgumentOutOfRangeException(nameof(source)),
+        };
+
+        var habits = await habitDataTransferService.GetByAutomationSourceAsync(
+            userId,
+            automationSource,
+            cancellationToken
         );
 
-        return result;
+        return habits
+            .Select(h => new HabitInfoModel(new Id(h.Id.Value), h.Name, (HabitEntryHabitType)h.Type))
+            .ToList();
     }
 }

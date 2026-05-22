@@ -21,6 +21,7 @@
     "@primeng/themes": "^21.0.4",
     "@primeuix/themes": "^2.0.3",
     "altcha": "^3.0.8",
+    "date-fns": "^4.2.1",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.6",
     "rxjs": "~7.8.2",

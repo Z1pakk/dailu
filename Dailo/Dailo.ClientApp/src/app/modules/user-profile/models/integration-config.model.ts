@@ -1,13 +1,14 @@
 export interface GithubIntegrationConfig {
   type: 'github';
   accessToken: string;
-  expiresInDays: number | null;
+  expiresAtUtc: string | null;
 }
 
 export interface StravaIntegrationConfig {
   type: 'strava';
-  clientId: string;
-  clientSecret: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAtUtc: string;
 }
 
 export type IntegrationConfig = GithubIntegrationConfig | StravaIntegrationConfig;

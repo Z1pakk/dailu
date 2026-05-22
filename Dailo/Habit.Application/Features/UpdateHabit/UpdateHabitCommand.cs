@@ -21,7 +21,8 @@ public sealed record UpdateHabitCommand(
     TargetModel Target,
     DateOnly? EndDate,
     MilestoneModel? Milestone,
-    IEnumerable<Id<TagModel>> TagIds
+    IEnumerable<Id<TagModel>> TagIds,
+    AutomationSource? AutomationSource
 ) : ICommand<Result>;
 
 public sealed class UpdateHabitCommandHandler(
@@ -37,23 +38,42 @@ public sealed class UpdateHabitCommandHandler(
     {
         var habitId = new Id<HabitEntity>(request.HabitId.Value);
 
-        var entity = await dbContext.Habits.FirstOrDefaultAsync(
-            h => h.Id == habitId && h.UserId == currentUserService.UserId,
-            cancellationToken
-        );
+        var entity = await dbContext
+            .Habits.Include(h => h.Tags)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                h => h.Id == habitId && h.UserId == currentUserService.UserId,
+                cancellationToken
+            );
 
         if (entity is null)
         {
             return Result.NotFound("Habit not found.");
         }
 
-        var requestedTagIds = request.TagIds.ToHashSet();
-        var tags = await tagService.GetByIdsAsync(requestedTagIds, cancellationToken);
+        var requestedTagIds = request.TagIds.Select(id => id.ToId()).ToHashSet();
+        var tags = await tagService.GetByIdsAsync(request.TagIds.ToHashSet(), cancellationToken);
         var existingTagIds = tags.Keys.Select(k => k.ToId()).ToHashSet();
 
-        var habitResult = HabitAggregate.Create(
+        var aggregate = HabitAggregate.Restore(
             new Id<HabitAggregate>(entity.Id.Value),
             entity.UserId,
+            entity.Name,
+            entity.Description,
+            entity.Type,
+            entity.Frequency,
+            entity.Target,
+            entity.Status,
+            entity.IsArchived,
+            entity.EndDate,
+            entity.Milestone,
+            entity.LastCompletedAtUtc,
+            entity.Tags.ToList(),
+            entity.Version,
+            entity.AutomationSource
+        );
+
+        var updateResult = aggregate.Update(
             request.Name,
             request.Description,
             request.Type,
@@ -64,33 +84,27 @@ public sealed class UpdateHabitCommandHandler(
             request.EndDate,
             request.Milestone?.Target,
             request.Milestone?.Current,
-            requestedTagIds.Select(id => id.ToId()).ToHashSet(),
+            requestedTagIds,
             existingTagIds,
-            entity.LastCompletedAtUtc
+            request.AutomationSource
         );
 
-        if (habitResult.IsFailure)
+        if (updateResult.IsFailure)
         {
-            return habitResult.ToPlainResult();
+            return updateResult;
         }
 
-        var validated = habitResult.Value.ToEntity();
-
-        entity.Name = validated.Name;
-        entity.Description = validated.Description;
-        entity.Type = validated.Type;
-        entity.Frequency = validated.Frequency;
-        entity.Target = validated.Target;
-        entity.EndDate = validated.EndDate;
-        entity.Milestone = validated.Milestone;
-        entity.LastCompletedAtUtc = validated.LastCompletedAtUtc;
+        var updatedEntity = aggregate.ToEntity();
+        var newTags = updatedEntity.Tags.ToList();
+        updatedEntity.Tags = [];
 
         var oldTags = await dbContext
             .HabitTags.Where(t => t.HabitId == habitId)
             .ToListAsync(cancellationToken);
 
         dbContext.HabitTags.RemoveRange(oldTags);
-        dbContext.HabitTags.AddRange(validated.Tags);
+        dbContext.HabitTags.AddRange(newTags);
+        dbContext.Habits.Update(updatedEntity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

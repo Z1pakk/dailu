@@ -30,6 +30,8 @@ public sealed class HabitAggregate : Aggregate
 
     private Milestone? Milestone { get; set; }
 
+    private AutomationSource? AutomationSource { get; set; }
+
     public DateTime? LastCompletedAtUtc { get; private set; }
 
     public IReadOnlyList<HabitTagEntity> Tags { get; private set; } = [];
@@ -51,7 +53,8 @@ public sealed class HabitAggregate : Aggregate
         int? milestoneCurrent,
         IReadOnlySet<Id> tagIds,
         IReadOnlySet<Id> existingTagIds,
-        DateTime? lastCompletedAtUtc
+        DateTime? lastCompletedAtUtc,
+        AutomationSource? automationSource = null
     )
     {
         var tagIdList = tagIds.ToList();
@@ -109,6 +112,7 @@ public sealed class HabitAggregate : Aggregate
                 IsArchived = false,
                 EndDate = endDate,
                 Milestone = milestone,
+                AutomationSource = automationSource,
                 LastCompletedAtUtc = lastCompletedAtUtc,
                 Tags = tagIdList
                     .Select(tagId => new HabitTagEntity
@@ -137,7 +141,8 @@ public sealed class HabitAggregate : Aggregate
         Milestone? milestone,
         DateTime? lastCompletedAtUtc,
         IReadOnlyList<HabitTagEntity> tags,
-        Guid version
+        Guid version,
+        AutomationSource? automationSource
     ) =>
         new()
         {
@@ -155,7 +160,82 @@ public sealed class HabitAggregate : Aggregate
             LastCompletedAtUtc = lastCompletedAtUtc,
             Tags = tags,
             Version = version,
+            AutomationSource = automationSource,
         };
+
+    public Result Update(
+        string name,
+        string? description,
+        HabitType type,
+        FrequencyType frequencyType,
+        int timesPerPeriod,
+        int targetValue,
+        string targetUnit,
+        DateOnly? endDate,
+        int? milestoneTarget,
+        int? milestoneCurrent,
+        IReadOnlySet<Id> tagIds,
+        IReadOnlySet<Id> existingTagIds,
+        AutomationSource? automationSource
+    )
+    {
+        var tagIdList = tagIds.ToList();
+
+        if (tagIdList.Count > 20)
+        {
+            return Result.BadRequest("A habit cannot have more than 20 tags.");
+        }
+
+        var missingTagIds = tagIdList.Where(tagId => !existingTagIds.Contains(tagId)).ToList();
+        if (missingTagIds.Count > 0)
+        {
+            return Result.NotFound($"Tags not found: {string.Join(", ", missingTagIds)}");
+        }
+
+        var frequencyResult = Frequency.Create(frequencyType, timesPerPeriod);
+        if (frequencyResult.IsFailure)
+        {
+            return Result.BadRequest(frequencyResult.Error);
+        }
+
+        var targetResult = Target.Create(targetValue, targetUnit);
+        if (targetResult.IsFailure)
+        {
+            return Result.BadRequest(targetResult.Error);
+        }
+
+        Milestone? milestone = null;
+        if (milestoneTarget is not null && milestoneCurrent is not null)
+        {
+            var milestoneResult = Milestone.Create(milestoneTarget.Value, milestoneCurrent.Value);
+            if (milestoneResult.IsFailure)
+            {
+                return Result.BadRequest(milestoneResult.Error);
+            }
+
+            milestone = milestoneResult.Value;
+        }
+
+        Name = name;
+        Description = description;
+        Type = type;
+        Frequency = frequencyResult.Value!;
+        Target = targetResult.Value!;
+        EndDate = endDate;
+        Milestone = milestone;
+        AutomationSource = automationSource;
+        Tags = tagIdList
+            .Select(tagId => new HabitTagEntity
+            {
+                Id = Id<HabitTagEntity>.NewId(),
+                HabitId = Id.ToGuid(),
+                TagId = tagId,
+                UserId = UserId,
+            })
+            .ToList();
+
+        return Result.Success();
+    }
 
     public Result Complete(DateTime completedAtUtc)
     {
@@ -187,6 +267,7 @@ public sealed class HabitAggregate : Aggregate
             IsArchived = IsArchived,
             EndDate = EndDate,
             Milestone = Milestone,
+            AutomationSource = AutomationSource,
             LastCompletedAtUtc = LastCompletedAtUtc,
             Tags = Tags.ToList(),
             Version = Version,

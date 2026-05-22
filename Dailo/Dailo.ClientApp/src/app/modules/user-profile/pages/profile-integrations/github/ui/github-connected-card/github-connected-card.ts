@@ -1,8 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  output,
+  signal,
+} from '@angular/core';
+import { differenceInDays, format, startOfDay } from 'date-fns';
 import { Store } from '@ngxs/store';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Button } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
 import { UserProfileRevokeIntegrationConfig } from '@user-profile/state/user-profile.action';
 import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
@@ -11,7 +20,7 @@ import { UserProfileStateModel } from '@user-profile/state/user-profile.state';
 
 @Component({
   selector: 'app-github-connected-card',
-  imports: [Button, ConfirmPopup],
+  imports: [Button, ConfirmPopup, Tooltip],
   templateUrl: './github-connected-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -39,32 +48,47 @@ export class GithubConnectedCard {
     const summary = this.$githubSummary();
     if (!summary) return null;
 
-    if (summary.expiresAt === null) {
-      return { text: 'Never expires', cssClass: 'text-surface-500 dark:text-surface-400' };
+    if (summary.expiresAtUtc === null) {
+      return {
+        text: 'Never expires',
+        cssClass: 'text-surface-500 dark:text-surface-400',
+        tooltip: null,
+      };
     }
 
-    const daysRemaining = Math.floor(
-      (new Date(summary.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    const expiresAt = new Date(summary.expiresAtUtc);
+    const tooltip = format(expiresAt, 'dd MMM yyyy, HH:mm');
+
+    const daysRemaining = differenceInDays(
+      startOfDay(expiresAt),
+      startOfDay(new Date()),
     );
 
     if (daysRemaining < 0) {
       return {
         text: `Expired ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) === 1 ? '' : 's'} ago`,
         cssClass: 'text-red-500 dark:text-red-400',
+        tooltip,
       };
     }
     if (daysRemaining === 0) {
-      return { text: 'Expires today', cssClass: 'text-orange-500 dark:text-orange-400' };
+      return {
+        text: 'Expires today',
+        cssClass: 'text-orange-500 dark:text-orange-400',
+        tooltip,
+      };
     }
     if (daysRemaining <= 14) {
       return {
         text: `Expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`,
         cssClass: 'text-orange-500 dark:text-orange-400',
+        tooltip,
       };
     }
     return {
       text: `Expires in ${daysRemaining} days`,
       cssClass: 'text-surface-500 dark:text-surface-400',
+      tooltip,
     };
   });
 

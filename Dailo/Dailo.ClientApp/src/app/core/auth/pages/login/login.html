@@ -79,6 +79,9 @@
                       fluid>
               Submit
             </p-button>
+            @if ($loginError()) {
+              <p class="mt-3 text-sm text-red-500 text-center">{{ $loginError() }}</p>
+            }
           </form>
           <div class="mt-8 body-small text-center lg:text-left">
             <span>Not registered?</span>

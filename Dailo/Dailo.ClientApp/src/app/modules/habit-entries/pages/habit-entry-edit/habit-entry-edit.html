@@ -1,0 +1,73 @@
+<form [formGroup]="editHabitEntryForm" class="flex flex-col gap-4" novalidate>
+  @if (entry.habitType !== habitTypes.binary) {
+    <div class="flex flex-col gap-2">
+      <label for="value" class="block">Value</label>
+      <p-input-number [formControl]="editHabitEntryForm.controls.value"
+                      [invalid]="!!editHabitEntryForm.controls.value.getError('serverError') || (!!editHabitEntryForm.controls.value.errors && editHabitEntryForm.controls.value.dirty)"
+                      [min]="0"
+                      [max]="99999"
+                      name="value"
+                      inputId="value"
+                      showButtons
+                      fluid />
+      @if (editHabitEntryForm.controls.value.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (editHabitEntryForm.controls.value.getError('issue') && editHabitEntryForm.controls.value.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ editHabitEntryForm.controls.value.getError('issue') }}
+        </small>
+      }
+    </div>
+  }
+  <div class="flex flex-col gap-2">
+    <label for="notes" class="block">
+      Notes
+      <span class="text-sm font-normal text-surface-400">(optional)</span>
+    </label>
+    <textarea [formControl]="editHabitEntryForm.controls.notes"
+              [invalid]="!!editHabitEntryForm.controls.notes.getError('serverError') || (!!editHabitEntryForm.controls.notes.errors && editHabitEntryForm.controls.notes.dirty)"
+              [maxLength]="1000"
+              name="notes"
+              id="notes"
+              pInputTextarea
+              fluid></textarea>
+    @if (editHabitEntryForm.controls.notes.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (editHabitEntryForm.controls.notes.getError('issue') && editHabitEntryForm.controls.notes.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ editHabitEntryForm.controls.notes.getError('issue') }}
+      </small>
+    }
+  </div>
+  <div class="flex flex-col gap-2">
+    <div class="flex items-center justify-between">
+      <label for="completedAt" class="block">Date</label>
+      <div class="flex items-center gap-2">
+        <label for="includeTime" class="text-sm text-surface-400">Include time</label>
+        <p-toggleswitch [formControl]="editHabitEntryForm.controls.includeTime"
+                        inputId="includeTime" />
+      </div>
+    </div>
+    <p-datepicker [formControl]="editHabitEntryForm.controls.completedAt"
+                  [invalid]="!!editHabitEntryForm.controls.completedAt.getError('serverError') || (!!editHabitEntryForm.controls.completedAt.errors && editHabitEntryForm.controls.completedAt.dirty)"
+                  [maxDate]="today"
+                  [showButtonBar]="true"
+                  [showTime]="editHabitEntryForm.controls.includeTime.value"
+                  [hourFormat]="'24'"
+                  appendTo="body"
+                  name="completedAt"
+                  inputId="completedAt"
+                  dateFormat="dd/mm/yy"
+                  fluid />
+    @if (editHabitEntryForm.controls.completedAt.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (editHabitEntryForm.controls.completedAt.getError('issue') && editHabitEntryForm.controls.completedAt.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ editHabitEntryForm.controls.completedAt.getError('issue') }}
+      </small>
+    }
+  </div>
+</form>

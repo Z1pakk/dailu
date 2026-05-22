@@ -18,7 +18,9 @@ import {
   HabitMilestoneTargetSchema,
   HabitEndDateSchema,
   HabitTagIdsSchema,
+  HabitAutomationSourceSchema,
 } from '@habits/schemas/habit.schemas';
+import { AutomationSource } from '@habits/enums/automation-source.enum';
 import { valibotValidator } from '@shared/lib/form/valibot.validator';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, map, Observable, startWith, tap } from 'rxjs';
@@ -89,6 +91,10 @@ export class HabitAddFacadeService {
         [],
         valibotValidator(HabitTagIdsSchema),
       ),
+      automationSource: this._fb.control<AutomationSource | null>(
+        null,
+        valibotValidator(HabitAutomationSourceSchema),
+      ),
     });
 
   public readonly $isFormValid: Signal<boolean> = toSignal(
@@ -113,6 +119,7 @@ export class HabitAddFacadeService {
       endDate,
       milestoneTarget,
       tagIds,
+      automationSource,
     } = formValue;
 
     const request = (<CreateHabitRequestModel>{
@@ -130,6 +137,7 @@ export class HabitAddFacadeService {
           ? { target: milestoneTarget, current: 0 }
           : null,
       tagIds,
+      automationSource,
     }) satisfies CreateHabitRequestModel;
 
     return this._store.dispatch(new HabitCreateHabit(request)).pipe(

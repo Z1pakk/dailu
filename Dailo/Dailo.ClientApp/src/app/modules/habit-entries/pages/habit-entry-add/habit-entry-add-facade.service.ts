@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, Signal } from '@angular/core';
+import { startOfDay } from 'date-fns';
 import { habitTypes } from '@habits/enums/habit-type.enum';
 import { NonNullableFormBuilder } from '@angular/forms';
 import { MessageService } from 'primeng/api';
@@ -98,10 +99,9 @@ export class HabitEntryAddFacadeService {
     const { habitId, notes, includeTime } = formValue;
     const value = this.$isBinaryHabit() ? 1 : formValue.value;
 
-    const completedAt = new Date(formValue.completedAt);
-    if (!includeTime) {
-      completedAt.setHours(0, 0, 0, 0);
-    }
+    const completedAt = includeTime
+      ? formValue.completedAt
+      : startOfDay(formValue.completedAt);
 
     const request = (<CreateHabitEntryRequestModel>{
       habitId,

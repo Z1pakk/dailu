@@ -10,4 +10,6 @@ public class IntegrationConfigEntity : BaseEntity<Id<IntegrationConfigEntity>>
 
     public required IntegrationProvider Provider { get; set; }
     public required IntegrationConfig Config { get; set; }
+
+    public DateTime? LastSyncedAtUtc { get; set; }
 }

@@ -7,6 +7,17 @@ namespace HabitUser.Application.Features.GetIntegrationConfigs;
 [JsonDerivedType(typeof(StravaIntegrationSummary), "strava")]
 public abstract record IntegrationSummary;
 
-public sealed record GithubIntegrationSummary(DateTime? ExpiresAt) : IntegrationSummary;
+public sealed record GithubIntegrationSummary(DateTime? ExpiresAtUtc) : IntegrationSummary;
 
-public sealed record StravaIntegrationSummary : IntegrationSummary;
+public sealed record StravaAthleteInfo(
+    long Id,
+    string Username,
+    string FirstName,
+    string LastName,
+    string ProfileUrl
+);
+
+public sealed record StravaIntegrationSummary(
+    DateTime ExpiresAtUtc,
+    StravaAthleteInfo? Athlete
+) : IntegrationSummary;

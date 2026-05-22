@@ -4,13 +4,20 @@ namespace SharedKernel.Domain;
 
 public abstract class Aggregate
 {
-    private readonly List<IDomainEvent> _domainEvents = [];
+    private readonly List<IEvent> _domainEvents = [];
 
     public Guid Version { get; protected set; }
 
-    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    protected void RaiseDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+    protected void RaiseDomainEvent(IEvent domainEvent) => _domainEvents.Add(domainEvent);
+
+    protected IEnumerable<IEvent> ConsumeDomainEvents()
+    {
+        var events = _domainEvents.ToList();
+        _domainEvents.Clear();
+        return events;
+    }
 
     public void ClearDomainEvents() => _domainEvents.Clear();
 }

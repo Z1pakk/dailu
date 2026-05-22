@@ -15,6 +15,7 @@ import { Select } from 'primeng/select';
 import { MultiSelect } from 'primeng/multiselect';
 import { habitTypeSelectItems } from '@habits/enums/habit-type.enum';
 import { frequencyTypeSelectItems } from '@habits/enums/frequency-type.enum';
+import { automationSourceSelectItems } from '@habits/enums/automation-source.enum';
 import { InputNumber } from 'primeng/inputnumber';
 import { DatePicker } from 'primeng/datepicker';
 import { Store } from '@ngxs/store';
@@ -49,6 +50,7 @@ export class HabitEdit implements OnInit {
 
   protected readonly habitTypeSelectItems = habitTypeSelectItems;
   protected readonly frequencyTypeSelectItems = frequencyTypeSelectItems;
+  protected readonly automationSourceSelectItems = automationSourceSelectItems;
   protected readonly today = new Date();
   protected readonly $tagSelectItems = this._habitEditService.$tagSelectItems;
   protected readonly editHabitForm = this._habitEditService.editHabitForm;

@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { HabitType, habitTypes } from '@habits/enums/habit-type.enum';
 import { FrequencyType, frequencyTypes } from '@habits/enums/frequency-type.enum';
+import { AutomationSource, automationSources } from '@habits/enums/automation-source.enum';
 import { notBlank, notBlankOptional } from '@shared/lib/form/not-blank';
 
 export const HabitNameSchema = v.pipe(
@@ -66,3 +67,9 @@ export const HabitEndDateSchema = v.nullable(
 );
 
 export const HabitTagIdsSchema = v.array(v.string());
+
+export const HabitAutomationSourceSchema = v.nullable(
+  v.picklist(
+    Object.values(automationSources) as [AutomationSource, ...AutomationSource[]],
+  ),
+);

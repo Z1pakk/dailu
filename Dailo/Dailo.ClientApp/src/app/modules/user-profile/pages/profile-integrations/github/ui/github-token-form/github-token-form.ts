@@ -61,12 +61,16 @@ export class GithubTokenForm {
 
     const { accessToken, expiresInDays }: GithubIntegrationFormValue = this.form.getRawValue();
 
+    const expiresAtUtc = expiresInDays
+      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
     this._store
       .dispatch(
         new UserProfileSaveIntegrationConfig((<GithubIntegrationConfig>{
           type: 'github',
           accessToken,
-          expiresInDays,
+          expiresAtUtc,
         }) satisfies GithubIntegrationConfig),
       )
       .pipe(

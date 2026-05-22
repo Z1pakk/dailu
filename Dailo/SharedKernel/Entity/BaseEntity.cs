@@ -30,5 +30,8 @@ public abstract class BaseEntity<T>
 
     public void AddDomainEvent(IEvent domainEvent) => _domainEvents.Add(domainEvent);
 
+    public void AddDomainEvent(params IEnumerable<IEvent> domainEvents) =>
+        _domainEvents.AddRange(domainEvents);
+
     public void ClearDomainEvents() => _domainEvents.Clear();
 }

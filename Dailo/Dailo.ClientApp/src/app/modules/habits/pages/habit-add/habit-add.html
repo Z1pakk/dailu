@@ -205,4 +205,22 @@
       <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
     }
   </div>
+  <div class="flex flex-col gap-2">
+    <label for="automationSource" class="block">
+      Automation Source
+      <span class="text-sm font-normal text-surface-400">(optional)</span>
+    </label>
+    <p-select [formControl]="addHabitForm.controls.automationSource"
+              [options]="automationSourceSelectItems"
+              [invalid]="!!addHabitForm.controls.automationSource.getError('serverError') || (!!addHabitForm.controls.automationSource.errors && addHabitForm.controls.automationSource.dirty)"
+              appendTo="body"
+              name="automationSource"
+              inputId="automationSource"
+              optionLabel="label"
+              optionValue="value"
+              fluid />
+    @if (addHabitForm.controls.automationSource.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+  </div>
 </form>

@@ -1,6 +1,7 @@
 using HabitUser.Application.IntegratedServices;
 using HabitUser.Integrations.GitHub;
 using HabitUser.Integrations.Identity.Services;
+using HabitUser.Integrations.Strava;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HabitUser.Integrations;
@@ -11,7 +12,7 @@ public static class Setup
     {
         services.AddScoped<IUserProfileService, UserProfileService>();
 
-        services.AddHttpClient<IGitHubHttpClient, GithubHttpClient>(client =>
+        services.AddHttpClient<IGitHubHttpClient, GitHubHttpClient>(client =>
         {
             client.BaseAddress = new Uri($"https://api.github.com/");
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Dailu");
@@ -20,6 +21,11 @@ public static class Setup
                     "application/vnd.github+json"
                 )
             );
+        });
+
+        services.AddHttpClient<IStravaHttpClient, StravaHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://www.strava.com/");
         });
 
         return services;

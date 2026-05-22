@@ -3,50 +3,35 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
 } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
 import { Store } from '@ngxs/store';
 import { MessageService } from 'primeng/api';
-import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, EMPTY, finalize, tap } from 'rxjs';
-import { valibotValidator } from '@shared/lib/form/valibot.validator';
-import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
-import {
-  UserProfileRevokeIntegrationConfig,
-  UserProfileSaveIntegrationConfig,
-} from '@user-profile/state/user-profile.action';
+import { ActivatedRoute } from '@angular/router';
+import { finalize } from 'rxjs';
+import { UserProfileFetchIntegrationConfigs } from '@user-profile/state/user-profile.action';
 import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
-import { StravaIntegrationConfig } from '@user-profile/models/integration-config.model';
 import { StravaIntegrationSummary } from '@user-profile/models/integration-summary.model';
 import { UserProfileStateModel } from '@user-profile/state/user-profile.state';
-import {
-  StravaClientIdSchema,
-  StravaClientSecretSchema,
-  StravaIntegrationForm,
-  StravaIntegrationFormGroup,
-  StravaIntegrationFormValue,
-} from './profile-strava-integration-form.type';
+import { UserProfileApi } from '@user-profile/api/user-profile.api';
+import { StravaConnectedCard } from './ui/strava-connected-card/strava-connected-card';
+import { StravaProfileCard } from './ui/strava-profile-card/strava-profile-card';
 
 @Component({
   selector: 'app-profile-strava-integration',
-  imports: [Button, InputText, ReactiveFormsModule],
+  imports: [Button, StravaConnectedCard, StravaProfileCard],
   templateUrl: './profile-strava-integration.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProfileStravaIntegration {
-  private readonly _fb = inject(NonNullableFormBuilder);
+export class ProfileStravaIntegration implements OnInit {
   private readonly _store = inject(Store);
   private readonly _messageService = inject(MessageService);
+  private readonly _api = inject(UserProfileApi);
+  private readonly _route = inject(ActivatedRoute);
 
-  protected readonly $isEditing = signal(false);
-  protected readonly $isRevoking = signal(false);
-
-  protected readonly $isSaving = this._store.selectSignal(
-    UserProfileStateSelectors.getSlices.isSavingIntegration,
-  );
+  protected readonly $isConnecting = signal(false);
 
   protected readonly $isLoading = this._store.selectSignal(
     UserProfileStateSelectors.getSlices.isLoadingIntegrations,
@@ -59,100 +44,43 @@ export class ProfileStravaIntegration {
       ),
   );
 
-  protected readonly $showConnected = computed(
-    () => !!this.$stravaSummary() && !this.$isEditing(),
-  );
+  protected readonly $showConnected = computed(() => !!this.$stravaSummary());
 
-  protected readonly $showForm = computed(
-    () => !this.$stravaSummary() || this.$isEditing(),
-  );
+  ngOnInit(): void {
+    const params = this._route.snapshot.queryParamMap;
 
-  protected readonly form: StravaIntegrationFormGroup =
-    this._fb.group<StravaIntegrationForm>({
-      clientId: this._fb.control<string>(
-        '',
-        valibotValidator(StravaClientIdSchema),
-      ),
-      clientSecret: this._fb.control<string>(
-        '',
-        valibotValidator(StravaClientSecretSchema),
-      ),
-    });
+    if (params.has('strava_connected')) {
+      this._store.dispatch(new UserProfileFetchIntegrationConfigs());
+    }
 
-  protected startEditing(): void {
-    this.form.reset();
-    this.$isEditing.set(true);
+    if (params.has('strava_error')) {
+      this._messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to connect Strava. Please try again.',
+        life: 4000,
+      });
+    }
   }
 
-  protected save() {
-    this.form.markAllAsTouched();
-    this.form.markAsDirty();
+  protected connect(): void {
+    this.$isConnecting.set(true);
 
-    if (this.form.invalid) return;
-
-    const { clientId, clientSecret }: StravaIntegrationFormValue =
-      this.form.getRawValue();
-
-    this._store
-      .dispatch(
-        new UserProfileSaveIntegrationConfig((<StravaIntegrationConfig>{
-          type: 'strava',
-          clientId,
-          clientSecret,
-        }) satisfies StravaIntegrationConfig),
-      )
-      .pipe(
-        tap({
-          next: () => {
-            this._messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'Strava integration saved successfully.',
-              life: 3000,
-            });
-            this.form.reset();
-            this.$isEditing.set(false);
-          },
-        }),
-        catchError((error: HttpErrorResponse) => {
-          applyServerErrors(this.form, error);
-          return EMPTY;
-        }),
-      )
-      .subscribe();
-  }
-
-  protected cancel(): void {
-    this.form.reset();
-    this.$isEditing.set(false);
-  }
-
-  protected revoke(): void {
-    this.$isRevoking.set(true);
-    this._store
-      .dispatch(new UserProfileRevokeIntegrationConfig('strava'))
-      .pipe(
-        tap({
-          next: () => {
-            this._messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'Strava integration revoked.',
-              life: 3000,
-            });
-          },
-        }),
-        catchError(() => {
+    this._api
+      .getStravaConnectUrl()
+      .pipe(finalize(() => this.$isConnecting.set(false)))
+      .subscribe({
+        next: ({ authUrl }) => {
+          window.location.href = authUrl;
+        },
+        error: () => {
           this._messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to revoke Strava integration.',
+            detail: 'Failed to initiate Strava connection.',
             life: 3000,
           });
-          return EMPTY;
-        }),
-        finalize(() => this.$isRevoking.set(false)),
-      )
-      .subscribe();
+        },
+      });
   }
 }

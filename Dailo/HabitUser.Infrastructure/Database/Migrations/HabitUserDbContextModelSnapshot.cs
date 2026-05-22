@@ -112,6 +112,10 @@ namespace HabitUser.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("last_modified_by_user_id");
 
+                    b.Property<DateTime?>("LastSyncedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_synced_at_utc");
+
                     b.Property<string>("Provider")
                         .IsRequired()
                         .HasMaxLength(50)

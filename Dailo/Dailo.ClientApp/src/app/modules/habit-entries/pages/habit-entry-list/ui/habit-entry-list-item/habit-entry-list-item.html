@@ -1,5 +1,5 @@
 <div
-  class="border border-(--surface-border) rounded-lg p-4 flex flex-col gap-2 shadow-sm hover:shadow-md cursor-pointer transition-shadow">
+  class="border border-(--surface-border) rounded-lg p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-shadow">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="flex flex-col gap-1">
       <div class="flex gap-3 items-center">
@@ -13,14 +13,22 @@
       }
     </div>
     <div class="text-right flex gap-2 justify-end items-baseline">
-      <span
-        class="bg-blue-100 text-blue-800 font-medium px-2.5 py-0.5 rounded">
-        Value: {{ habitEntry().value }}
-      </span>
+      @if (habitEntry().habitType !== habitTypes.binary) {
+        <span class="bg-blue-100 text-blue-800 font-medium px-2.5 py-0.5 rounded">
+          Value: {{ habitEntry().value }}
+        </span>
+      }
+      <p-button
+        icon="pi pi-pencil"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        (click)="onEditClick()" />
     </div>
     <div>
       <span class="text-surface-500 text-sm font-normal leading-tight">
-        {{ habitEntry().date | date: 'dd/MM/yyyy' }}
+        {{ habitEntry().completedAtUtc | date: $completedAtFormat() }}
       </span>
     </div>
     <div class="text-right">

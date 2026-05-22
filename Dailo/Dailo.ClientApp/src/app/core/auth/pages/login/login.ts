@@ -2,8 +2,10 @@ import 'altcha';
 import {
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
+  effect,
   ElementRef,
   inject,
+  signal,
   viewChild,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -28,7 +30,6 @@ import { AuthRouterService } from '@auth/services/auth-router.service';
 import { AltchaService } from '@auth/services/altcha.service';
 import { markAllAsDirty } from '@shared/lib/form/mark-as-dirty';
 import { HttpErrorResponse } from '@angular/common/http';
-import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-login',
@@ -50,10 +51,19 @@ export class Login {
   private readonly _store = inject(Store);
   private readonly _authRouterService = inject(AuthRouterService);
   private readonly _fb = inject(NonNullableFormBuilder);
-  private readonly _messageService = inject(MessageService);
   protected readonly altchaService = inject(AltchaService);
 
+  protected readonly $loginError = signal<string | null>(null);
+
   private readonly _$altchaWidgetRef = viewChild<ElementRef>('altchaWidget');
+
+  constructor() {
+    effect(() => {
+      if (this.altchaService.$isError()) {
+        this.$loginError.set('A network error occurred. Please try again later.');
+      }
+    });
+  }
 
   protected readonly loginForm: LoginFormGroup = this._fb.group<LoginForm>({
     email: this._fb.control<string>('', {
@@ -72,6 +82,7 @@ export class Login {
   }
 
   protected login() {
+    this.$loginError.set(null);
     markAllAsDirty(this.loginForm);
 
     if (!this.altchaService.$isSolved() || !this.loginForm.valid) {
@@ -92,12 +103,11 @@ export class Login {
       },
       error: (error: HttpErrorResponse) => {
         this._resetCaptcha();
-        this._messageService.add({
-          severity: 'error',
-          summary: 'Login failed',
-          detail: error.error?.detail ?? 'Invalid email or password.',
-          life: 5000,
-        });
+        this.$loginError.set(
+          error.status === 0
+            ? 'A network error occurred. Please try again later.'
+            : (error.error?.detail ?? 'An error occurred. Please try again later.'),
+        );
       },
     });
   }

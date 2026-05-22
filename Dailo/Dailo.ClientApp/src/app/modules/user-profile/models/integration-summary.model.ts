@@ -1,10 +1,20 @@
 export interface GithubIntegrationSummary {
   type: 'github';
-  expiresAt: string | null; // ISO datetime; null = never expires
+  expiresAtUtc: string | null; // ISO datetime; null = never expires
+}
+
+export interface StravaAthleteInfo {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  profileUrl: string;
 }
 
 export interface StravaIntegrationSummary {
   type: 'strava';
+  expiresAtUtc: string;
+  athlete: StravaAthleteInfo | null;
 }
 
 export type IntegrationSummary = GithubIntegrationSummary | StravaIntegrationSummary;

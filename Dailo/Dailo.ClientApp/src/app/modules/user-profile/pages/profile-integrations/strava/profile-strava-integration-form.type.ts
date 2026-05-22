@@ -2,30 +2,41 @@ import * as v from 'valibot';
 import { FormControl, FormGroup } from '@angular/forms';
 import { notBlank } from '@shared/lib/form/not-blank';
 
-export const StravaClientIdSchema = v.pipe(
+export const StravaAccessTokenSchema = v.pipe(
   v.string(),
-  v.nonEmpty('Client ID is required'),
-  notBlank(),
-  v.maxLength(100, 'Maximum of 100 characters'),
-);
-
-export const StravaClientSecretSchema = v.pipe(
-  v.string(),
-  v.nonEmpty('Client secret is required'),
+  v.nonEmpty('Access token is required'),
   notBlank(),
   v.maxLength(255, 'Maximum of 255 characters'),
 );
 
+export const StravaRefreshTokenSchema = v.pipe(
+  v.string(),
+  v.nonEmpty('Refresh token is required'),
+  notBlank(),
+  v.maxLength(255, 'Maximum of 255 characters'),
+);
+
+export const StravaExpiresInHoursSchema = v.nullable(
+  v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(1, 'Must be at least 1 hour'),
+    v.maxValue(24, 'Must not exceed 24 hours'),
+  ),
+);
+
 export const StravaIntegrationFormSchema = v.object({
-  clientId: StravaClientIdSchema,
-  clientSecret: StravaClientSecretSchema,
+  accessToken: StravaAccessTokenSchema,
+  refreshToken: StravaRefreshTokenSchema,
+  expiresInHours: StravaExpiresInHoursSchema,
 });
 
 export type StravaIntegrationFormValue = v.InferOutput<typeof StravaIntegrationFormSchema>;
 
 export type StravaIntegrationForm = {
-  clientId: FormControl<string>;
-  clientSecret: FormControl<string>;
+  accessToken: FormControl<string>;
+  refreshToken: FormControl<string>;
+  expiresInHours: FormControl<number | null>;
 };
 
 export type StravaIntegrationFormGroup = FormGroup<StravaIntegrationForm>;

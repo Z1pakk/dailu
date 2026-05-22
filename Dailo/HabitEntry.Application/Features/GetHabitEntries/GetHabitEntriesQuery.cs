@@ -1,3 +1,4 @@
+using HabitEntry.Application.Enums;
 using HabitEntry.Application.IntegratedServices;
 using HabitEntry.Application.Models;
 using HabitEntry.Application.Persistence;
@@ -41,6 +42,7 @@ public sealed class GetHabitEntriesQueryHandler(
                 Id = new Id<HabitEntryModel>(e.Id.Value),
                 HabitId = e.HabitId,
                 HabitName = habits.GetValueOrDefault(e.HabitId)?.Name ?? "Unknown",
+                HabitType = habits.GetValueOrDefault(e.HabitId)?.HabitType ?? HabitType.None,
                 Value = e.Value,
                 Notes = e.Notes,
                 Source = e.Source,

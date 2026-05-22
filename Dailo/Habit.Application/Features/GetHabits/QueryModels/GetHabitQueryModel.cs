@@ -29,6 +29,8 @@ public class GetHabitQueryModel
 
     public DateTime CreatedAtUtc { get; set; }
 
+    public AutomationSource? AutomationSource { get; set; }
+
     public DateTime? LastCompletedAtUtc { get; set; }
 
     public List<Id> TagIds { get; set; } = [];

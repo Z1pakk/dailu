@@ -1,9 +1,11 @@
 using FluentValidation;
 using HabitUser.Api;
 using HabitUser.Application;
+using HabitUser.Application.Options;
 using HabitUser.Application.Persistence;
 using HabitUser.Infrastructure.Database;
 using HabitUser.Infrastructure.Pipeline;
+using HabitUser.Infrastructure.Workers;
 using HabitUser.Integrations;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Options;
 
 namespace HabitUser.Infrastructure;
 
@@ -58,7 +61,14 @@ public static class Setup
 
         services.AddHandlerAssembly<IHabitUserApplicationRoot>();
 
+        services.AddHabitUserServices();
+
         services.AddHabitUserIntegrations();
+
+        services.AddValidateOptions<StravaOptions>();
+
+        services.AddHostedService<GitHubActivityPoolingWorker>();
+        services.AddHostedService<StravaActivityPollingWorker>();
 
         return services;
     }

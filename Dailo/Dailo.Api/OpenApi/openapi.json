@@ -139,6 +139,40 @@
         }
       }
     },
+    "/api/habit-entries/{id}": {
+      "put": {
+        "tags": [
+          "HabitEntryModel"
+        ],
+        "description": "Updates an existing habit entry for the current authenticated user.",
+        "operationId": "UpdateHabitEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHabitEntryCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/habit-user/profile": {
       "get": {
         "tags": [
@@ -269,6 +303,55 @@
           },
           "400": {
             "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/strava/connect": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "operationId": "StravaConnect",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymousTypeOfstring"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/strava/callback": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "operationId": "StravaCallback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -557,6 +640,23 @@
           }
         }
       },
+      "AnonymousTypeOfstring": {
+        "required": [
+          "authUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "authUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "AutomationSource": {
+        "type": "integer"
+      },
       "CreateHabitCommand": {
         "required": [
           "name",
@@ -566,7 +666,8 @@
           "target",
           "endDate",
           "milestone",
-          "tagIds"
+          "tagIds",
+          "automationSource"
         ],
         "type": "object",
         "properties": {
@@ -607,6 +708,16 @@
           },
           "tagIds": {
             "type": "array"
+          },
+          "automationSource": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AutomationSource"
+              }
+            ]
           }
         }
       },
@@ -860,6 +971,7 @@
           "id",
           "habitId",
           "habitName",
+          "habitType",
           "value",
           "source",
           "completedAtUtc"
@@ -874,6 +986,9 @@
           },
           "habitName": {
             "type": "string"
+          },
+          "habitType": {
+            "$ref": "#/components/schemas/HabitType"
           },
           "value": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -980,6 +1095,16 @@
             "type": "string",
             "format": "date-time"
           },
+          "automationSource": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AutomationSource"
+              }
+            ]
+          },
           "lastCompletedAtUtc": {
             "type": [
               "null",
@@ -1029,7 +1154,7 @@
       "IntegrationConfigGithubIntegrationConfig": {
         "required": [
           "accessToken",
-          "expiresInDays"
+          "expiresAtUtc"
         ],
         "properties": {
           "type": {
@@ -1041,21 +1166,20 @@
           "accessToken": {
             "type": "string"
           },
-          "expiresInDays": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "expiresAtUtc": {
             "type": [
               "null",
-              "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "date-time"
           }
         }
       },
       "IntegrationConfigStravaIntegrationConfig": {
         "required": [
-          "clientId",
-          "clientSecret"
+          "accessToken",
+          "refreshToken",
+          "expiresAtUtc"
         ],
         "properties": {
           "type": {
@@ -1064,11 +1188,25 @@
             ],
             "type": "string"
           },
-          "clientId": {
+          "accessToken": {
             "type": "string"
           },
-          "clientSecret": {
+          "refreshToken": {
             "type": "string"
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "athlete": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StravaAthlete"
+              }
+            ]
           }
         }
       },
@@ -1095,7 +1233,7 @@
       },
       "IntegrationSummaryGithubIntegrationSummary": {
         "required": [
-          "expiresAt"
+          "expiresAtUtc"
         ],
         "properties": {
           "type": {
@@ -1104,7 +1242,7 @@
             ],
             "type": "string"
           },
-          "expiresAt": {
+          "expiresAtUtc": {
             "type": [
               "null",
               "string"
@@ -1114,12 +1252,30 @@
         }
       },
       "IntegrationSummaryStravaIntegrationSummary": {
+        "required": [
+          "expiresAtUtc",
+          "athlete"
+        ],
         "properties": {
           "type": {
             "enum": [
               "strava"
             ],
             "type": "string"
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "athlete": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StravaAthleteInfo"
+              }
+            ]
           }
         }
       },
@@ -1276,6 +1432,70 @@
           }
         }
       },
+      "StravaAthlete": {
+        "required": [
+          "id",
+          "username",
+          "firstName",
+          "lastName",
+          "profileUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "profileUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "StravaAthleteInfo": {
+        "required": [
+          "id",
+          "username",
+          "firstName",
+          "lastName",
+          "profileUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "profileUrl": {
+            "type": "string"
+          }
+        }
+      },
       "TagModel": {
         "required": [
           "id",
@@ -1328,7 +1548,8 @@
           "target",
           "endDate",
           "milestone",
-          "tagIds"
+          "tagIds",
+          "automationSource"
         ],
         "type": "object",
         "properties": {
@@ -1372,6 +1593,48 @@
           },
           "tagIds": {
             "type": "array"
+          },
+          "automationSource": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AutomationSource"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateHabitEntryCommand": {
+        "required": [
+          "entryId",
+          "value",
+          "notes",
+          "completedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "$ref": "#/components/schemas/IdOfHabitEntryModel"
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

@@ -1,3 +1,4 @@
+using HabitEntry.Application.Enums;
 using HabitEntry.Domain.Enums;
 using StrictId;
 
@@ -10,6 +11,8 @@ public class HabitEntryModel
     public required Id HabitId { get; set; }
 
     public required string HabitName { get; set; }
+
+    public required HabitType HabitType { get; set; }
 
     public required int Value { get; set; }
 

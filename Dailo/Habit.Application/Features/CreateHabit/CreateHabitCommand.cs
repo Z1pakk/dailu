@@ -18,7 +18,8 @@ public sealed record CreateHabitCommand(
     TargetModel Target,
     DateOnly? EndDate,
     MilestoneModel? Milestone,
-    IEnumerable<Id<TagModel>> TagIds
+    IEnumerable<Id<TagModel>> TagIds,
+    AutomationSource? AutomationSource
 ) : ICommand<Result<CreateHabitCommandResponse>>;
 
 public sealed record CreateHabitCommandResponse(Id<HabitModel> Id);
@@ -54,7 +55,8 @@ public sealed class CreateHabitCommandHandler(
             request.Milestone?.Current,
             requestedTagIds.Select(id => new Id(id.Value)).ToHashSet(),
             existingTagIds,
-            lastCompletedAtUtc: null
+            lastCompletedAtUtc: null,
+            request.AutomationSource
         );
 
         if (habitResult.IsFailure)

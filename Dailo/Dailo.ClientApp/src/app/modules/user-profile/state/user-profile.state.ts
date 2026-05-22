@@ -4,8 +4,8 @@ import { UserProfileModel } from '@user-profile/models/user-profile.model';
 import {
   GithubIntegrationSummary,
   IntegrationSummary,
+  StravaIntegrationSummary,
 } from '@user-profile/models/integration-summary.model';
-import { GithubIntegrationConfig } from '@user-profile/models/integration-config.model';
 import {
   UserProfileFetchGithubProfile,
   UserProfileFetchIntegrationConfigs,
@@ -135,7 +135,9 @@ export class UserProfileState {
               integrationSummaries: integrationSummaries.filter(
                 (s) => s.type !== action.provider,
               ),
-              ...(action.provider === 'github' ? { githubProfile: null, githubProfileError: false } : {}),
+              ...(action.provider === 'github'
+                ? { githubProfile: null, githubProfileError: false }
+                : {}),
             });
           }
         },
@@ -161,7 +163,9 @@ export class UserProfileState {
             );
             ctx.patchState({
               integrationSummaries: [...rest, summary],
-              ...(action.payload.type === 'github' ? { githubProfile: null, githubProfileError: false } : {}),
+              ...(action.payload.type === 'github'
+                ? { githubProfile: null, githubProfileError: false }
+                : {}),
             });
           }
         },
@@ -198,14 +202,11 @@ export class UserProfileState {
   }
 }
 
-function buildSummary(config: UserProfileSaveIntegrationConfig['payload']): IntegrationSummary {
-  if (config.type === 'github') {
-    const { expiresInDays } = config as GithubIntegrationConfig;
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
-      : null;
-    return { type: 'github', expiresAt } satisfies GithubIntegrationSummary;
+function buildSummary(
+  config: UserProfileSaveIntegrationConfig['payload'],
+): IntegrationSummary {
+  if (config.type === 'strava') {
+    return { type: 'strava', expiresAtUtc: config.expiresAtUtc, athlete: null } satisfies StravaIntegrationSummary;
   }
-
-  return { type: config.type };
+  return { type: 'github', expiresAtUtc: config.expiresAtUtc } satisfies GithubIntegrationSummary;
 }

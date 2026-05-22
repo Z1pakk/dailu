@@ -35,7 +35,7 @@ public sealed class HabitEntryAggregate : Aggregate
         string? notes,
         HabitEntrySource source,
         string? externalId,
-        DateTime completedAt
+        DateTime completedAtUtc
     )
     {
         if (value < 0)
@@ -50,25 +50,76 @@ public sealed class HabitEntryAggregate : Aggregate
             return Result<HabitEntryAggregate>.BadRequest("HabitId is required.");
         }
 
-        if (completedAt > DateTime.UtcNow)
+        if (completedAtUtc > DateTime.UtcNow)
         {
             return Result<HabitEntryAggregate>.BadRequest("Date cannot be in the future.");
         }
 
-        return Result<HabitEntryAggregate>.Success(
-            new HabitEntryAggregate
-            {
-                Id = id,
-                UserId = userId,
-                HabitId = habitId,
-                Value = value,
-                Notes = notes,
-                Source = source,
-                ExternalId = externalId,
-                CompletedAtUtc = completedAt,
-                IsArchived = false,
-            }
+        var aggregate = new HabitEntryAggregate
+        {
+            Id = id,
+            UserId = userId,
+            HabitId = habitId,
+            Value = value,
+            Notes = notes,
+            Source = source,
+            ExternalId = externalId,
+            CompletedAtUtc = completedAtUtc,
+            IsArchived = false,
+        };
+
+        aggregate.RaiseDomainEvent(
+            new HabitEntryCompletedIntegrationEvent(habitId, completedAtUtc)
         );
+
+        return Result<HabitEntryAggregate>.Success(aggregate);
+    }
+
+    public static HabitEntryAggregate Restore(
+        Id<HabitEntryAggregate> id,
+        Guid userId,
+        Id habitId,
+        int value,
+        string? notes,
+        HabitEntrySource source,
+        string? externalId,
+        bool isArchived,
+        DateTime completedAtUtc,
+        Guid version
+    )
+    {
+        return new HabitEntryAggregate
+        {
+            Id = id,
+            UserId = userId,
+            HabitId = habitId,
+            Value = value,
+            Notes = notes,
+            Source = source,
+            ExternalId = externalId,
+            IsArchived = isArchived,
+            CompletedAtUtc = completedAtUtc,
+            Version = version,
+        };
+    }
+
+    public Result Update(int value, string? notes, DateTime completedAt)
+    {
+        if (value < 0)
+        {
+            return Result.BadRequest("Value must be greater than or equal to zero.");
+        }
+
+        if (completedAt > DateTime.UtcNow)
+        {
+            return Result.BadRequest("Date cannot be in the future.");
+        }
+
+        Value = value;
+        Notes = notes;
+        CompletedAtUtc = completedAt;
+
+        return Result.Success();
     }
 
     public HabitEntryEntity ToEntity()
@@ -84,11 +135,10 @@ public sealed class HabitEntryAggregate : Aggregate
             ExternalId = ExternalId,
             CompletedAtUtc = CompletedAtUtc,
             IsArchived = IsArchived,
+            Version = Version,
         };
 
-        entity.AddDomainEvent(
-            new HabitEntryCompletedIntegrationEvent(HabitId, entity.CompletedAtUtc)
-        );
+        entity.AddDomainEvent(ConsumeDomainEvents());
 
         return entity;
     }

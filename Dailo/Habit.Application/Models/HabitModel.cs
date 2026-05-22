@@ -27,6 +27,8 @@ public class HabitModel
 
     public DateTime CreatedAtUtc { get; set; }
 
+    public AutomationSource? AutomationSource { get; set; }
+
     public DateTime? LastCompletedAtUtc { get; set; }
 
     public IEnumerable<TagModel> Tags { get; set; } = [];

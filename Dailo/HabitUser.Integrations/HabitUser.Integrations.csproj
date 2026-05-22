@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HabitUser.Application\HabitUser.Application.csproj" />
+    <ProjectReference Include="..\HabitUser.Domain\HabitUser.Domain.csproj" />
     <ProjectReference Include="..\Identity.DataTransfer\Identity.DataTransfer.csproj" />
   </ItemGroup>
 </Project>

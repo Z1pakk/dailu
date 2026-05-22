@@ -40,14 +40,15 @@ public sealed class GetIntegrationConfigsQueryHandler(
 
     private static IntegrationSummary ToSummary(IntegrationConfigEntity entity)
     {
-        var savedAt = entity.LastModifiedAtUtc ?? entity.CreatedAtUtc;
-
         return entity.Config switch
         {
-            GithubIntegrationConfig github => new GithubIntegrationSummary(
-                github.ExpiresInDays.HasValue ? savedAt.AddDays(github.ExpiresInDays.Value) : null
+            GithubIntegrationConfig github => new GithubIntegrationSummary(github.ExpiresAtUtc),
+            StravaIntegrationConfig strava => new StravaIntegrationSummary(
+                strava.ExpiresAtUtc,
+                strava.Athlete is { } a
+                    ? new StravaAthleteInfo(a.Id, a.Username, a.FirstName, a.LastName, a.ProfileUrl)
+                    : null
             ),
-            StravaIntegrationConfig => new StravaIntegrationSummary(),
             _ => throw new ArgumentException("Unknown integration config type."),
         };
     }
