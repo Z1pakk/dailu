@@ -1,0 +1,19 @@
+@if ($athlete(); as athlete) {
+  <div
+    class="self-stretch flex items-center gap-4 p-4 mt-4 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60">
+    <img [src]="athlete.profileUrl"
+         [alt]="athlete.firstName + ' ' + athlete.lastName"
+         class="w-14 h-14 rounded-full border-2 border-surface-200 dark:border-surface-600 shrink-0 object-cover" />
+    <div class="flex flex-col gap-1 min-w-0">
+      <span class="font-semibold text-surface-950 dark:text-surface-0 truncate">
+        {{ athlete.firstName }} {{ athlete.lastName }}
+      </span>
+      <a [href]="'https://www.strava.com/athletes/' + athlete.id"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="text-sm text-surface-500 dark:text-surface-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors w-fit">
+        &#64;{{ athlete.username }}
+      </a>
+    </div>
+  </div>
+}
