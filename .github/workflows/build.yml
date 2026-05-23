@@ -15,7 +15,8 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  build:
+  build-backend:
+    name: build-backend
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -55,7 +56,7 @@ jobs:
         run: dotnet publish Dailo.slnx --configuration Release --no-restore --no-build
 
   build-frontend:
-    name: Build frontend
+    name: build-frontend
     runs-on: ubuntu-latest
 
     defaults:
