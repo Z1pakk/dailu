@@ -1,5 +1,5 @@
-using HabitUser.Application.Features.GetUserProfile;
-using HabitUser.Application.Models;
+using HabitUser.Application.Features.Profile;
+using HabitUser.Application.Features.Profile.Models;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

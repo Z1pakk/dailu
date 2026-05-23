@@ -1,4 +1,4 @@
-using HabitUser.Application.Features.PollIntegrationActivity;
+using HabitUser.Application.Features.Integration;
 using HabitUser.Domain.Entities;
 using Mediator;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +14,7 @@ public sealed class StravaActivityPollingWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(30));
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(2));
 
         while (!stoppingToken.IsCancellationRequested)
         {

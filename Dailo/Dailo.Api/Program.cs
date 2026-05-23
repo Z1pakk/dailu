@@ -28,7 +28,7 @@ builder.Services.AddOpenApi();
 
 if (!builder.IsOpenApiExecution())
 {
-    builder.AddDatabaseSeeding();
+    builder.AddDatabaseInitialization();
 }
 
 var app = builder.Build();

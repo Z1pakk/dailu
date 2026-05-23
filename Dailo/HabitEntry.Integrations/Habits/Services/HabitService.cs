@@ -25,7 +25,11 @@ public class HabitService(IHabitDataTransferService habitDataTransferService) : 
 
         return responseHabits.ToDictionary(
             kvp => new Id(kvp.Key.Value),
-            kvp => new HabitInfoModel(new Id(kvp.Key.Value), kvp.Value.Name, (HabitEntryHabitType)kvp.Value.Type)
+            kvp => new HabitInfoModel(
+                new Id(kvp.Key.Value),
+                kvp.Value.Name,
+                (HabitEntryHabitType)kvp.Value.Type
+            )
         );
     }
 
@@ -38,6 +42,7 @@ public class HabitService(IHabitDataTransferService habitDataTransferService) : 
         var automationSource = source switch
         {
             IntegrationActivitySource.Github => AutomationSource.Github,
+            IntegrationActivitySource.Strava => AutomationSource.Strava,
             _ => throw new ArgumentOutOfRangeException(nameof(source)),
         };
 
@@ -48,7 +53,11 @@ public class HabitService(IHabitDataTransferService habitDataTransferService) : 
         );
 
         return habits
-            .Select(h => new HabitInfoModel(new Id(h.Id.Value), h.Name, (HabitEntryHabitType)h.Type))
+            .Select(h => new HabitInfoModel(
+                new Id(h.Id.Value),
+                h.Name,
+                (HabitEntryHabitType)h.Type
+            ))
             .ToList();
     }
 }

@@ -1,4 +1,4 @@
-using HabitUser.Application.Models;
+using HabitUser.Application.Features.Profile.Models;
 using SharedKernel.ResultPattern;
 
 namespace HabitUser.Application.IntegratedServices;

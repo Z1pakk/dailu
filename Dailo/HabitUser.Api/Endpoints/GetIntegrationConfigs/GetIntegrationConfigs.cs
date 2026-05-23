@@ -1,4 +1,5 @@
-using HabitUser.Application.Features.GetIntegrationConfigs;
+using HabitUser.Application.Features.Integration;
+using HabitUser.Application.Features.Integration.Models;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

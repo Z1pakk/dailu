@@ -6,7 +6,7 @@ using Dailo.Infrastructure.DataProtection;
 using Dailo.Infrastructure.ProblemDetails;
 using Dailo.Infrastructure.User;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.Repositories;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -38,12 +38,15 @@ public static class Setup
         >();
 
         var dataEncryptionOptions = services.GetOptions<DataEncryptionOptions>();
-        if (dataEncryptionOptions.Key != null)
-        {
-            services.AddSingleton<IXmlRepository>(_ => new SecretKeyXmlRepository(dataEncryptionOptions.Key!));
-        }
 
         services.AddDataProtection().SetApplicationName("Dailo").DisableAutomaticKeyGeneration();
+
+        if (dataEncryptionOptions.Key != null)
+        {
+            services.Configure<KeyManagementOptions>(options =>
+                options.XmlRepository = new SecretKeyXmlRepository(dataEncryptionOptions.Key!)
+            );
+        }
 
         return services;
     }

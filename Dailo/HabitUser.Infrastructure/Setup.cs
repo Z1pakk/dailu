@@ -1,7 +1,7 @@
 using FluentValidation;
 using HabitUser.Api;
 using HabitUser.Application;
-using HabitUser.Application.Options;
+using HabitUser.Application.Features.Strava.Options;
 using HabitUser.Application.Persistence;
 using HabitUser.Infrastructure.Database;
 using HabitUser.Infrastructure.Pipeline;

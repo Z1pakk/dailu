@@ -1,5 +1,5 @@
-using HabitUser.Application.Features.HandleStravaCallback;
-using HabitUser.Application.Options;
+using HabitUser.Application.Features.Strava;
+using HabitUser.Application.Features.Strava.Options;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;

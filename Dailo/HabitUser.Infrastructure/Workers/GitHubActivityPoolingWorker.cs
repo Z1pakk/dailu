@@ -1,4 +1,4 @@
-using HabitUser.Application.Features.PollIntegrationActivity;
+using HabitUser.Application.Features.Integration;
 using HabitUser.Domain.Entities;
 using Mediator;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,4 +1,4 @@
-using HabitUser.Application.Features.SaveIntegrationConfig;
+using HabitUser.Application.Features.Integration;
 using HabitUser.Domain.Integrations;
 using Mediator;
 using Microsoft.AspNetCore.Builder;

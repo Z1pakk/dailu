@@ -30,6 +30,29 @@ export const userProfileRoutes: Routes = [
           import('./pages/profile-integrations/profile-integrations').then(
             (m) => m.ProfileIntegrations,
           ),
+        children: [
+          {
+            path: '',
+            redirectTo: 'github',
+            pathMatch: 'full',
+          },
+          {
+            path: 'github',
+            title: 'Dailu - GitHub Integration',
+            loadComponent: () =>
+              import('./pages/profile-integrations/github/profile-github-integration').then(
+                (m) => m.ProfileGithubIntegration,
+              ),
+          },
+          {
+            path: 'strava',
+            title: 'Dailu - Strava Integration',
+            loadComponent: () =>
+              import('./pages/profile-integrations/strava/profile-strava-integration').then(
+                (m) => m.ProfileStravaIntegration,
+              ),
+          },
+        ],
       },
     ],
   },

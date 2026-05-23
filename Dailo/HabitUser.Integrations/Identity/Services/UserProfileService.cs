@@ -1,5 +1,5 @@
+using HabitUser.Application.Features.Profile.Models;
 using HabitUser.Application.IntegratedServices;
-using HabitUser.Application.Models;
 using Identity.DataTransfer.Services;
 using SharedKernel.ResultPattern;
 

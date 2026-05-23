@@ -61,7 +61,7 @@ public sealed class IntegrationActivitiesDetectedIntegrationEventHandler(
                     Id<HabitEntryAggregate>.NewId(),
                     notification.UserId,
                     habit.HabitId,
-                    value: 1,
+                    value: activity.Value,
                     notes: activity.Notes,
                     HabitEntrySource.Automation,
                     externalId: activity.ExternalId,

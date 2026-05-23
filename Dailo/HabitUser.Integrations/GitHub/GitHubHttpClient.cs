@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HabitUser.Application.Features.Github.Models;
 using HabitUser.Application.IntegratedServices;
-using HabitUser.Application.Models;
 using HabitUser.Integrations.GitHub.Models;
 using Microsoft.Extensions.Logging;
 using SharedKernel.ResultPattern;
@@ -191,7 +191,12 @@ public sealed class GitHubHttpClient(HttpClient httpclient, ILogger<GitHubHttpCl
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to fetch PR #{PrNumber} for {Repo}", prNumber, repoFullName);
+            logger.LogError(
+                ex,
+                "Failed to fetch PR #{PrNumber} for {Repo}",
+                prNumber,
+                repoFullName
+            );
             return null;
         }
     }

@@ -2,9 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HabitUser.Application.Features.Strava.Models;
+using HabitUser.Application.Features.Strava.Options;
 using HabitUser.Application.IntegratedServices;
-using HabitUser.Application.Models;
-using HabitUser.Application.Options;
 using HabitUser.Domain.Integrations;
 using HabitUser.Integrations.Strava.Models;
 using Microsoft.Extensions.Logging;
@@ -27,8 +27,7 @@ public sealed class StravaHttpClient(
         CancellationToken cancellationToken = default
     )
     {
-        using var content = new FormUrlEncodedContent(
-        [
+        using var content = new FormUrlEncodedContent([
             new KeyValuePair<string, string>("client_id", _options.ClientId),
             new KeyValuePair<string, string>("client_secret", _options.ClientSecret),
             new KeyValuePair<string, string>("code", code),
@@ -40,10 +39,7 @@ public sealed class StravaHttpClient(
             var response = await httpClient.PostAsync("oauth/token", content, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError(
-                    "Strava code exchange failed: {StatusCode}",
-                    response.StatusCode
-                );
+                logger.LogError("Strava code exchange failed: {StatusCode}", response.StatusCode);
                 return null;
             }
 
@@ -227,7 +223,8 @@ public sealed class StravaHttpClient(
                     Type: a.Type,
                     StartDateUtc: a.StartDate,
                     Distance: a.Distance,
-                    MovingTime: a.MovingTime
+                    MovingTime: a.MovingTime,
+                    Description: a.Description
                 ))
                 .ToList();
 

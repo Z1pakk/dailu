@@ -1,4 +1,5 @@
-using HabitUser.Application.Features.PollIntegrationActivity;
+using HabitUser.Application.Features.Github;
+using HabitUser.Application.Features.Strava;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HabitUser.Application;

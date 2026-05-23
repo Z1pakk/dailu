@@ -1,4 +1,4 @@
-using HabitUser.Application.Features.UpdateUserProfile;
+using HabitUser.Application.Features.Profile;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

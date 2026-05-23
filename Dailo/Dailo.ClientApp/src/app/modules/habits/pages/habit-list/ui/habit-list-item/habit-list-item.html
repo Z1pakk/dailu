@@ -24,6 +24,14 @@
             }
           </div>
         }
+
+        @let automationSource = habit().automationSource;
+        @if (automationSource) {
+          <p-tag
+            [value]="automationSourceLabels[automationSource]"
+            severity="info"
+          />
+        }
       </div>
       <span>{{ habit().description }}</span>
     </div>

@@ -103,11 +103,13 @@ export class Login {
       },
       error: (error: HttpErrorResponse) => {
         this._resetCaptcha();
-        this.$loginError.set(
-          error.status === 0
-            ? 'A network error occurred. Please try again later.'
-            : (error.error?.detail ?? 'An error occurred. Please try again later.'),
-        );
+        if (error.status === 401) {
+          this.$loginError.set('Invalid email or password.');
+        } else if (error.status === 0 || error.status >= 500) {
+          this.$loginError.set('An error occurred. Please try again later.');
+        } else {
+          this.$loginError.set(error.error?.detail ?? 'An error occurred. Please try again later.');
+        }
       },
     });
   }

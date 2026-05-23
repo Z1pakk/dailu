@@ -1,4 +1,4 @@
-using HabitUser.Application.Models;
+using HabitUser.Application.Features.Strava.Models;
 using HabitUser.Domain.Integrations;
 using SharedKernel.ResultPattern;
 

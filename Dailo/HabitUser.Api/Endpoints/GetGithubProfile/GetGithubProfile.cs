@@ -1,5 +1,5 @@
-using HabitUser.Application.Features.GetGithubProfile;
-using HabitUser.Application.Models;
+using HabitUser.Application.Features.Github;
+using HabitUser.Application.Features.Github.Models;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

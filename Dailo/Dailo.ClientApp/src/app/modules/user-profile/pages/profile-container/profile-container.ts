@@ -31,7 +31,7 @@ export class ProfileContainer {
     {
       label: 'Integrations',
       icon: 'pi pi-share-alt',
-      routerLink: 'integrations',
+      routerLink: 'integrations/github',
     },
   ];
 }

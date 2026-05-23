@@ -45,20 +45,24 @@ internal sealed class SecretKeyXmlRepository : IXmlRepository
     public void StoreElement(XElement element, string friendlyName) { }
 
     private static XElement BuildKeyElement(Guid keyId, byte[] masterKey) =>
-        new("key",
+        new(
+            "key",
             new XAttribute("id", keyId.ToString()),
             new XAttribute("version", "1"),
             new XElement("creationDate", "2000-01-01T00:00:00Z"),
             new XElement("activationDate", "2000-01-01T00:00:00Z"),
             new XElement("expirationDate", "2099-12-31T23:59:59Z"),
-            new XElement("descriptor",
-                new XAttribute("deserializerType", typeof(AuthenticatedEncryptorDescriptorDeserializer).AssemblyQualifiedName!),
-                new XElement("descriptor",
+            new XElement(
+                "descriptor",
+                new XAttribute(
+                    "deserializerType",
+                    typeof(AuthenticatedEncryptorDescriptorDeserializer).AssemblyQualifiedName!
+                ),
+                new XElement(
+                    "descriptor",
                     new XElement("encryption", new XAttribute("algorithm", "AES_256_CBC")),
                     new XElement("validation", new XAttribute("algorithm", "HMACSHA256")),
-                    new XElement("masterKey",
-                        new XElement("value", Convert.ToBase64String(masterKey))
-                    )
+                    new XElement("masterKey", Convert.ToBase64String(masterKey))
                 )
             )
         );

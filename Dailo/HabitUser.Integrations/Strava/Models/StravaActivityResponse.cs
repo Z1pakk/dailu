@@ -21,4 +21,7 @@ internal sealed record StravaActivityResponse
 
     [JsonPropertyName("moving_time")]
     public int MovingTime { get; init; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; init; }
 }
