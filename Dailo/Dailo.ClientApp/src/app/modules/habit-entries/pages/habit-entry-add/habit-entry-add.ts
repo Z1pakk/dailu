@@ -52,5 +52,9 @@ export class HabitEntryAdd implements OnInit {
 
   ngOnInit() {
     this._store.dispatch(new HabitGetHabits());
+    const { habitId } = this._data;
+    if (habitId) {
+      this.addHabitEntryForm.controls.habitId.setValue(habitId);
+    }
   }
 }

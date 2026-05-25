@@ -1,0 +1,41 @@
+<div class="border border-(--surface-border) rounded-lg p-6 shadow-sm">
+  <div class="flex items-start justify-between gap-6 mb-3">
+    <div>
+      <p class="text-xl font-semibold">Activity</p>
+      <p class="text-surface-500 text-sm mt-0.5">{{ $monthLabel() }}</p>
+    </div>
+    <div class="flex gap-3 text-right">
+      <div>
+        <p class="text-xl font-semibold">{{ $totalThisMonth() }}</p>
+        <p class="text-surface-500 text-sm mt-0.5">entries</p>
+      </div>
+      <div>
+        <p class="text-xl font-semibold text-blue-500">
+          {{ $currentStreak() }}
+        </p>
+        <p class="text-surface-500 text-sm mt-0.5">streak</p>
+      </div>
+    </div>
+  </div>
+  <div
+    [style]="'grid-template-columns: repeat(' + $gridData().cols + ', 1fr); grid-template-rows: repeat(3, 2.5rem); grid-auto-flow: column;'"
+    class="grid w-full gap-1">
+    @for (cell of $gridData().cells; track cell.date) {
+      <div [class.ring-1]="cell.today"
+           [class.ring-blue-500]="cell.today"
+           [ngClass]="getCellClass(cell)"
+           [pTooltip]="cell.tooltipLabel"
+           class="rounded flex items-center justify-center text-sm font-medium cursor-default transition-transform duration-100 hover:scale-110"
+           tooltipPosition="top">
+        {{ cell.day }}
+      </div>
+    }
+  </div>
+  <div class="flex items-center justify-end gap-1.5 mt-3">
+    <span class="text-surface-500 text-sm">Less</span>
+    @for (level of legendLevels; track level) {
+      <div [ngClass]="intensityClasses[level]" class="w-4 h-4 rounded-sm"></div>
+    }
+    <span class="text-surface-500 text-sm">More</span>
+  </div>
+</div>

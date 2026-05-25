@@ -21,6 +21,10 @@
     <File Path="docs/adr/000_template.md" />
     <File Path="docs/adr/001_database.md" />
     <File Path="docs/adr/002_architecture.md" />
+    <File Path="docs/adr/003_authentication.md" />
+    <File Path="docs/adr/004_inter_module_communication.md" />
+    <File Path="docs/adr/005_orm.md" />
+    <File Path="docs/adr/006_cqrs.md" />
   </Folder>
   <Folder Name="/src/modules/" />
   <Folder Name="/src/modules/habit-entry/">

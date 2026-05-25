@@ -1,0 +1,27 @@
+<div class="border border-(--surface-border) rounded-xl p-6 shadow-sm">
+  <h2 class="text-xl font-semibold mb-4">Quick Entries</h2>
+  @if (!$habits().length) {
+    <p class="text-surface-500 text-sm py-4 text-center">No habits found.</p>
+  }
+  @else {
+    <div class="flex flex-col">
+      @for (habit of $habits(); track habit.id) {
+        <div
+          class="flex items-center justify-between gap-3 py-2.5 border-b border-(--surface-border) last:border-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="font-medium truncate">{{ habit.name }}</span>
+            @if (habit.type === habitTypes.measurable) {
+              <p-tag [rounded]="true"
+                     value="{{ habit.target.unit || 'measurable' }}"
+                     severity="info" />
+            }
+          </div>
+          <p-button (click)="addEntry(habit)"
+                    label="Add Entry"
+                    size="small"
+                    severity="secondary" />
+        </div>
+      }
+    </div>
+  }
+</div>
