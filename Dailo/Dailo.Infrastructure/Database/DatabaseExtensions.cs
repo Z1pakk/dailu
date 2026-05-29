@@ -44,20 +44,17 @@ internal sealed class DatabaseInitializationService(
     {
         await using var scope = services.CreateAsyncScope();
 
-        if (environment.IsDevelopment())
+        var registrations = scope.ServiceProvider.GetServices<MigrationContextRegistration>();
+        foreach (var registration in registrations)
         {
-            var registrations = scope.ServiceProvider.GetServices<MigrationContextRegistration>();
-            foreach (var registration in registrations)
+            if (cancellationToken.IsCancellationRequested)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                var dbContext = (DbContext)
-                    scope.ServiceProvider.GetRequiredService(registration.ContextType);
-                await dbContext.Database.MigrateAsync(cancellationToken);
+                return;
             }
+
+            var dbContext = (DbContext)
+                scope.ServiceProvider.GetRequiredService(registration.ContextType);
+            await dbContext.Database.MigrateAsync(cancellationToken);
         }
 
         var seeders = scope.ServiceProvider.GetServices<IDataSeeder>();

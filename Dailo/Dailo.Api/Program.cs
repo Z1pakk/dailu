@@ -34,8 +34,12 @@ if (!builder.IsOpenApiExecution())
 var app = builder.Build();
 
 app.UseExceptionHandler();
-app.UseHsts();
-app.UseHttpsRedirection();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
 
 if (app.Environment.IsDevelopment())
 {

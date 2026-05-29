@@ -1,0 +1,43 @@
+services:
+  dailu-api:
+    image: ${API_IMAGE:?API_IMAGE is required}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__HabitPostgresConnectionString: "Host=${DB_HOST:?DB_HOST is required};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      ConnectionStrings__HabitEntryPostgresConnectionString: "Host=${DB_HOST:?DB_HOST is required};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      ConnectionStrings__TagPostgresConnectionString: "Host=${DB_HOST:?DB_HOST is required};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      ConnectionStrings__IdentityPostgresConnectionString: "Host=${DB_HOST:?DB_HOST is required};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      ConnectionStrings__HabitUserPostgresConnectionString: "Host=${DB_HOST:?DB_HOST is required};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
+      Jwt__Issuer: ${JWT_ISSUER:-dailu.api}
+      Jwt__Audience: ${JWT_AUDIENCE:-dailu.app}
+      Jwt__ExpirationInMinutes: ${JWT_EXPIRATION_IN_MINUTES:-30}
+      Jwt__RefreshTokenExpirationInDays: ${JWT_REFRESH_TOKEN_EXPIRATION_IN_DAYS:-7}
+      DataEncryption__Key: ${DATA_ENCRYPTION_KEY:?DATA_ENCRYPTION_KEY is required}
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN:?CORS_ALLOWED_ORIGIN is required}
+      Altcha__HmacKey: ${ALTCHA_HMAC_KEY:?ALTCHA_HMAC_KEY is required}
+      Altcha__Algorithm: ${ALTCHA_ALGORITHM:-PBKDF2/SHA-256}
+      Altcha__MaxNumber: ${ALTCHA_MAX_NUMBER:-100000}
+      Altcha__Iterations: ${ALTCHA_ITERATIONS:-10000}
+      Strava__ClientId: ${STRAVA_CLIENT_ID:-}
+      Strava__ClientSecret: ${STRAVA_CLIENT_SECRET:-}
+      Strava__RedirectUri: ${STRAVA_REDIRECT_URI:-}
+      Strava__FrontendCallbackUrl: ${STRAVA_FRONTEND_CALLBACK_URL:-}
+    networks:
+      - default
+      - dokploy-network
+
+  dailu-frontend:
+    image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    networks:
+      - default
+      - dokploy-network
+    depends_on:
+      - dailu-api
+
+networks:
+  dokploy-network:
+    external: true
