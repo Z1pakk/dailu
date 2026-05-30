@@ -3,7 +3,7 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
-ROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["DevHabit.Api/DevHabit.Api.csproj", "DevHabit.Api/"]
