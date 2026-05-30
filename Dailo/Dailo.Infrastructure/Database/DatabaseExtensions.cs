@@ -35,10 +35,7 @@ public static class DatabaseExtensions
 
 internal sealed record MigrationContextRegistration(Type ContextType);
 
-internal sealed class DatabaseInitializationService(
-    IServiceProvider services,
-    IHostEnvironment environment
-) : IHostedService
+internal sealed class DatabaseInitializationService(IServiceProvider services) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
