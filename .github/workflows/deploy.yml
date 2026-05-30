@@ -40,8 +40,8 @@ jobs:
       - name: Build and push API image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dailo.Api/Dockerfile
+          context: ./Dailo
+          file: ./Dailo/Dailo.Api/Dockerfile
           push: true
           tags: |
             ${{ env.API_IMAGE }}:latest
@@ -52,8 +52,8 @@ jobs:
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
         with:
-          context: ./Dailo.ClientApp
-          file: ./Dailo.ClientApp/Dockerfile
+          context: ./Dailo/Dailo.ClientApp
+          file: ./Dailo/Dailo.ClientApp/Dockerfile
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
