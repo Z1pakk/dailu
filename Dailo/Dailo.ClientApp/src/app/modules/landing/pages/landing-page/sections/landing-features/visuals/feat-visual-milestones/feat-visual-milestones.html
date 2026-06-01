@@ -1,0 +1,15 @@
+<div class="milestones-list">
+  @for (m of milestones; track m.label) {
+    <div class="milestone-item">
+      <div class="milestone-header">
+        <span class="milestone-label">{{ m.label }}</span>
+        <span [class]="'milestone-value value-' + m.color">
+          {{ m.current }}/{{ m.target }}{{ m.emoji ? ' ' + m.emoji : '' }}
+        </span>
+      </div>
+      <div [class]="'milestone-track track-' + m.color">
+        <div [class]="'milestone-bar bar-' + m.color" [style.width.%]="m.pct"></div>
+      </div>
+    </div>
+  }
+</div>

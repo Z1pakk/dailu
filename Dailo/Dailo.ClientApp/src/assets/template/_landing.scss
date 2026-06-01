@@ -1,3 +1,199 @@
 .landing-container {
-  max-width: calc(var(--spacing) * 340);
+  max-width: 1100px;
+}
+
+.section-label {
+  display: inline-block;
+  margin-bottom: 16px;
+
+  border: 1px solid var(--color-green-200);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+
+  .p-tag-label {
+    text-transform: uppercase !important;
+  }
+}
+
+.section-title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--p-surface-900);
+}
+
+// Transparent wrapper kept for template compatibility
+.btn-glow { display: inline-flex; }
+
+// Hero "live" status tag — class on host element, target inner .p-tag
+.hero-live-tag {
+  display: inline-block;
+  padding: 6px 10px;
+
+  .p-tag {
+    border: 1px solid var(--color-green-200);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .p-tag-icon {
+    font-size: 7px;
+    animation: livePing 2s ease-out infinite;
+  }
+}
+
+@keyframes livePing {
+  0%   { opacity: 1;   text-shadow: 0 0 0 rgba(34, 197, 94, 0.6); }
+  70%  { opacity: 0.8; text-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
+  100% { opacity: 1;   text-shadow: none; }
+}
+
+// p-tag borders for hero widget quick habits
+app-landing-page .p-tag {
+  border: 1px solid;
+
+  &:not(.p-tag-info):not(.p-tag-success):not(.p-tag-secondary):not(.p-tag-warn):not(.p-tag-danger) {
+    border-color: var(--color-blue-200);
+    background: var(--color-blue-50);
+  }
+  &.p-tag-info      { border-color: var(--color-blue-200); }
+  &.p-tag-success   { border-color: var(--color-green-200); }
+  &.p-tag-secondary {
+    border-color: var(--color-gray-200);
+    background: var(--color-gray-50);
+  }
+  &.p-tag-warn      { border-color: var(--color-amber-200); }
+  &.p-tag-danger    { border-color: var(--color-red-200); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+
+  &.in-view {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// ── How It Works — Stepper overrides ──
+.hiw-stepper {
+  .p-steplist {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 24px;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 48px;
+      left: calc(100% / 6 - 8px);
+      right: calc(100% / 6 - 8px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--p-surface-200), var(--p-primary-500), var(--p-surface-200));
+      z-index: 0;
+    }
+  }
+
+  .p-step {
+    justify-content: center !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    cursor: pointer;
+    background: transparent !important;
+    outline: none;
+  }
+
+  .p-stepper-separator {
+    display: none !important;
+  }
+
+  .p-steppanels {
+    margin-top: 32px;
+  }
+}
+
+// Step cards
+.p-step {
+  .hiw-step-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    padding: 24px 16px;
+    border-radius: 12px;
+    transition: background 0.25s, box-shadow 0.25s;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      background: var(--p-primary-50);
+
+      .hiw-step-num {
+        background: var(--p-primary-500) !important;
+        border-color: var(--p-primary-500) !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+      }
+    }
+  }
+
+  &.p-step-active .hiw-step-card {
+    background: var(--p-primary-50);
+    box-shadow: 0 0 0 2px var(--p-primary-200);
+
+    .hiw-step-num {
+      background: var(--p-primary-500) !important;
+      border-color: var(--p-primary-500) !important;
+      color: #fff !important;
+      box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+    }
+
+    .hiw-step-title {
+      color: var(--p-surface-900);
+    }
+  }
+
+  &:not(.p-step-disabled):hover .hiw-step-num {
+    background: var(--p-primary-500) !important;
+    border-color: var(--p-primary-500) !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.hiw-step-num {
+  width: 48px;
+  height: 48px;
+  border-radius: 50% !important;
+  background: #fff !important;
+  border: 2px solid var(--p-surface-200) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: var(--p-surface-400) !important;
+  margin-bottom: 16px;
+  transition: all 0.25s;
+  min-width: 48px;
+}
+
+.hiw-step-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--p-surface-700);
+  margin-bottom: 8px;
+}
+
+.hiw-step-desc {
+  font-size: 13px;
+  color: var(--p-surface-500);
+  line-height: 1.6;
 }

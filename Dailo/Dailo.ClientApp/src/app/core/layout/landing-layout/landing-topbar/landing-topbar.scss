@@ -1,0 +1,15 @@
+.landing-container {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid color-mix(in srgb, var(--p-surface-200) 80%, transparent);
+  transition: box-shadow 0.3s;
+
+  &:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  }
+
+  & > div {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: color-mix(in srgb, var(--p-surface-50) 72%, transparent);
+  }
+}

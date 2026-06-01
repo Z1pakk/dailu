@@ -1,0 +1,28 @@
+.hiw-section {
+  background: var(--p-surface-50);
+  padding: 80px 0;
+}
+
+.hiw-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.hiw-stepper {
+  margin-top: 48px;
+}
+
+.hiw-demo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--p-surface-200);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.hiw-demo-icon  { font-size: 36px; flex-shrink: 0; }
+.hiw-demo-title { font-size: 15px; font-weight: 700; color: var(--p-surface-900); margin-bottom: 4px; }
+.hiw-demo-text  { font-size: 13px; color: var(--p-surface-500); line-height: 1.65; }

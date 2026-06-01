@@ -1,0 +1,18 @@
+<div class="heatmap-wrap">
+  <div class="heatmap-month">June 2026</div>
+  <div class="heatmap-grid">
+    @for (lvl of cells; track $index) {
+      <div [class]="'heat-cell heat-' + lvl"></div>
+    }
+  </div>
+  <div class="heatmap-stats">
+    <div class="heatmap-stat">
+      <span class="heatmap-stat-val">24</span>
+      <span class="heatmap-stat-lbl">entries this month</span>
+    </div>
+    <div class="heatmap-stat">
+      <span class="heatmap-stat-val primary">12</span>
+      <span class="heatmap-stat-lbl">day streak</span>
+    </div>
+  </div>
+</div>

@@ -19,8 +19,8 @@
   --focus-ring-shadow: var(--p-focus-ring-shadow);
   --border-radius: var(--p-content-border-radius);
 
-  --surface-ground: #fdfdff;
-  --popover-background: #fdfdff;
+  --surface-ground: var(--p-surface-50);
+  --popover-background: var(--p-surface-50);
   --popover-border-color: var(--surface-border);
   --popover-item-active-background-color: var(--p-surface-100);
   --popover-item-hover-background-color: var(--p-content-hover-background);

@@ -1,0 +1,36 @@
+.reminder-card {
+  background: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 12px;
+  padding: 16px;
+  width: 240px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.reminder-time {
+  font-size: 10px;
+  color: var(--p-surface-400);
+  margin-bottom: 8px;
+}
+
+.reminder-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--p-surface-900);
+  margin-bottom: 6px;
+}
+
+.reminder-body {
+  font-size: 12px;
+  color: var(--p-surface-500);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 8px;
+
+  ::ng-deep p-button { flex: 1; }
+  ::ng-deep .p-button { width: 100%; }
+}

@@ -1,0 +1,55 @@
+.sync-feed {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 280px;
+}
+
+.sync-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sync-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: var(--p-surface-0);
+
+  &.github { background: var(--color-gray-900); }
+  &.strava { background: var(--color-orange-500); }
+}
+
+.sync-info { flex: 1; }
+
+.sync-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--p-surface-900);
+}
+
+.sync-sub {
+  font-size: 11px;
+  color: var(--p-surface-400);
+  margin-top: 1px;
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-green-500);
+  flex-shrink: 0;
+}
+
+.sync-connector {
+  height: 24px;
+  margin-left: 17px;
+  border-left: 2px dashed var(--p-surface-200);
+}

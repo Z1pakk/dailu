@@ -1,0 +1,171 @@
+<section class="hero-section">
+<!-- Ambient background floating cards -->
+  <div class="hero-bg-cards" aria-hidden="true">
+    <div class="hero-float-card hero-float-left hero-float-top">
+      <p class="hero-float-label">Weekly activity</p>
+      <div class="hero-bar-chart">
+        <div class="hero-bar hero-bar-h1"></div>
+        <div class="hero-bar hero-bar-h3"></div>
+        <div class="hero-bar hero-bar-h0"></div>
+        <div class="hero-bar hero-bar-h4"></div>
+        <div class="hero-bar hero-bar-h2"></div>
+        <div class="hero-bar hero-bar-h5 hero-bar-accent"></div>
+        <div class="hero-bar hero-bar-h3"></div>
+      </div>
+    </div>
+    <div
+      class="hero-float-card hero-float-left hero-float-bottom hero-float-delay1">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🔥</span>
+        <div>
+          <div class="hero-float-stat">{{ $streak() }}</div>
+          <div class="hero-float-label">day streak</div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="hero-float-card hero-float-right hero-float-top hero-float-delay2">
+      <p class="hero-float-label">🏆 Milestone progress</p>
+      <div class="hero-milestone">
+        <div class="hero-milestone-row">
+          <span>Open source</span>
+          <span class="text-blue-500 font-bold">67/100</span>
+        </div>
+        <div class="hero-milestone-bar">
+          <div class="hero-milestone-fill hero-milestone-fill-67"></div>
+        </div>
+        <div class="hero-milestone-row mt-2">
+          <span>Morning runs</span>
+          <span class="text-green-600 font-bold">50/50 🎉</span>
+        </div>
+        <div class="hero-milestone-bar">
+          <div
+            class="hero-milestone-fill hero-milestone-fill-100 hero-milestone-fill-green"></div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="hero-float-card hero-float-right hero-float-bottom hero-float-delay3">
+      <div class="flex items-center gap-1.5 mb-1.5">
+        <span class="hero-ai-icon">✦</span>
+        <span class="hero-float-ai-label">AI insight</span>
+      </div>
+      <p class="hero-float-text">Most consistent on weekday mornings 💪</p>
+    </div>
+  </div>
+<!-- Hero content -->
+  <div class="hero-inner reveal">
+    <div class="hero-text">
+      <p-tag [rounded]="true"
+             class="hero-live-tag mb-5"
+             value="Automatic tracking is live"
+             icon="pi pi-circle-fill" />
+      <h1 class="hero-title">
+        Build habits.
+        <br />
+        Track
+        <span class="text-primary-500">automatically.</span>
+      </h1>
+      <p class="hero-desc">
+        Connect the tools you already use. Dailu syncs your activity, tracks your streaks,
+        and keeps you accountable — without lifting a finger.
+      </p>
+      <div class="hero-actions">
+        <span class="btn-glow">
+          <a routerLink="/register" class="hero-btn-primary" pButton>
+            Start tracking free →
+          </a>
+        </span>
+        <a routerLink="/login"
+           severity="secondary"
+           class="hero-btn-secondary"
+           pButton>
+          Sign in
+        </a>
+      </div>
+      <div class="hero-trust">
+        <div class="hero-avatars">
+          <span class="hero-av hero-av-blue">V</span>
+          <span class="hero-av hero-av-green">M</span>
+          <span class="hero-av hero-av-yellow">A</span>
+          <span class="hero-av hero-av-pink">K</span>
+        </div>
+        Joined by developers &amp; athletes building better habits
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div #widget class="hero-widget">
+        <div class="hero-widget-header">
+          <div>
+            <p class="hero-widget-title">Activity</p>
+            <p class="hero-widget-sub">{{ $monthLabel() }}</p>
+          </div>
+          <div class="hero-widget-stats">
+            <div>
+              <p class="hero-widget-stat-val">{{ $totalThisMonth() }}</p>
+              <p class="hero-widget-stat-lbl">entries</p>
+            </div>
+            <div>
+              <p class="hero-widget-stat-val text-primary-500">
+                {{ $streak() }}
+              </p>
+              <p class="hero-widget-stat-lbl">streak</p>
+            </div>
+          </div>
+        </div>
+        <div [style.grid-template-columns]="'repeat(' + $cols() + ', 1fr)'"
+             [style.grid-template-rows]="'repeat(3, 2rem)'"
+             class="hero-heatmap">
+          @for (cell of $heatCells(); track cell.date) {
+            <div [ngClass]="intensityClasses[cell.intensity]"
+                 [class.ring-1]="cell.today"
+                 [class.ring-primary-500]="cell.today"
+                 [pTooltip]="cell.tooltip"
+                 tooltipPosition="top"
+                 class="hero-heatmap-cell">
+              {{ cell.day }}
+            </div>
+          }
+        </div>
+        <div class="hero-heatmap-legend">
+          <span>Less</span>
+          @for (lvl of [0,1,2,3,4]; track lvl) {
+            <div [ngClass]="intensityClass(lvl)"
+                 class="hero-heatmap-legend-cell"></div>
+          }
+          <span>More</span>
+        </div>
+        <div class="hero-quick-habits">
+          @for (h of quickHabits; track h.name) {
+            <div class="hero-quick-row">
+              <div class="flex gap-2">
+                <span class="hero-quick-name">{{ h.name }}</span>
+                <p-tag [value]="h.tag"
+                       [severity]="h.severity"
+                       [rounded]="true" />
+              </div>
+              @if ($doneMap()[h.name]) {
+                <p-button class="hero-quick-btn done"
+                          variant="outlined"
+                          severity="success"
+                          size="small"
+                          disabled>
+                  ✓ Done
+                </p-button>
+              }
+              @else {
+                <p-button (click)="toggleDone(h.name)"
+                          variant="outlined"
+                          severity="secondary"
+                          class="hero-quick-btn"
+                          size="small">
+                  Add entry
+                </p-button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

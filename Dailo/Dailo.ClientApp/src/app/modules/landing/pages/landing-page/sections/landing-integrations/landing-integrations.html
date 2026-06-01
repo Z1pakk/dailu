@@ -1,0 +1,30 @@
+<section class="int-section">
+  <div class="int-inner">
+    <div class="reveal text-center">
+      <p-tag class="section-label" [rounded]="true" value="🔌 Integrations" />
+      <h2 class="section-title text-center">Your tools, connected</h2>
+      <p class="int-sub">
+        Dailu connects to the apps you already use. Live integrations sync automatically — more categories coming soon.
+      </p>
+    </div>
+    <div class="int-grid reveal">
+      @for (group of groups; track group.label) {
+        <div class="int-card">
+          <div class="int-card-header">
+            <div class="int-card-icon">{{ group.icon }}</div>
+            <span class="int-card-name">{{ group.label }}</span>
+            <span class="int-badge" [class.live]="group.status === 'live'">
+              {{ group.status === 'live' ? 'Live' : 'Coming soon' }}
+            </span>
+          </div>
+          <p class="int-card-desc">{{ group.desc }}</p>
+          <div class="int-card-services">
+            @for (s of group.services; track s) {
+              <p-tag [value]="s" [rounded]="true" />
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

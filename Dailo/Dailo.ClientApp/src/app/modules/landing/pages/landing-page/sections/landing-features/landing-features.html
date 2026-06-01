@@ -1,0 +1,47 @@
+<section class="feat-section">
+  <div class="feat-inner">
+    <div class="reveal">
+      <p-tag class="section-label" [rounded]="true" value="✨ Features" />
+      <h2 class="section-title">Everything you need<br>to stay consistent</h2>
+    </div>
+
+    <div class="feat-tabs reveal">
+      @for (tab of tabs; track tab.key) {
+        <p-button
+          [label]="tab.soon ? tab.label + ' ✦' : tab.label"
+          [severity]="$activeTab() === tab.key ? null : 'secondary'"
+          [outlined]="$activeTab() !== tab.key"
+          (onClick)="selectTab(tab.key)"
+        />
+      }
+    </div>
+
+    <div class="feat-pane reveal">
+      <div class="feat-pane-text">
+        <p class="feat-pane-tag">
+          {{ activeTab().tag }}
+          @if (activeTab().soon) {
+            <span class="feat-soon-badge">Coming soon</span>
+          }
+        </p>
+        <h3 class="feat-pane-title">{{ activeTab().title }}</h3>
+        <p class="feat-pane-desc">{{ activeTab().desc }}</p>
+        <ul class="feat-bullets">
+          @for (b of activeTab().bullets; track b) {
+            <li>{{ b }}</li>
+          }
+        </ul>
+      </div>
+      <div class="feat-pane-visual">
+        @switch (activeTab().key) {
+          @case ('heatmap')    { <app-feat-visual-heatmap /> }
+          @case ('habits')     { <app-feat-visual-habits /> }
+          @case ('sync')       { <app-feat-visual-sync /> }
+          @case ('milestones') { <app-feat-visual-milestones /> }
+          @case ('reminders')  { <app-feat-visual-reminders /> }
+          @case ('ai')         { <app-feat-visual-ai /> }
+        }
+      </div>
+    </div>
+  </div>
+</section>
