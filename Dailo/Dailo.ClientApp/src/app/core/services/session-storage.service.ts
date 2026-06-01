@@ -11,11 +11,6 @@ export class SessionStorageService {
   }
 
   public get(key: string): string | null {
-    console.log(
-      'Getting session storage item:',
-      sessionStorage.getItem(this.prefix + key),
-    );
-
     return sessionStorage.getItem(this.prefix + key);
   }
 

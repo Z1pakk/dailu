@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   input,
+  numberAttribute,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 
@@ -14,8 +15,14 @@ import { NgOptimizedImage } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LogoWidget {
-  public readonly $widthPx = input(120, { alias: 'widthPx' });
-  public readonly $heightPx = input(35, { alias: 'heightPx' });
+  public readonly $widthPx = input(120, {
+    alias: 'widthPx',
+    transform: numberAttribute,
+  });
+  public readonly $heightPx = input(35, {
+    alias: 'heightPx',
+    transform: numberAttribute,
+  });
 
   public readonly $isWhite = input(false, {
     transform: booleanAttribute,

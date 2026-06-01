@@ -1,0 +1,50 @@
+.habits-card {
+  background: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 10px;
+  padding: 16px;
+  width: 100%;
+  max-width: 280px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.habits-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--p-surface-900);
+  margin-bottom: 8px;
+}
+
+.habits-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.habits-meta {
+  font-size: 11px;
+  color: var(--p-surface-500);
+  margin-bottom: 10px;
+}
+
+.habits-progress {
+  height: 6px;
+  background: var(--p-surface-100);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.habits-bar {
+  height: 100%;
+  width: 50%;
+  background: var(--p-primary-400);
+  border-radius: 99px;
+}
+
+.habits-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--p-surface-400);
+}

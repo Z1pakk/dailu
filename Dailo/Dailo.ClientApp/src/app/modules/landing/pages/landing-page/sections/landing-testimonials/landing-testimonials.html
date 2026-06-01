@@ -1,0 +1,31 @@
+<section class="tst-section">
+  <div class="tst-inner">
+    <div class="reveal">
+      <p-tag class="section-label" [rounded]="true" value="💬 What people say" />
+      <h2 class="section-title">Built for people<br>who show up</h2>
+    </div>
+    <div class="tst-grid reveal">
+      @for (t of testimonials; track t.name) {
+        <div
+          class="tst-card"
+          [class.featured]="t.featured"
+          [style.background]="t.cardBg"
+        >
+          <span class="tst-quote" aria-hidden="true">"</span>
+          <p class="tst-text" [class.dark]="t.featured">{{ t.text }}</p>
+          <div class="tst-author">
+            <span
+              class="tst-av"
+              [style.background]="t.avatarBg"
+              [style.color]="t.avatarFg"
+            >{{ t.avatar }}</span>
+            <div>
+              <p class="tst-name" [class.dark]="t.featured">{{ t.name }}</p>
+              <p class="tst-role" [class.dark]="t.featured">{{ t.role }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

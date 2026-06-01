@@ -1,0 +1,106 @@
+<section class="hiw-section">
+  <div class="hiw-inner">
+    <div class="reveal">
+      <p-tag [rounded]="true" class="section-label" value="⚡ How it works" />
+      <h2 class="section-title">
+        From zero to tracking
+        <br />
+        in three steps
+      </h2>
+    </div>
+    <p-stepper [value]="$activeStep()"
+               (valueChange)="$activeStep.set($event ?? 0)"
+               class="hiw-stepper reveal">
+      <p-step-list class="p-1">
+        <p-step [value]="0">
+          <ng-template #content
+                       let-activateCallback="activateCallback"
+                       let-active="active">
+            <div [class.active]="active"
+                 (click)="activateCallback()"
+                 class="hiw-step-card">
+              <div class="hiw-step-num">1</div>
+              <h3 class="hiw-step-title">Connect</h3>
+              <p class="hiw-step-desc">
+                Link your apps and services in seconds. No API keys, no config.
+              </p>
+            </div>
+          </ng-template>
+        </p-step>
+        <p-step [value]="1">
+          <ng-template #content
+                       let-activateCallback="activateCallback"
+                       let-active="active">
+            <div [class.active]="active"
+                 (click)="activateCallback()"
+                 class="hiw-step-card">
+              <div class="hiw-step-num">2</div>
+              <h3 class="hiw-step-title">Track</h3>
+              <p class="hiw-step-desc">
+                Dailo polls your connected apps on a schedule and logs new activity automatically.
+              </p>
+            </div>
+          </ng-template>
+        </p-step>
+        <p-step [value]="2">
+          <ng-template #content
+                       let-activateCallback="activateCallback"
+                       let-active="active">
+            <div [class.active]="active"
+                 (click)="activateCallback()"
+                 class="hiw-step-card">
+              <div class="hiw-step-num">3</div>
+              <h3 class="hiw-step-title">Grow</h3>
+              <p class="hiw-step-desc">
+                Watch your heatmap fill, streaks climb, and milestones unlock as you stay consistent.
+              </p>
+            </div>
+          </ng-template>
+        </p-step>
+      </p-step-list>
+      <p-step-panels>
+        <p-step-panel [value]="0">
+          <ng-template #content>
+            <div class="hiw-demo">
+              <span class="hiw-demo-icon">🔗</span>
+              <div>
+                <p class="hiw-demo-title">Connect the apps you already use</p>
+                <p class="hiw-demo-text">
+                  Pick from a growing list of integrations. We request read-only access — your data stays yours. Disconnect anytime.
+                </p>
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+        <p-step-panel [value]="1">
+          <ng-template #content>
+            <div class="hiw-demo">
+              <span class="hiw-demo-icon">🔄</span>
+              <div>
+                <p class="hiw-demo-title">
+                  Your activity, logged automatically
+                </p>
+                <p class="hiw-demo-text">
+                  Dailo polls your connected apps on a regular schedule. New activities are turned into habit entries automatically — no manual input needed.
+                </p>
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+        <p-step-panel [value]="2">
+          <ng-template #content>
+            <div class="hiw-demo">
+              <span class="hiw-demo-icon">📈</span>
+              <div>
+                <p class="hiw-demo-title">Streaks, milestones, momentum</p>
+                <p class="hiw-demo-text">
+                  Your activity heatmap fills up, streaks build day by day, and milestone badges unlock as you hit targets. Progress is visible at a glance.
+                </p>
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+  </div>
+</section>
