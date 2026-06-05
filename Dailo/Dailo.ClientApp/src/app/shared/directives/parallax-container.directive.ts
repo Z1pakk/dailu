@@ -2,7 +2,6 @@ import {
   DestroyRef,
   Directive,
   ElementRef,
-  HostListener,
   inject,
   NgZone,
 } from '@angular/core';
@@ -12,6 +11,10 @@ type ParallaxEffect = (curX: number, curY: number) => void;
 @Directive({
   selector: '[parallaxContainer]',
   standalone: true,
+  host: {
+    '(mousemove)': 'onMouseMove($event)',
+    '(mouseleave)': 'onMouseLeave()',
+  },
 })
 export class ParallaxContainerDirective {
   private readonly _el = inject(ElementRef<HTMLElement>);
@@ -37,7 +40,6 @@ export class ParallaxContainerDirective {
     return () => this._effects.delete(fn);
   }
 
-  @HostListener('mousemove', ['$event'])
   onMouseMove(e: MouseEvent): void {
     const r = this._el.nativeElement.getBoundingClientRect();
     this._targetX = (e.clientX - r.left - r.width / 2) / (r.width / 2);
@@ -45,7 +47,6 @@ export class ParallaxContainerDirective {
     this._scheduleFrame();
   }
 
-  @HostListener('mouseleave')
   onMouseLeave(): void {
     this._targetX = 0;
     this._targetY = 0;
@@ -71,9 +72,7 @@ export class ParallaxContainerDirective {
       Math.abs(this._targetY - this._curY) < 0.001;
 
     if (!atRest) {
-      this._zone.runOutsideAngular(() => {
-        this._rafId = requestAnimationFrame(() => this._tick());
-      });
+      this._rafId = requestAnimationFrame(() => this._tick());
     }
   }
 }
