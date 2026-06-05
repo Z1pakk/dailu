@@ -18,7 +18,7 @@
       <div class="flex items-center gap-2">
         <span class="text-xl">🔥</span>
         <div>
-          <div class="hero-float-stat">{{ $streak() }}</div>
+          <div class="hero-float-stat">{{ 12 }}</div>
           <div class="hero-float-label">day streak</div>
         </div>
       </div>
@@ -54,7 +54,7 @@
     </div>
   </div>
 <!-- Hero content -->
-  <div class="hero-inner reveal">
+  <div class="hero-inner section-inner reveal">
     <div class="hero-text">
       <p-tag [rounded]="true"
              class="hero-live-tag mb-5"
@@ -71,17 +71,26 @@
         and keeps you accountable — without lifting a finger.
       </p>
       <div class="hero-actions">
-        <span class="btn-glow">
-          <a routerLink="/register" class="hero-btn-primary" pButton>
-            Start tracking free →
+        @if ($isAuthenticated()) {
+          <span class="btn-glow">
+            <a routerLink="/app" class="hero-btn-primary" pButton>
+              Go to App →
+            </a>
+          </span>
+        }
+        @else {
+          <span class="btn-glow">
+            <a routerLink="/register" class="hero-btn-primary" pButton>
+              Start tracking free →
+            </a>
+          </span>
+          <a routerLink="/login"
+             severity="secondary"
+             class="hero-btn-secondary"
+             pButton>
+            Sign in
           </a>
-        </span>
-        <a routerLink="/login"
-           severity="secondary"
-           class="hero-btn-secondary"
-           pButton>
-          Sign in
-        </a>
+        }
       </div>
       <div class="hero-trust">
         <div class="hero-avatars">
@@ -93,79 +102,6 @@
         Joined by developers &amp; athletes building better habits
       </div>
     </div>
-    <div class="hero-visual">
-      <div #widget class="hero-widget">
-        <div class="hero-widget-header">
-          <div>
-            <p class="hero-widget-title">Activity</p>
-            <p class="hero-widget-sub">{{ $monthLabel() }}</p>
-          </div>
-          <div class="hero-widget-stats">
-            <div>
-              <p class="hero-widget-stat-val">{{ $totalThisMonth() }}</p>
-              <p class="hero-widget-stat-lbl">entries</p>
-            </div>
-            <div>
-              <p class="hero-widget-stat-val text-primary-500">
-                {{ $streak() }}
-              </p>
-              <p class="hero-widget-stat-lbl">streak</p>
-            </div>
-          </div>
-        </div>
-        <div [style.grid-template-columns]="'repeat(' + $cols() + ', 1fr)'"
-             [style.grid-template-rows]="'repeat(3, 2rem)'"
-             class="hero-heatmap">
-          @for (cell of $heatCells(); track cell.date) {
-            <div [ngClass]="intensityClasses[cell.intensity]"
-                 [class.ring-1]="cell.today"
-                 [class.ring-primary-500]="cell.today"
-                 [pTooltip]="cell.tooltip"
-                 tooltipPosition="top"
-                 class="hero-heatmap-cell">
-              {{ cell.day }}
-            </div>
-          }
-        </div>
-        <div class="hero-heatmap-legend">
-          <span>Less</span>
-          @for (lvl of [0,1,2,3,4]; track lvl) {
-            <div [ngClass]="intensityClass(lvl)"
-                 class="hero-heatmap-legend-cell"></div>
-          }
-          <span>More</span>
-        </div>
-        <div class="hero-quick-habits">
-          @for (h of quickHabits; track h.name) {
-            <div class="hero-quick-row">
-              <div class="flex gap-2">
-                <span class="hero-quick-name">{{ h.name }}</span>
-                <p-tag [value]="h.tag"
-                       [severity]="h.severity"
-                       [rounded]="true" />
-              </div>
-              @if ($doneMap()[h.name]) {
-                <p-button class="hero-quick-btn done"
-                          variant="outlined"
-                          severity="success"
-                          size="small"
-                          disabled>
-                  ✓ Done
-                </p-button>
-              }
-              @else {
-                <p-button (click)="toggleDone(h.name)"
-                          variant="outlined"
-                          severity="secondary"
-                          class="hero-quick-btn"
-                          size="small">
-                  Add entry
-                </p-button>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </div>
+    <app-landing-hero-visual-card />
   </div>
 </section>

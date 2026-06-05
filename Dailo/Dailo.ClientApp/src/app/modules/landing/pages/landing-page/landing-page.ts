@@ -1,9 +1,10 @@
 import {
-  AfterViewInit,
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
-  NgZone,
+  inject,
 } from '@angular/core';
 import { LandingHero } from './sections/landing-hero/landing-hero';
 import { LandingStats } from './sections/landing-stats/landing-stats';
@@ -13,6 +14,7 @@ import { LandingFeatures } from './sections/landing-features/landing-features';
 import { LandingTestimonials } from './sections/landing-testimonials/landing-testimonials';
 import { LandingFaq } from './sections/landing-faq/landing-faq';
 import { LandingCta } from './sections/landing-cta/landing-cta';
+import { IntersectionService } from '@shared/lib/intersection/intersection.service';
 
 @Component({
   selector: 'app-landing-page',
@@ -24,32 +26,26 @@ import { LandingCta } from './sections/landing-cta/landing-cta';
   styleUrl: './landing-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LandingPage implements AfterViewInit {
-  constructor(
-    private readonly _el: ElementRef<HTMLElement>,
-    private readonly _zone: NgZone,
-  ) {}
+export class LandingPage {
+  private readonly _el: ElementRef<HTMLElement> = inject(ElementRef);
+  private readonly _intersection = inject(IntersectionService);
+  private readonly _destroyRef = inject(DestroyRef);
 
-  ngAfterViewInit(): void {
-    this._zone.runOutsideAngular(() => {
+  constructor() {
+    afterNextRender(() => {
       const vh = window.innerHeight;
-      const observer = new IntersectionObserver(
-        entries => entries.forEach(e => {
-          if (e.isIntersecting) {
-            e.target.classList.add('in-view');
-            observer.unobserve(e.target);
-          }
-        }),
-        { threshold: 0.1 },
-      );
-
-      this._el.nativeElement.querySelectorAll<Element>('.reveal').forEach(el => {
+      this._el.nativeElement.querySelectorAll<HTMLElement>('.reveal').forEach((el) => {
         const rect = el.getBoundingClientRect();
         if (rect.top < vh && rect.bottom > 0) {
-          el.classList.add('in-view'); // already visible — no flash
-        } else {
-          observer.observe(el); // below fold — reveal on scroll
+          el.classList.add('in-view');
+          return;
         }
+        const cleanup = this._intersection.whenVisible(
+          el,
+          () => el.classList.add('in-view'),
+          { threshold: 0.1 },
+        );
+        this._destroyRef.onDestroy(cleanup);
       });
     });
   }

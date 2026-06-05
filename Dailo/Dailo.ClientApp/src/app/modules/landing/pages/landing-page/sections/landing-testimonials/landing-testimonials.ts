@@ -16,7 +16,7 @@ interface Testimonial {
   selector: 'app-landing-testimonials',
   imports: [Tag],
   templateUrl: './landing-testimonials.html',
-  styleUrl: './landing-testimonials.scss',
+  styleUrls: ['../../_layout.scss', './landing-testimonials.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingTestimonials {

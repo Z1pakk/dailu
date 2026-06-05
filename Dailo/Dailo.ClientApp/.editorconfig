@@ -4,7 +4,11 @@ insert_final_newline = true
 [*.ts]
 # noinspection EditorConfigKeyCorrectness
 quote_type = single
+indent_size = 2
 ij_typescript_use_double_quotes = false
+
+[*.html]
+indent_size = 2
 
 [*.md]
 max_line_length = off

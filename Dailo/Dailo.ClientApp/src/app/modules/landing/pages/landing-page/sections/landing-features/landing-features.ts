@@ -22,7 +22,7 @@ interface FeatureTab {
   selector: 'app-landing-features',
   imports: [Button, Tag, FeatVisualHeatmap, FeatVisualHabits, FeatVisualSync, FeatVisualMilestones, FeatVisualReminders, FeatVisualAi],
   templateUrl: './landing-features.html',
-  styleUrl: './landing-features.scss',
+  styleUrls: ['../../_layout.scss', './landing-features.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingFeatures {

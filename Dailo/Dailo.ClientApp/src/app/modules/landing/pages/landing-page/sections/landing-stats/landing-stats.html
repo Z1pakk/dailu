@@ -1,14 +1,14 @@
 <div class="stats-bar bg-slate-900">
-  <div class="stats-bar-inner">
+  <div class="stats-bar-inner section-inner">
     @for (stat of stats; track stat.label; let last = $last) {
       <div class="stats-item">
-        <span
-          #counter
-          class="stats-number"
-          [class.stats-number-blue]="stat.blue"
-          [attr.data-target]="stat.target"
-          [attr.data-suffix]="stat.suffix"
-        >0</span>
+        <span #counter
+              [class.stats-number-blue]="stat.blue"
+              [attr.data-target]="stat.target"
+              [attr.data-suffix]="stat.suffix"
+              class="stats-number">
+          0
+        </span>
         <span class="stats-label">{{ stat.label }}</span>
       </div>
       @if (!last) {
@@ -16,7 +16,12 @@
       }
     }
     <span class="btn-glow">
-      <a routerLink="/register" pButton class="stats-cta">Start for free →</a>
+      @if ($isAuthenticated()) {
+        <a routerLink="/app" class="stats-cta" pButton>Go to App →</a>
+      }
+      @else {
+        <a routerLink="/register" class="stats-cta" pButton>Start for free →</a>
+      }
     </span>
   </div>
 </div>
