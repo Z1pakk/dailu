@@ -10,7 +10,7 @@ interface FaqItem {
   selector: 'app-landing-faq',
   imports: [Tag],
   templateUrl: './landing-faq.html',
-  styleUrl: './landing-faq.scss',
+  styleUrls: ['../../_layout.scss', './landing-faq.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingFaq {

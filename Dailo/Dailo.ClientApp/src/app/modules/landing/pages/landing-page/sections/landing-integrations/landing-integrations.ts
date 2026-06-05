@@ -13,7 +13,7 @@ interface IntegrationGroup {
   selector: 'app-landing-integrations',
   imports: [Tag],
   templateUrl: './landing-integrations.html',
-  styleUrl: './landing-integrations.scss',
+  styleUrls: ['../../_layout.scss', './landing-integrations.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingIntegrations {

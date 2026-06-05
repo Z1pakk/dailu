@@ -12,7 +12,7 @@ import { Tag } from 'primeng/tag';
   selector: 'app-landing-how-it-works',
   imports: [Stepper, StepList, Step, StepPanels, StepPanel, Tag],
   templateUrl: './landing-how-it-works.html',
-  styleUrl: './landing-how-it-works.scss',
+  styleUrls: ['../../_layout.scss', './landing-how-it-works.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingHowItWorks {

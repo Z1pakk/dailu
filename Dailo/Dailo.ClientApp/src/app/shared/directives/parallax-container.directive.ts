@@ -35,6 +35,10 @@ export class ParallaxContainerDirective {
     });
   }
 
+  /**
+   * Add effect which should be handled by handlers
+   * @param fn
+   */
   addEffect(fn: ParallaxEffect): () => void {
     this._effects.add(fn);
     return () => this._effects.delete(fn);
@@ -65,7 +69,7 @@ export class ParallaxContainerDirective {
     this._curX += (this._targetX - this._curX) * 0.08;
     this._curY += (this._targetY - this._curY) * 0.08;
 
-    this._effects.forEach(fn => fn(this._curX, this._curY));
+    this._effects.forEach((fn) => fn(this._curX, this._curY));
 
     const atRest =
       Math.abs(this._targetX - this._curX) < 0.001 &&
