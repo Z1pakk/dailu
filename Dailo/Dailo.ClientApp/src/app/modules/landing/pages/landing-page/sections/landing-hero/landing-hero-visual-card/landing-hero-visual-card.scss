@@ -1,0 +1,115 @@
+// ── Widget ─────────────────────────────────────────────────────────────────
+
+:host {
+  flex: 0 0 420px;
+  max-width: 420px;
+}
+
+.hero-widget {
+  background: #fff;
+  border: 1px solid var(--p-surface-200);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  transition: transform 0.05s linear;
+}
+
+.hero-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.hero-widget-title { font-size: 14px; font-weight: 700; color: var(--p-surface-900); }
+.hero-widget-sub   { font-size: 11px; color: var(--p-surface-400); margin-top: 2px; }
+.hero-widget-stats { display: flex; gap: 16px; text-align: right; }
+
+.hero-widget-stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--p-surface-900);
+  line-height: 1;
+}
+
+.hero-widget-stat-lbl { font-size: 10px; color: var(--p-surface-400); margin-top: 2px; }
+
+// ── Heatmap ────────────────────────────────────────────────────────────────
+
+.hero-heatmap {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 3px;
+  width: 100%;
+}
+
+.hero-heatmap-cell {
+  border-radius: 3px;
+  transition: transform 0.1s;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.35);
+
+  &:hover { transform: scale(1.15); }
+}
+
+.bg-blue-400 .hero-heatmap-cell,
+.bg-blue-500 .hero-heatmap-cell,
+.hero-heatmap-cell.bg-blue-400,
+.hero-heatmap-cell.bg-blue-500 {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hero-heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  justify-content: flex-end;
+  font-size: 10px;
+  color: var(--p-surface-400);
+}
+
+.hero-heatmap-legend-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+// ── Quick habits ───────────────────────────────────────────────────────────
+
+.hero-quick-habits {
+  margin-top: 14px;
+  border-top: 1px solid var(--p-surface-50);
+  padding-top: 14px;
+}
+
+.hero-quick-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--p-surface-50);
+
+  &:last-child { border-bottom: none; }
+}
+
+.hero-quick-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p-surface-700);
+  flex: 1;
+  line-height: 2;
+}
+
+.hero-quick-btn {
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
