@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   inject,
-  output,
   signal,
 } from '@angular/core';
 import { differenceInDays, format, startOfDay } from 'date-fns';
@@ -14,7 +13,6 @@ import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
 import { UserProfileRevokeIntegrationConfig } from '@user-profile/state/user-profile.action';
-import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
 import { GithubIntegrationSummary } from '@user-profile/models/integration-summary.model';
 import { UserProfileStateModel } from '@user-profile/state/user-profile.state';
 
@@ -29,13 +27,7 @@ export class GithubConnectedCard {
   private readonly _messageService = inject(MessageService);
   private readonly _confirmationService = inject(ConfirmationService);
 
-  readonly updateClicked = output<void>();
-
   protected readonly $isRevoking = signal(false);
-
-  protected readonly $isSaving = this._store.selectSignal(
-    UserProfileStateSelectors.getSlices.isSavingIntegration,
-  );
 
   protected readonly $githubSummary = this._store.selectSignal(
     (state: { userProfile: UserProfileStateModel }) =>

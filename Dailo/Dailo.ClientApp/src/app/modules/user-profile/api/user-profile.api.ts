@@ -46,6 +46,12 @@ export class UserProfileApi {
     );
   }
 
+  public getGithubConnectUrl(): Observable<{ authUrl: string }> {
+    return this._http.get<{ authUrl: string }>(
+      `${this.baseUrl}/habit-user/integrations/github/connect`,
+    );
+  }
+
   public getGithubProfile(): Observable<{ profile: GitHubUserProfileModel }> {
     return this._http.get<{ profile: GitHubUserProfileModel }>(
       `${this.baseUrl}/habit-user/integrations/github/profile`,

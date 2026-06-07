@@ -1,9 +1,7 @@
 using HabitUser.Api.Endpoints.DeleteIntegrationConfig;
-using HabitUser.Api.Endpoints.GetGithubProfile;
 using HabitUser.Api.Endpoints.GetIntegrationConfigs;
 using HabitUser.Api.Endpoints.GetUserProfile;
 using HabitUser.Api.Endpoints.SaveIntegrationConfig;
-using HabitUser.Api.Endpoints.StravaOAuth;
 using HabitUser.Api.Endpoints.UpdateUserProfile;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -21,10 +19,7 @@ public sealed class HabitUserGroup : IEndpointGroup
         group.MapGetUserProfileEndpoint();
         group.MapUpdateUserProfileEndpoint();
         group.MapGetIntegrationConfigsEndpoint();
-        group.MapGetGithubProfileEndpoint();
         group.MapSaveIntegrationConfigEndpoint();
         group.MapDeleteIntegrationConfigEndpoint();
-        group.MapStravaConnectEndpoint();
-        group.MapStravaCallbackEndpoint();
     }
 }
