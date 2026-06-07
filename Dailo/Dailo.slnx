@@ -41,6 +41,8 @@
     <Project Path="HabitUser.Domain/HabitUser.Domain.csproj" />
     <Project Path="HabitUser.Infrastructure/HabitUser.Infrastructure.csproj" />
     <Project Path="HabitUser.Integrations/HabitUser.Integrations.csproj" />
+    <Project Path="HabitUser.Strava/HabitUser.Strava.csproj" />
+    <Project Path="HabitUser.Github/HabitUser.Github.csproj" />
   </Folder>
   <Folder Name="/src/modules/habit/">
     <Project Path="Habit.Api/Habit.Api.csproj" />

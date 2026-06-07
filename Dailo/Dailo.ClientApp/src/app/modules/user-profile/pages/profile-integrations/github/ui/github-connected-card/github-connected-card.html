@@ -21,15 +21,7 @@
     </div>
   </div>
   <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-    <p-button [disabled]="$isRevoking()"
-              (click)="updateClicked.emit()"
-              label="Update"
-              type="button"
-              variant="outlined"
-              severity="secondary"
-              class="w-full sm:w-auto" />
     <p-button [loading]="$isRevoking()"
-              [disabled]="$isSaving()"
               (click)="revoke($event)"
               label="Revoke"
               type="button"

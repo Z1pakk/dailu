@@ -259,27 +259,6 @@
         }
       }
     },
-    "/api/habit-user/integrations/github/profile": {
-      "get": {
-        "tags": [
-          "HabitUser"
-        ],
-        "description": "Get the GitHub profile for the current authenticated user.",
-        "operationId": "GetGithubProfile",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetGithubProfileResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/habit-user/integrations/{provider}": {
       "delete": {
         "tags": [
@@ -303,6 +282,76 @@
           },
           "400": {
             "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/github/connect": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "operationId": "GithubConnect",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymousTypeOfstring"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/github/callback": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "operationId": "GithubCallback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/github/profile": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get the GitHub profile for the current authenticated user.",
+        "operationId": "GetGithubProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGithubProfileResponse"
+                }
+              }
+            }
           }
         }
       }

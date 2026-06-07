@@ -3,7 +3,4 @@
     <ProjectReference Include="..\HabitUser.Application\HabitUser.Application.csproj" />
     <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Endpoints\" />
-  </ItemGroup>
 </Project>
