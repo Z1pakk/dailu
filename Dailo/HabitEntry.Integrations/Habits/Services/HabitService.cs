@@ -1,7 +1,7 @@
 using Dailo.Events;
+using Habit.DataTransfer.Enums;
 using Habit.DataTransfer.Models;
 using Habit.DataTransfer.Services;
-using Habit.Domain.Enums;
 using HabitEntry.Application.IntegratedServices;
 using HabitEntry.Application.Models;
 using StrictId;

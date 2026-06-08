@@ -88,6 +88,24 @@ Run `dotnet ef migrations add <Name>` from within the specific `*.Infrastructure
 
 ## Code Style
 
+### Test method naming
+
+Use `MethodName_Should_Expectation` or `MethodName_When_Expectation_Should_Behavior`. Each segment is PascalCase.
+
+**Good:**
+```csharp
+public void DomainLayer_Should_NotDependOnHigherLayers() { ... }
+public void CreateHabit_When_NameIsEmpty_Should_ReturnValidationError() { ... }
+public void GetHabits_Should_ReturnOnlyCurrentUsersHabits() { ... }
+```
+
+**Bad:**
+```csharp
+public void Domain_should_not_depend_on_higher_layers() { ... }
+public void ShouldReturnError() { ... }
+public void Test1() { ... }
+```
+
 ### File naming
 Never suffix files with `.utils`, `.helpers`, `.util`, or `.helper`. Name files by what they contain.
 

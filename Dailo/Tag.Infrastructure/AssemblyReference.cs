@@ -3,7 +3,7 @@ using Tag.Infrastructure.Database;
 
 namespace Tag.Infrastructure;
 
-internal static class AssemblyReference
+public static class AssemblyReference
 {
-    internal static Assembly Assembly => typeof(TagDbContext).Assembly;
+    public static Assembly Assembly => typeof(TagDbContext).Assembly;
 }

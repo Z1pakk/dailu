@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Habit.Infrastructure\Habit.Infrastructure.csproj" />
+    <ProjectReference Include="..\HabitEntry.Infrastructure\HabitEntry.Infrastructure.csproj" />
+    <ProjectReference Include="..\HabitUser.Infrastructure\HabitUser.Infrastructure.csproj" />
+    <ProjectReference Include="..\Tag.Infrastructure\Tag.Infrastructure.csproj" />
+    <ProjectReference Include="..\Tag.Integrations\Tag.Integrations.csproj" />
+    <ProjectReference Include="..\Identity.Infrastructure\Identity.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

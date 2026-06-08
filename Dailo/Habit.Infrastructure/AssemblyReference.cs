@@ -3,7 +3,7 @@ using Habit.Infrastructure.Database;
 
 namespace Habit.Infrastructure;
 
-internal static class AssemblyReference
+public static class AssemblyReference
 {
-    internal static Assembly Assembly => typeof(HabitDbContext).Assembly;
+    public static Assembly Assembly => typeof(HabitDbContext).Assembly;
 }

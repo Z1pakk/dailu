@@ -1,10 +1,11 @@
 using Habit.Application.Persistence;
+using Habit.DataTransfer.Enums;
 using Habit.DataTransfer.Models;
 using Habit.Domain.Entities;
-using Habit.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.User;
 using StrictId;
+using DomainAutomationSource = Habit.Domain.Enums.AutomationSource;
 
 namespace Habit.DataTransfer.Services;
 
@@ -52,9 +53,11 @@ public class HabitDataTransferService(IHabitDbContext dbContext, ICurrentUserSer
         CancellationToken cancellationToken = default
     )
     {
+        var domainSource = (DomainAutomationSource)source;
+
         return await dbContext
             .Habits.AsNoTracking()
-            .Where(h => h.UserId == userId && h.AutomationSource == source && !h.IsArchived)
+            .Where(h => h.UserId == userId && h.AutomationSource == domainSource && !h.IsArchived)
             .Select(h => new HabitModel
             {
                 Id = new Id<HabitModel>(h.Id.Value),
