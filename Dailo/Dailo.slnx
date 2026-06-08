@@ -31,6 +31,7 @@
   <Folder Name="/src/modules/habit-entry/">
     <Project Path="HabitEntry.Api/HabitEntry.Api.csproj" />
     <Project Path="HabitEntry.Application/HabitEntry.Application.csproj" />
+    <Project Path="HabitEntry.ArchitectureTests/HabitEntry.ArchitectureTests.csproj" />
     <Project Path="HabitEntry.Domain/HabitEntry.Domain.csproj" />
     <Project Path="HabitEntry.Infrastructure/HabitEntry.Infrastructure.csproj" />
     <Project Path="HabitEntry.Integrations/HabitEntry.Integrations.csproj" />
@@ -38,6 +39,7 @@
   <Folder Name="/src/modules/habit-user/">
     <Project Path="HabitUser.Api/HabitUser.Api.csproj" />
     <Project Path="HabitUser.Application/HabitUser.Application.csproj" />
+    <Project Path="HabitUser.ArchitectureTests/HabitUser.ArchitectureTests.csproj" />
     <Project Path="HabitUser.Domain/HabitUser.Domain.csproj" />
     <Project Path="HabitUser.Infrastructure/HabitUser.Infrastructure.csproj" />
     <Project Path="HabitUser.Integrations/HabitUser.Integrations.csproj" />
@@ -47,6 +49,7 @@
   <Folder Name="/src/modules/habit/">
     <Project Path="Habit.Api/Habit.Api.csproj" />
     <Project Path="Habit.Application/Habit.Application.csproj" />
+    <Project Path="Habit.ArchitectureTests/Habit.ArchitectureTests.csproj" />
     <Project Path="Habit.DataTransfer/Habit.DataTransfer.csproj" />
     <Project Path="Habit.Domain/Habit.Domain.csproj" />
     <Project Path="Habit.Infrastructure/Habit.Infrastructure.csproj" />
@@ -56,6 +59,7 @@
   <Folder Name="/src/modules/identity/">
     <Project Path="Identity.Api/Identity.Api.csproj" />
     <Project Path="Identity.Application/Identity.Application.csproj" />
+    <Project Path="Identity.ArchitectureTests/Identity.ArchitectureTests.csproj" />
     <Project Path="Identity.DataTransfer/Identity.DataTransfer.csproj" />
     <Project Path="Identity.Domain/Identity.Domain.csproj" />
     <Project Path="Identity.Infrastructure/Identity.Infrastructure.csproj" />
@@ -63,6 +67,7 @@
   <Folder Name="/src/modules/tag/">
     <Project Path="Tag.Api/Tag.Api.csproj" />
     <Project Path="Tag.Application/Tag.Application.csproj" />
+    <Project Path="Tag.ArchitectureTests/Tag.ArchitectureTests.csproj" />
     <Project Path="Tag.DataTransfer/Tag.DataTransfer.csproj" />
     <Project Path="Tag.Domain/Tag.Domain.csproj" />
     <Project Path="Tag.Infrastructure/Tag.Infrastructure.csproj" />
@@ -74,6 +79,9 @@
     <Project Path="SharedInfrastructure/SharedInfrastructure.csproj" />
     <Project Path="SharedKernel/SharedKernel.csproj" />
   </Folder>
-  <Folder Name="/src/tests/" />
+  <Folder Name="/src/tests/">
+    <Project Path="Dailu.ArchitectureTests/Dailu.ArchitectureTests.csproj" />
+    <Project Path="Test.SharedKernel/Test.SharedKernel.csproj" />
+  </Folder>
   <Project Path="docker-compose.dcproj" />
 </Solution>

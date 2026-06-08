@@ -3,7 +3,7 @@ using Identity.Infrastructure.Database;
 
 namespace Identity.Infrastructure;
 
-internal static class AssemblyReference
+public static class AssemblyReference
 {
-    internal static Assembly Assembly => typeof(IdentityDbContext).Assembly;
+    public static Assembly Assembly => typeof(IdentityDbContext).Assembly;
 }

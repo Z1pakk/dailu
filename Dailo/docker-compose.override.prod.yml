@@ -25,6 +25,10 @@ services:
       Strava__ClientSecret: ${STRAVA_CLIENT_SECRET:-}
       Strava__RedirectUri: ${STRAVA_REDIRECT_URI:-}
       Strava__FrontendCallbackUrl: ${STRAVA_FRONTEND_CALLBACK_URL:-}
+      Github__ClientId: ${GITHUB_CLIENT_ID:-}
+      Github__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
+      Github__RedirectUri: ${GITHUB_REDIRECT_URI:-}
+      Github__FrontendCallbackUrl: ${GITHUB_FRONTEND_CALLBACK_URL:-}
     networks:
       - default
       - dokploy-network
