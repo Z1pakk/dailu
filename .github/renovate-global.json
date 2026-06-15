@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
+  "repositories": ["Z1pakk/dailu"],
   "enabledManagers": ["nuget"],
   "labels": ["dependencies"],
   "baseBranches": ["develop"],
