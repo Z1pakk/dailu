@@ -1,0 +1,63 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "enabledManagers": ["nuget"],
+  "labels": ["dependencies"],
+  "baseBranches": ["develop"],
+  "branchPrefix": "renovate/",
+  "separateMultipleMajor": true,
+  "osvVulnerabilityAlerts": true,
+  "minimumReleaseAge": "3 days",
+  "rebaseWhen": "behind-base-branch",
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "matchManagers": ["nuget"],
+      "matchPackagePrefixes": [
+        "Microsoft.AspNetCore.",
+        "Microsoft.EntityFrameworkCore.",
+        "Microsoft.Extensions.",
+        "Microsoft.NET."
+      ],
+      "groupName": "Microsoft .NET packages",
+      "groupSlug": "microsoft-dotnet"
+    },
+    {
+      "matchManagers": ["nuget"],
+      "matchPackagePrefixes": ["Aspire."],
+      "groupName": "Aspire packages",
+      "groupSlug": "aspire"
+    },
+    {
+      "matchManagers": ["nuget"],
+      "matchPackagePrefixes": ["OpenTelemetry."],
+      "groupName": "OpenTelemetry packages",
+      "groupSlug": "opentelemetry"
+    },
+    {
+      "matchManagers": ["nuget"],
+      "excludePackagePrefixes": [
+        "Microsoft.AspNetCore.",
+        "Microsoft.EntityFrameworkCore.",
+        "Microsoft.Extensions.",
+        "Microsoft.NET.",
+        "Aspire.",
+        "OpenTelemetry."
+      ],
+      "groupName": "NuGet packages",
+      "groupSlug": "nuget-packages"
+    },
+    {
+      "matchManagers": ["nuget"],
+      "matchPackageNames": [
+        "coverlet.collector",
+        "Microsoft.NET.Test.Sdk",
+        "TngTech.ArchUnitNET.xUnit",
+        "xunit",
+        "xunit.runner.visualstudio"
+      ],
+      "groupName": "Test packages",
+      "groupSlug": "test-packages"
+    }
+  ]
+}
