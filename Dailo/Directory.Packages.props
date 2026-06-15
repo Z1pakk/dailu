@@ -10,39 +10,39 @@
     <PackageVersion Include="Humanizer.Core" Version="3.0.10" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Routing" Version="10.0.5" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.9" />
     <PackageVersion
       Include="Microsoft.Extensions.Configuration.EnvironmentVariables"
-      Version="10.0.8"
+      Version="10.0.9"
     />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
     <PackageVersion
       Include="Microsoft.Extensions.DependencyInjection.Abstractions"
-      Version="10.0.8"
+      Version="10.0.9"
     />
-    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.9" />
     <PackageVersion
       Include="Microsoft.Extensions.Options.ConfigurationExtensions"
-      Version="10.0.8"
+      Version="10.0.9"
     />
-    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.9" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="Npgsql.OpenTelemetry" Version="10.0.2" />
     <!-- The following packages are used for OpenTelemetry -->
