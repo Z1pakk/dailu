@@ -1,7 +1,9 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path="../.github/renovate-global.json" />
     <File Path="../.github/workflows/build.yml" />
     <File Path="../.github/workflows/deploy.yml" />
+    <File Path="../.github/workflows/renovate.yml" />
     <File Path=".editorconfig" />
     <File Path="AGENTS.md" />
     <File Path="Directory.Build.props" />
