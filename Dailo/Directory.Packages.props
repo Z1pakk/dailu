@@ -43,8 +43,8 @@
       Version="10.0.8"
     />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.8" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
-    <PackageVersion Include="Npgsql.OpenTelemetry" Version="10.0.2" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+    <PackageVersion Include="Npgsql.OpenTelemetry" Version="10.0.3" />
     <!-- The following packages are used for OpenTelemetry -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
@@ -54,7 +54,7 @@
     <PackageVersion Include="Scalar.AspNetCore" Version="2.14.14" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <!-- The following package is used for SonarAnalyzer -->
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.26.0.140279" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913" />
     <PackageVersion Include="StrictId" Version="2.0.2" />
     <PackageVersion Include="StrictId.EFCore" Version="2.0.2" />
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.2" />
