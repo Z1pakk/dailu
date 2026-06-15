@@ -4,7 +4,7 @@
   "repositories": ["Z1pakk/dailu"],
   "enabledManagers": ["nuget"],
   "labels": ["dependencies"],
-  "baseBranches": ["develop"],
+  "baseBranches": ["main"],
   "branchPrefix": "renovate/",
   "separateMultipleMajor": true,
   "osvVulnerabilityAlerts": true,
