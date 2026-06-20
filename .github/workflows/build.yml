@@ -75,22 +75,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('Dailo/Dailo.ClientApp/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Cache Angular build cache
-        uses: actions/cache@v5
-        with:
-          path: Dailo/Dailo.ClientApp/.angular/cache
-          key: ${{ runner.os }}-angular-${{ hashFiles('Dailo/Dailo.ClientApp/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-angular-
+          cache: 'npm'
+          cache-dependency-path: Dailo/Dailo.ClientApp/package-lock.json
 
       - name: Install dependencies
         run: npm install
@@ -104,7 +90,7 @@ jobs:
           eslint_flags: src
           filter_mode: added
           level: error
-          fail_on_error: true
+          fail_level: error
 
       - name: Build
         run: npm run build -- --configuration production
