@@ -15,9 +15,7 @@
         </div>
       </div>
     </div>
-    <div [style.grid-template-columns]="'repeat(' + $cols() + ', 1fr)'"
-         [style.grid-template-rows]="'repeat(3, 2rem)'"
-         class="hero-heatmap">
+    <div class="hero-heatmap">
       @for (cell of $heatCells(); track cell.date) {
         <div [ngClass]="intensityClasses[cell.intensity]"
              [class.ring-1]="cell.today"

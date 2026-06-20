@@ -10,7 +10,7 @@
     </div>
     <p-stepper [value]="$activeStep()"
                (valueChange)="$activeStep.set($event ?? 0)"
-               class="hiw-stepper reveal">
+               class="hiw-stepper reveal block">
       <p-step-list class="p-1">
         <p-step [value]="0">
           <ng-template #content

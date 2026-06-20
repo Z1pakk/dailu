@@ -9,7 +9,7 @@ import {
 type ParallaxEffect = (curX: number, curY: number) => void;
 
 @Directive({
-  selector: '[parallaxContainer]',
+  selector: '[appParallaxContainer]',
   standalone: true,
   host: {
     '(mousemove)': 'onMouseMove($event)',

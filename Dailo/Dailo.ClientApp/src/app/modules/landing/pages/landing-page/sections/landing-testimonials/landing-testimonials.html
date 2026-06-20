@@ -9,15 +9,14 @@
         <div
           class="tst-card"
           [class.featured]="t.featured"
-          [style.background]="t.cardBg"
+          [ngClass]="t.cardClass"
         >
           <span class="tst-quote" aria-hidden="true">"</span>
           <p class="tst-text" [class.dark]="t.featured">{{ t.text }}</p>
           <div class="tst-author">
             <span
               class="tst-av"
-              [style.background]="t.avatarBg"
-              [style.color]="t.avatarFg"
+              [ngClass]="t.avatarClass"
             >{{ t.avatar }}</span>
             <div>
               <p class="tst-name" [class.dark]="t.featured">{{ t.name }}</p>

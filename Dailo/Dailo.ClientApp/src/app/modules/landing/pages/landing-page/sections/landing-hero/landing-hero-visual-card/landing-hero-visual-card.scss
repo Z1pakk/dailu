@@ -39,6 +39,8 @@
 
 .hero-heatmap {
   display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(3, 2rem);
   grid-auto-flow: column;
   gap: 3px;
   width: 100%;

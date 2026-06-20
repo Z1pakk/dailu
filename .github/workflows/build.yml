@@ -59,6 +59,10 @@ jobs:
   build-frontend:
     name: build-frontend
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
 
     defaults:
       run:
@@ -90,6 +94,17 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
+          workdir: Dailo/Dailo.ClientApp
+          eslint_flags: src
+          filter_mode: added
+          level: error
+          fail_on_error: true
 
       - name: Build
         run: npm run build
