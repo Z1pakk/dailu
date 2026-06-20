@@ -106,6 +106,12 @@ public void ShouldReturnError() { ... }
 public void Test1() { ... }
 ```
 
+### Adding npm packages
+
+Never use `npm install <package>` to add a dependency. Instead:
+1. Manually add the package and version to `package.json` under `dependencies` or `devDependencies`
+2. Run `npm install` with no arguments
+
 ### File naming
 Never suffix files with `.utils`, `.helpers`, `.util`, or `.helper`. Name files by what they contain.
 

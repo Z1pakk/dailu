@@ -21,6 +21,10 @@
   padding: 24px;
   position: relative;
   overflow: hidden;
+
+  &.card-dark { background: #0f172a; }
+  &.card-blue { background: #eff6ff; }
+  &.card-gray { background: #f9fafb; }
 }
 
 .tst-quote {
@@ -63,6 +67,10 @@
   font-weight: 800;
   font-size: 13px;
   flex-shrink: 0;
+
+  &.av-white-on-dark { background: #fff; color: #0f172a; }
+  &.av-white-on-blue { background: #1d4ed8; color: #fff; }
+  &.av-white-on-slate { background: #374151; color: #fff; }
 }
 
 .tst-name {

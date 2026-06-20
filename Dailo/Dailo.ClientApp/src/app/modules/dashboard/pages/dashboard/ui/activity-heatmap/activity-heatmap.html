@@ -18,8 +18,9 @@
     </div>
   </div>
   <div
-    [style]="'grid-template-columns: repeat(' + $gridData().cols + ', 1fr); grid-template-rows: repeat(3, 2.5rem); grid-auto-flow: column;'"
-    class="grid w-full gap-1">
+    [class.grid-cols-10]="$gridData().cols === 10"
+    [class.grid-cols-11]="$gridData().cols === 11"
+    class="grid w-full gap-1 grid-rows-[repeat(3,2.5rem)] grid-flow-col">
     @for (cell of $gridData().cells; track cell.date) {
       <div [class.ring-1]="cell.today"
            [class.ring-blue-500]="cell.today"

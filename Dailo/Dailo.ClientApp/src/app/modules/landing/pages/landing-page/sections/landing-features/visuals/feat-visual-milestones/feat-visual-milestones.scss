@@ -48,4 +48,8 @@
   &.bar-primary { background: var(--p-primary-500); }
   &.bar-green   { background: var(--color-green-500); }
   &.bar-gray    { background: var(--p-surface-300); }
+
+  &.pct-40  { width: 40%; }
+  &.pct-67  { width: 67%; }
+  &.pct-100 { width: 100%; }
 }

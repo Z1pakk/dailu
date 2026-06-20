@@ -19,7 +19,7 @@ import { HabitListItem } from '@habits/pages/habit-list/ui/habit-list-item/habit
 import { HabitModel } from '@habits/models/habit.model';
 
 @Component({
-  selector: 'dailo',
+  selector: 'app-habit-list',
   imports: [DataView, Button, HabitListItem],
   templateUrl: './habit-list.html',
   styleUrl: './habit-list.scss',

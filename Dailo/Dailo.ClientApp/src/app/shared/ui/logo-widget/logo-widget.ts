@@ -2,6 +2,9 @@ import {
   booleanAttribute,
   ChangeDetectionStrategy,
   Component,
+  effect,
+  ElementRef,
+  inject,
   input,
   numberAttribute,
 } from '@angular/core';
@@ -15,6 +18,8 @@ import { NgOptimizedImage } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LogoWidget {
+  private readonly _el = inject(ElementRef<HTMLElement>);
+
   public readonly $widthPx = input(120, {
     alias: 'widthPx',
     transform: numberAttribute,
@@ -28,4 +33,12 @@ export class LogoWidget {
     transform: booleanAttribute,
     alias: 'isWhite',
   });
+
+  constructor() {
+    effect(() => {
+      const el = this._el.nativeElement;
+      el.style.setProperty('--logo-w', `${this.$widthPx()}px`);
+      el.style.setProperty('--logo-mh', `${this.$heightPx()}px`);
+    });
+  }
 }
