@@ -60,9 +60,9 @@
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.2" />
     <PackageVersion Include="SystemTextJsonPatch" Version="5.0.0" />
     <!-- Aspire -->
-    <PackageVersion Include="Aspire.Hosting" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.4" />
+    <PackageVersion Include="Aspire.Hosting" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
     <PackageVersion Include="MessagePack" Version="2.5.302" />
     <!-- Test packages -->
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
