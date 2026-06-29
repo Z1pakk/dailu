@@ -17,4 +17,9 @@ export interface StravaIntegrationSummary {
   athlete: StravaAthleteInfo | null;
 }
 
-export type IntegrationSummary = GithubIntegrationSummary | StravaIntegrationSummary;
+export interface GoogleHealthIntegrationSummary {
+  type: 'google-health';
+  expiresAtUtc: string;
+}
+
+export type IntegrationSummary = GithubIntegrationSummary | StravaIntegrationSummary | GoogleHealthIntegrationSummary;

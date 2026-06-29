@@ -7,6 +7,7 @@ import { GetIntegrationConfigsResponseModel } from '@user-profile/models/respons
 import { UpdateUserProfileRequestModel } from '@user-profile/models/requests/update-user-profile.request';
 import { IntegrationConfig } from '@user-profile/models/integration-config.model';
 import { GitHubUserProfileModel } from '@user-profile/models/github-user-profile.model';
+import { GoogleHealthUserProfileModel } from '@user-profile/models/google-health-user-profile.model';
 
 @Injectable({
   providedIn: 'root',
@@ -55,6 +56,18 @@ export class UserProfileApi {
   public getGithubProfile(): Observable<{ profile: GitHubUserProfileModel }> {
     return this._http.get<{ profile: GitHubUserProfileModel }>(
       `${this.baseUrl}/habit-user/integrations/github/profile`,
+    );
+  }
+
+  public getGoogleHealthConnectUrl(): Observable<{ authUrl: string }> {
+    return this._http.get<{ authUrl: string }>(
+      `${this.baseUrl}/habit-user/integrations/google-health/connect`,
+    );
+  }
+
+  public getGoogleHealthProfile(): Observable<{ profile: GoogleHealthUserProfileModel }> {
+    return this._http.get<{ profile: GoogleHealthUserProfileModel }>(
+      `${this.baseUrl}/habit-user/integrations/google-health/profile`,
     );
   }
 

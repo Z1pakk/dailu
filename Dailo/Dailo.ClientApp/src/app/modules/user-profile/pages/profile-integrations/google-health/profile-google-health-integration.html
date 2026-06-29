@@ -1,0 +1,19 @@
+@if ($isLoading()) {
+  <div class="self-stretch flex items-center justify-center py-12">
+    <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+  </div>
+} @else if ($showConnected()) {
+  <app-google-health-connected-card />
+  <app-google-health-profile-card />
+} @else {
+  <div class="self-stretch flex flex-col items-start gap-4">
+    <p class="text-sm text-surface-500 dark:text-surface-400">
+      Connect your Google Health account to automatically track your activities.
+    </p>
+    <p-button [loading]="$isConnecting()"
+              (click)="connect()"
+              label="Connect Google Health"
+              type="button"
+              class="w-full sm:w-auto" />
+  </div>
+}

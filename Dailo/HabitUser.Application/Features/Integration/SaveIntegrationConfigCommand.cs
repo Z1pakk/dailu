@@ -65,6 +65,7 @@ public sealed class SaveIntegrationConfigCommandHandler(
         {
             GithubIntegrationConfig => IntegrationProvider.Github,
             StravaIntegrationConfig => IntegrationProvider.Strava,
+            GoogleHealthIntegrationConfig => IntegrationProvider.GoogleHealth,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(config),
                 "Unknown integration provider."

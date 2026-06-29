@@ -405,6 +405,76 @@
         }
       }
     },
+    "/api/habit-user/integrations/google-health/connect": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "operationId": "GoogleHealthConnect",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymousTypeOfstring"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/google-health/callback": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "operationId": "GoogleHealthCallback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/google-health/profile": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get the Google Health profile for the current authenticated user.",
+        "operationId": "GetGoogleHealthProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGoogleHealthProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tags": {
       "post": {
         "tags": [
@@ -887,6 +957,17 @@
           }
         }
       },
+      "GetGoogleHealthProfileResponse": {
+        "required": [
+          "profile"
+        ],
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/GoogleHealthUserProfileModel"
+          }
+        }
+      },
       "GetHabitEntriesQueryResponse": {
         "required": [
           "habitEntries"
@@ -1012,6 +1093,52 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "GoogleHealthUserProfileModel": {
+        "required": [
+          "id",
+          "name",
+          "givenName",
+          "familyName",
+          "email",
+          "pictureUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "givenName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "familyName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1190,13 +1317,17 @@
           },
           {
             "$ref": "#/components/schemas/IntegrationConfigStravaIntegrationConfig"
+          },
+          {
+            "$ref": "#/components/schemas/IntegrationConfigGoogleHealthIntegrationConfig"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
             "github": "#/components/schemas/IntegrationConfigGithubIntegrationConfig",
-            "strava": "#/components/schemas/IntegrationConfigStravaIntegrationConfig"
+            "strava": "#/components/schemas/IntegrationConfigStravaIntegrationConfig",
+            "google-health": "#/components/schemas/IntegrationConfigGoogleHealthIntegrationConfig"
           }
         }
       },
@@ -1220,6 +1351,31 @@
               "null",
               "string"
             ],
+            "format": "date-time"
+          }
+        }
+      },
+      "IntegrationConfigGoogleHealthIntegrationConfig": {
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "expiresAtUtc"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "google-health"
+            ],
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresAtUtc": {
+            "type": "string",
             "format": "date-time"
           }
         }
@@ -1270,13 +1426,17 @@
           },
           {
             "$ref": "#/components/schemas/IntegrationSummaryStravaIntegrationSummary"
+          },
+          {
+            "$ref": "#/components/schemas/IntegrationSummaryGoogleHealthIntegrationSummary"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
             "github": "#/components/schemas/IntegrationSummaryGithubIntegrationSummary",
-            "strava": "#/components/schemas/IntegrationSummaryStravaIntegrationSummary"
+            "strava": "#/components/schemas/IntegrationSummaryStravaIntegrationSummary",
+            "google-health": "#/components/schemas/IntegrationSummaryGoogleHealthIntegrationSummary"
           }
         }
       },
@@ -1296,6 +1456,23 @@
               "null",
               "string"
             ],
+            "format": "date-time"
+          }
+        }
+      },
+      "IntegrationSummaryGoogleHealthIntegrationSummary": {
+        "required": [
+          "expiresAtUtc"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "google-health"
+            ],
+            "type": "string"
+          },
+          "expiresAtUtc": {
+            "type": "string",
             "format": "date-time"
           }
         }

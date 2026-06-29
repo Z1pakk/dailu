@@ -42,7 +42,7 @@ internal static class DeleteIntegrationConfig
         }
 
         var result = await sender.Send(
-            new DeleteIntegrationConfigCommand(parsedProvider),
+            new RemoveIntegrationConfigCommand(parsedProvider),
             cancellationToken
         );
 

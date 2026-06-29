@@ -43,6 +43,7 @@
     <Project Path="HabitUser.Application/HabitUser.Application.csproj" />
     <Project Path="HabitUser.ArchitectureTests/HabitUser.ArchitectureTests.csproj" />
     <Project Path="HabitUser.Domain/HabitUser.Domain.csproj" />
+    <Project Path="HabitUser.GoogleHealth/HabitUser.GoogleHealth.csproj" />
     <Project Path="HabitUser.Infrastructure/HabitUser.Infrastructure.csproj" />
     <Project Path="HabitUser.Integrations/HabitUser.Integrations.csproj" />
     <Project Path="HabitUser.Strava/HabitUser.Strava.csproj" />

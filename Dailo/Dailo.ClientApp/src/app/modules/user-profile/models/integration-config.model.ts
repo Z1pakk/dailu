@@ -11,4 +11,14 @@ export interface StravaIntegrationConfig {
   expiresAtUtc: string;
 }
 
-export type IntegrationConfig = GithubIntegrationConfig | StravaIntegrationConfig;
+export interface GoogleHealthIntegrationConfig {
+  type: 'google-health';
+  accessToken: string;
+  refreshToken: string;
+  expiresAtUtc: string;
+}
+
+export type IntegrationConfig =
+  | GithubIntegrationConfig
+  | StravaIntegrationConfig
+  | GoogleHealthIntegrationConfig;

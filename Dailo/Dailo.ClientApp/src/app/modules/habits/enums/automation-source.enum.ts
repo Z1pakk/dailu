@@ -5,6 +5,7 @@ export const automationSources = {
   none: 0,
   github: 1,
   strava: 2,
+  googleHealth: 3,
 } as const;
 
 export type AutomationSource = ValueOf<typeof automationSources>;
@@ -13,6 +14,7 @@ export const automationSourceLabels: Record<AutomationSource, string> = {
   [automationSources.none]: 'None',
   [automationSources.github]: 'Github',
   [automationSources.strava]: 'Strava',
+  [automationSources.googleHealth]: 'Google Health',
 };
 
 export const automationSourceSelectItems: SelectItem<AutomationSource>[] = [
@@ -27,5 +29,9 @@ export const automationSourceSelectItems: SelectItem<AutomationSource>[] = [
   {
     label: automationSourceLabels[automationSources.strava],
     value: automationSources.strava,
+  },
+  {
+    label: automationSourceLabels[automationSources.googleHealth],
+    value: automationSources.googleHealth,
   },
 ];
