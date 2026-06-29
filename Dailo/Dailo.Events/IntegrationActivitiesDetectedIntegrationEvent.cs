@@ -7,6 +7,7 @@ public enum IntegrationActivitySource
     None = 0,
     Github = 1,
     Strava = 2,
+    GoogleHealth = 3,
 }
 
 public sealed record IntegrationActivityItem(

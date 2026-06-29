@@ -3,6 +3,7 @@ using HabitUser.Api;
 using HabitUser.Application;
 using HabitUser.Application.Persistence;
 using HabitUser.Github;
+using HabitUser.GoogleHealth;
 using HabitUser.Infrastructure.Database;
 using HabitUser.Infrastructure.Pipeline;
 using HabitUser.Integrations;
@@ -67,6 +68,8 @@ public static class Setup
         services.AddGithubModule();
 
         services.AddStravaModule();
+
+        services.AddGoogleHealthModule();
 
         return services;
     }

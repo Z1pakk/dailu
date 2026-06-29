@@ -58,7 +58,7 @@ public sealed class StravaActivityService(
                 ExternalId: a.Id.ToString(CultureInfo.InvariantCulture),
                 OccurredAtUtc: a.StartDateUtc,
                 Notes: BuildNotes(a.Type, a.Name, a.Distance, a.Description),
-                Value: a.Distance > 0 ? Math.Max(1, (int)Math.Round(a.Distance / 10f)) : 1
+                Value: CalculateValue(a.Distance)
             ))
             .ToList();
 
@@ -84,5 +84,10 @@ public sealed class StravaActivityService(
         var distanceKm = distance > 0 ? $" ({distance / 1000:F1} km)" : string.Empty;
         var desc = !string.IsNullOrWhiteSpace(description) ? $" — {description}" : string.Empty;
         return $"[{type}] {name}{distanceKm}{desc}";
+    }
+
+    private static int CalculateValue(float distance)
+    {
+        return distance > 0 ? Math.Max(1, (int)Math.Round(distance / 10f)) : 1;
     }
 }

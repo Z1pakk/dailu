@@ -13,7 +13,7 @@ public sealed class StravaActivityWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(2));
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
 
         while (!stoppingToken.IsCancellationRequested)
         {

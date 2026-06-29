@@ -11,19 +11,25 @@ public sealed record StravaApiResult(
 
 public interface IStravaHttpClient
 {
+    /// <summary>
+    /// Get activities from Strava API. Automatically refreshes the access token if needed.
+    /// </summary>
+    /// <param name="config">Config with credentials from db</param>
+    /// <param name="afterDateTimeUtc">DateTime in UTC to take activities after this value</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<Result<StravaApiResult>> GetActivitiesAsync(
         StravaIntegrationConfig config,
-        DateTime? after = null,
+        DateTime? afterDateTimeUtc = null,
         CancellationToken cancellationToken = default
     );
 
+    /// <summary>
+    /// Exchange authorization code for an access token using OAuth2 in Strava.
+    /// </summary>
+    /// <returns></returns>
     Task<StravaTokensModel?> ExchangeAuthorizationCodeAsync(
         string code,
-        CancellationToken cancellationToken = default
-    );
-
-    Task<StravaTokensModel?> RefreshAccessTokenAsync(
-        string refreshToken,
         CancellationToken cancellationToken = default
     );
 }

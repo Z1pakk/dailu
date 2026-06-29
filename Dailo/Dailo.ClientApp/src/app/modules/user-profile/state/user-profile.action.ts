@@ -1,6 +1,7 @@
 import { UpdateUserProfileRequestModel } from '@user-profile/models/requests/update-user-profile.request';
 import { IntegrationConfig } from '@user-profile/models/integration-config.model';
 
+
 const scope = '[UserProfile]';
 
 export class UserProfileGetProfile {
@@ -43,4 +44,12 @@ export class UserProfileGetGithubProfile {
 
 export class UserProfileFetchGithubProfile {
   static readonly type = `${scope} FetchGithubProfile`;
+}
+
+export class UserProfileGetGoogleHealthProfile {
+  static readonly type = `${scope} GetGoogleHealthProfile`;
+}
+
+export class UserProfileFetchGoogleHealthProfile {
+  static readonly type = `${scope} FetchGoogleHealthProfile`;
 }

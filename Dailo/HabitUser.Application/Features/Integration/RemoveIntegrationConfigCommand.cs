@@ -7,25 +7,25 @@ using SharedKernel.User;
 
 namespace HabitUser.Application.Features.Integration;
 
-public sealed record DeleteIntegrationConfigCommand(IntegrationProvider Provider) : ICommand<Result>;
+public sealed record RemoveIntegrationConfigCommand(IntegrationProvider Provider)
+    : ICommand<Result>;
 
-public sealed class DeleteIntegrationConfigCommandHandler(
+public sealed class RemoveIntegrationConfigCommandHandler(
     IHabitUserDbContext dbContext,
     ICurrentUserService currentUserService
-) : ICommandHandler<DeleteIntegrationConfigCommand, Result>
+) : ICommandHandler<RemoveIntegrationConfigCommand, Result>
 {
     public async ValueTask<Result> Handle(
-        DeleteIntegrationConfigCommand request,
+        RemoveIntegrationConfigCommand request,
         CancellationToken cancellationToken
     )
     {
         var userId = currentUserService.UserId;
 
-        var existing = await dbContext.IntegrationConfigs
-            .FirstOrDefaultAsync(
-                x => x.HabitUser.IdentityUserId == userId && x.Provider == request.Provider,
-                cancellationToken
-            );
+        var existing = await dbContext.IntegrationConfigs.FirstOrDefaultAsync(
+            x => x.HabitUser.IdentityUserId == userId && x.Provider == request.Provider,
+            cancellationToken
+        );
 
         if (existing is not null)
         {

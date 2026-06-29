@@ -50,6 +50,9 @@ public sealed class GetIntegrationConfigsQueryHandler(
                     ? new StravaAthleteInfo(a.Id, a.Username, a.FirstName, a.LastName, a.ProfileUrl)
                     : null
             ),
+            GoogleHealthIntegrationConfig google => new GoogleHealthIntegrationSummary(
+                google.ExpiresAtUtc
+            ),
             _ => throw new ArgumentException("Unknown integration config type."),
         };
     }

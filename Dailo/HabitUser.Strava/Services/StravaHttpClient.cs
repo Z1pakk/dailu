@@ -21,6 +21,8 @@ public sealed class StravaHttpClient(
 {
     private readonly StravaOptions _options = options.Value;
 
+    private const string UnauthorizedError = "UNAUTHORIZED";
+
     public async Task<StravaTokensModel?> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
@@ -70,7 +72,26 @@ public sealed class StravaHttpClient(
         }
     }
 
-    public async Task<StravaTokensModel?> RefreshAccessTokenAsync(
+    private async Task<StravaIntegrationConfig?> TryRefreshAsync(
+        StravaIntegrationConfig config,
+        CancellationToken cancellationToken
+    )
+    {
+        var tokens = await RefreshAccessTokenAsync(config.RefreshToken, cancellationToken);
+        if (tokens is null)
+        {
+            return null;
+        }
+
+        return new StravaIntegrationConfig(
+            tokens.AccessToken,
+            tokens.RefreshToken,
+            tokens.ExpiresAtUtc,
+            config.Athlete
+        );
+    }
+
+    private async Task<StravaTokensModel?> RefreshAccessTokenAsync(
         string refreshToken,
         CancellationToken cancellationToken = default
     )
@@ -116,7 +137,7 @@ public sealed class StravaHttpClient(
 
     public async Task<Result<StravaApiResult>> GetActivitiesAsync(
         StravaIntegrationConfig config,
-        DateTime? after = null,
+        DateTime? afterDateTimeUtc = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -137,7 +158,7 @@ public sealed class StravaHttpClient(
             accessToken = refreshedConfig.AccessToken;
         }
 
-        var result = await FetchActivitiesAsync(accessToken, after, cancellationToken);
+        var result = await FetchActivitiesAsync(accessToken, afterDateTimeUtc, cancellationToken);
 
         if (result.IsFailure && result.Error == UnauthorizedError && refreshedConfig is null)
         {
@@ -152,7 +173,7 @@ public sealed class StravaHttpClient(
             refreshedConfig = refreshed;
             result = await FetchActivitiesAsync(
                 refreshedConfig.AccessToken,
-                after,
+                afterDateTimeUtc,
                 cancellationToken
             );
         }
@@ -237,25 +258,4 @@ public sealed class StravaHttpClient(
             );
         }
     }
-
-    private async Task<StravaIntegrationConfig?> TryRefreshAsync(
-        StravaIntegrationConfig config,
-        CancellationToken cancellationToken
-    )
-    {
-        var tokens = await RefreshAccessTokenAsync(config.RefreshToken, cancellationToken);
-        if (tokens is null)
-        {
-            return null;
-        }
-
-        return new StravaIntegrationConfig(
-            tokens.AccessToken,
-            tokens.RefreshToken,
-            tokens.ExpiresAtUtc,
-            config.Athlete
-        );
-    }
-
-    private const string UnauthorizedError = "UNAUTHORIZED";
 }

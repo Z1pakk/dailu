@@ -29,6 +29,10 @@ services:
       Github__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
       Github__RedirectUri: ${GITHUB_REDIRECT_URI:-}
       Github__FrontendCallbackUrl: ${GITHUB_FRONTEND_CALLBACK_URL:-}
+      GoogleHealth__ClientId: ${GOOGLE_HEALTH_CLIENT_ID:-}
+      GoogleHealth__ClientSecret: ${GOOGLE_HEALTH_CLIENT_SECRET:-}
+      GoogleHealth__RedirectUri: ${GOOGLE_HEALTH_REDIRECT_URI:-}
+      GoogleHealth__FrontendCallbackUrl: ${GOOGLE_HEALTH_FRONTEND_CALLBACK_URL:-}
     networks:
       - default
       - dokploy-network

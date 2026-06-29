@@ -43,6 +43,7 @@ public class HabitService(IHabitDataTransferService habitDataTransferService) : 
         {
             IntegrationActivitySource.Github => AutomationSource.Github,
             IntegrationActivitySource.Strava => AutomationSource.Strava,
+            IntegrationActivitySource.GoogleHealth => AutomationSource.GoogleHealth,
             _ => throw new ArgumentOutOfRangeException(nameof(source)),
         };
 

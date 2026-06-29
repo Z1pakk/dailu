@@ -52,6 +52,14 @@ export const userProfileRoutes: Routes = [
                 (m) => m.ProfileStravaIntegration,
               ),
           },
+          {
+            path: 'google-health',
+            title: 'Dailu - Google Health Integration',
+            loadComponent: () =>
+              import('./pages/profile-integrations/google-health/profile-google-health-integration').then(
+                (m) => m.ProfileGoogleHealthIntegration,
+              ),
+          },
         ],
       },
     ],

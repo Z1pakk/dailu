@@ -22,6 +22,7 @@
     <ProjectReference Include="..\HabitUser.Application\HabitUser.Application.csproj" />
     <ProjectReference Include="..\HabitUser.Domain\HabitUser.Domain.csproj" />
     <ProjectReference Include="..\HabitUser.Github\HabitUser.Github.csproj" />
+    <ProjectReference Include="..\HabitUser.GoogleHealth\HabitUser.GoogleHealth.csproj" />
     <ProjectReference Include="..\HabitUser.Integrations\HabitUser.Integrations.csproj" />
     <ProjectReference Include="..\HabitUser.Strava\HabitUser.Strava.csproj" />
     <ProjectReference Include="..\SharedInfrastructure\SharedInfrastructure.csproj" />
