@@ -16,7 +16,6 @@
   </Folder>
   <Folder Name="/src/api/">
     <Project Path="Dailo.Api/Dailo.Api.csproj" />
-    <Project Path="Dailo.MigrationsRunner/Dailo.MigrationsRunner.csproj" />
   </Folder>
   <Folder Name="/src/aspire/">
     <Project Path="Dailo.AppHost/Dailo.AppHost.csproj" />
