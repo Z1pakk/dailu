@@ -43,6 +43,7 @@ COPY ["Tag.Application/Tag.Application.csproj", "Tag.Application/"]
 COPY ["Tag.DataTransfer/Tag.DataTransfer.csproj", "Tag.DataTransfer/"]
 COPY ["Tag.Domain/Tag.Domain.csproj", "Tag.Domain/"]
 COPY ["Tag.Infrastructure/Tag.Infrastructure.csproj", "Tag.Infrastructure/"]
+COPY ["Dailo.MigrationsRunner/Dailo.MigrationsRunner.csproj", "Dailo.MigrationsRunner/"]
 RUN dotnet restore "Dailo.Api/Dailo.Api.csproj"
 COPY . .
 WORKDIR "/src/Dailo.Api"
@@ -56,3 +57,13 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Dailo.Api.dll"]
+
+FROM build AS publish-migrations
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src/Dailo.MigrationsRunner
+RUN dotnet publish "./Dailo.MigrationsRunner.csproj" -c $BUILD_CONFIGURATION -o /app/publish-migrations /p:UseAppHost=false
+
+FROM base AS migrations-runtime
+WORKDIR /app
+COPY --from=publish-migrations /app/publish-migrations .
+ENTRYPOINT ["dotnet", "Dailo.MigrationsRunner.dll"]

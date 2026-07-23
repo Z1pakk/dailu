@@ -10,6 +10,7 @@ env:
   REGISTRY: ghcr.io
   API_IMAGE: ghcr.io/${{ github.repository_owner }}/dailo-api
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/dailo-frontend
+  MIGRATIONS_IMAGE: ghcr.io/${{ github.repository_owner }}/dailo-migrations-runner
 
 jobs:
   build-and-push:
@@ -34,6 +35,7 @@ jobs:
         run: |
           echo "API_IMAGE=${API_IMAGE,,}" >> $GITHUB_ENV
           echo "FRONTEND_IMAGE=${FRONTEND_IMAGE,,}" >> $GITHUB_ENV
+          echo "MIGRATIONS_IMAGE=${MIGRATIONS_IMAGE,,}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -62,10 +64,87 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push migrations-runner image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Dailo
+          file: ./Dailo/Dailo.Api/Dockerfile
+          target: migrations-runtime
+          push: true
+          tags: |
+            ${{ env.MIGRATIONS_IMAGE }}:latest
+            ${{ env.MIGRATIONS_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      # Exchanges a provisioner secret (name + password, like an OAuth client
+      # id/secret) for a one-time token, then exchanges that for an SSH
+      # certificate valid ~10 minutes from our self-hosted step-ca. The cert's
+      # force-command restricts the session to /opt/ci-scripts/run-migrations.sh
+      # regardless of what's requested, and that script itself only accepts a
+      # validated git-sha - so the provisioner password only ever grants a
+      # short-lived, narrowly-scoped capability, not direct server access.
+      # This step's exit code IS the container's actual exit code (docker run is
+      # invoked directly on the server) - no separate status polling needed.
+      - name: Install step CLI
+        env:
+          STEP_CLI_VERSION: "0.30.6"
+        run: |
+          curl -fsSL -O \
+            "https://github.com/smallstep/cli/releases/download/v${STEP_CLI_VERSION}/step_linux_${STEP_CLI_VERSION}_amd64.tar.gz"
+          curl -fsSL -o checksums.txt \
+            "https://github.com/smallstep/cli/releases/download/v${STEP_CLI_VERSION}/checksums.txt"
+          grep " step_linux_${STEP_CLI_VERSION}_amd64.tar.gz$" checksums.txt | sha256sum -c -
+          tar -xzf "step_linux_${STEP_CLI_VERSION}_amd64.tar.gz"
+          sudo mv "step_${STEP_CLI_VERSION}/bin/step" /usr/local/bin/step
+          rm -rf "step_linux_${STEP_CLI_VERSION}_amd64.tar.gz" checksums.txt "step_${STEP_CLI_VERSION}"
+          step version
+
+      # The CA's root certificate isn't sensitive (that's the point of a CA -
+      # clients need it to verify what the CA signs); this just confirms we're
+      # actually talking to our CA and not an impostor, via its fingerprint.
+      - name: Bootstrap trust in step-ca
+        run: |
+          step ca bootstrap --ca-url "${{ secrets.DOKPLOY_CA_URL }}" \
+            --fingerprint "${{ secrets.DOKPLOY_CA_FINGERPRINT }}" --force
+
+      - name: Get a short-lived SSH certificate from step-ca
+        run: |
+          echo "${{ secrets.DOKPLOY_CA_PROVISIONER_PASSWORD }}" > /tmp/provisioner-pass.txt
+          TOKEN=$(step ca token ci-migrate --ssh \
+            --provisioner ci-migrate-provisioner \
+            --provisioner-password-file /tmp/provisioner-pass.txt \
+            --ca-url "${{ secrets.DOKPLOY_CA_URL }}")
+          step ssh certificate --token "$TOKEN" --sign \
+            --not-after 10m \
+            ci-migrate /tmp/ci_ephemeral
+          rm -f /tmp/provisioner-pass.txt
+
+      - name: Run migrations over certificate-authenticated SSH
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.DOKPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+          IMAGE="${{ env.MIGRATIONS_IMAGE }}:${{ github.sha }}"
+          IMAGE="${IMAGE,,}"
+
+          ssh -i /tmp/ci_ephemeral \
+            "ci-migrate@${{ secrets.DOKPLOY_SSH_HOST }}" \
+            "run-migrations $IMAGE"
+
+          rm -f /tmp/ci_ephemeral /tmp/ci_ephemeral.pub /tmp/ci_ephemeral-cert.pub
+
   deploy:
     name: Deploy to Dokploy
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push, migrate]
 
     steps:
       - name: Trigger Dokploy deployment
