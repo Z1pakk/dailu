@@ -8,11 +8,14 @@ internal static class RefreshTokenCookieOptions
 {
     internal const string CookieName = "refreshToken";
 
-    internal static Microsoft.AspNetCore.Http.CookieOptions Create(IWebHostEnvironment env, DateTimeOffset expires) =>
+    internal static Microsoft.AspNetCore.Http.CookieOptions Create(
+        IWebHostEnvironment env,
+        DateTimeOffset expires
+    ) =>
         new()
         {
             HttpOnly = true,
-            Secure = !env.IsDevelopment(),
+            Secure = true,
             SameSite = env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
             Expires = expires.UtcDateTime,
         };

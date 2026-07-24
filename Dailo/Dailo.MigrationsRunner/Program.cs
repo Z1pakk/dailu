@@ -32,11 +32,16 @@ try
 {
     await host.StartAsync();
     await host.StopAsync();
-    Console.WriteLine("MIGRATIONS_RUNNER_RESULT=SUCCESS");
+
+#pragma warning disable CA1303
+    Console.WriteLine($"MIGRATIONS_RUNNER_RESULT=SUCCESS");
+#pragma warning restore CA1303
 }
 catch (Exception ex)
 {
     Console.Error.WriteLine(ex);
-    Console.WriteLine("MIGRATIONS_RUNNER_RESULT=FAILURE");
+#pragma warning disable CA1303
+    Console.WriteLine($"MIGRATIONS_RUNNER_RESULT=FAILURE");
+#pragma warning restore CA1303
     Environment.Exit(1);
 }

@@ -39,6 +39,6 @@ internal static class GetGithubProfile
             return result.ToTypedHttpResult();
         }
 
-        return TypedResults.Ok(new GetGithubProfileResponse(result.Value!.Profile));
+        return TypedResults.Ok(new GetGithubProfileResponse(result.Value.Profile));
     }
 }

@@ -39,6 +39,6 @@ internal static class GetIntegrationConfigs
             return result.ToTypedHttpResult();
         }
 
-        return TypedResults.Ok(new GetIntegrationConfigsResponse(result.Value!.Summaries));
+        return TypedResults.Ok(new GetIntegrationConfigsResponse(result.Value.Summaries));
     }
 }

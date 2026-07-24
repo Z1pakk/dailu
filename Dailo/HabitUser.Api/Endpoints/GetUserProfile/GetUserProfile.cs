@@ -38,7 +38,7 @@ internal static class GetUserProfile
             return result.ToTypedHttpResult();
         }
 
-        var response = new GetUserProfileResponse(result.Value!.Profile);
+        var response = new GetUserProfileResponse(result.Value.Profile);
 
         return TypedResults.Ok(response);
     }

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Habit.Api.Endpoints.GetHabitEntries;
+namespace HabitEntry.Api.Endpoints.GetHabitEntries;
 
 internal sealed record GetHabitEntriesResponse(IEnumerable<HabitEntryModel> HabitEntries);
 
@@ -38,7 +38,7 @@ internal static class GetHabitEntries
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new GetHabitEntriesQueryResponse(commandResult.Value!.HabitEntries);
+        var response = new GetHabitEntriesQueryResponse(commandResult.Value.HabitEntries);
 
         return TypedResults.Ok(response);
     }

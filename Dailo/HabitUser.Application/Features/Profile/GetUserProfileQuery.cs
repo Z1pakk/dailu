@@ -29,7 +29,7 @@ public sealed class GetUserProfileQueryHandler(
             return result.ToTargetResult<GetUserProfileQueryResponse>();
         }
 
-        var response = new GetUserProfileQueryResponse(result.Value!);
+        var response = new GetUserProfileQueryResponse(result.Value);
 
         return Result<GetUserProfileQueryResponse>.Success(response);
     }

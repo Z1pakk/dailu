@@ -106,8 +106,8 @@ public sealed class HabitAggregate : Aggregate
                 Name = name,
                 Description = description,
                 Type = type,
-                Frequency = frequencyResult.Value!,
-                Target = targetResult.Value!,
+                Frequency = frequencyResult.Value,
+                Target = targetResult.Value,
                 Status = HabitStatus.Ongoing,
                 IsArchived = false,
                 EndDate = endDate,
@@ -219,8 +219,8 @@ public sealed class HabitAggregate : Aggregate
         Name = name;
         Description = description;
         Type = type;
-        Frequency = frequencyResult.Value!;
-        Target = targetResult.Value!;
+        Frequency = frequencyResult.Value;
+        Target = targetResult.Value;
         EndDate = endDate;
         Milestone = milestone;
         AutomationSource = automationSource;
