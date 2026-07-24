@@ -204,6 +204,20 @@ process.
 sudo useradd -m -s /bin/bash ci-migrate
 ```
 
+**`useradd` leaves the account password-locked by default** (shadow entry
+starts with `!`), and OpenSSH itself - not just PAM - refuses *all* auth
+methods, including certificate-based pubkey auth, for a locked account. It
+fails as `User ci-migrate not allowed because account is locked` in
+`journalctl -u ssh`, even though the failure has nothing to do with passwords.
+Set the password field to something that can never match instead of leaving it
+locked - this satisfies OpenSSH's check while still making password
+authentication permanently impossible (`ci-migrate` should only ever be
+reachable via the CA-issued certificate):
+
+```
+sudo usermod -p '*' ci-migrate
+```
+
 Store the DB connection string where only root can read it:
 
 ```
@@ -321,6 +335,13 @@ Tailscale, not the open internet, once that's in place.
     needs: build-and-push
 
     steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+
       - name: Install step CLI
         env:
           STEP_CLI_VERSION: "0.30.6"
@@ -419,45 +440,118 @@ Note the address this box gets on the tailnet:
 tailscale ip -4
 ```
 
-In the Tailscale admin console (Settings -> OAuth clients), create an OAuth
-client scoped to create devices, with a `tag:ci` tag it's allowed to apply, and
-pre-authorize that tag under Settings -> Tags so tagged nodes join without
-manual approval each run. Save the generated client ID and secret as GitHub
-repo secrets `TS_OAUTH_CLIENT_ID` / `TS_OAUTH_CLIENT_SECRET` - this is what the
-`migrate` job exchanges, at runtime, for a short-lived single-use tailnet node;
-no standing VPN key lives in GitHub.
-
-Optionally restrict what `tag:ci` nodes can reach via the tailnet's own ACL
-(Access Controls in the admin console) as a second layer independent of the
-Hetzner firewall change below - the exact JSON syntax has not been verified
-against Tailscale's current docs, so check it against their ACL reference
-before applying:
+**Define the `tag:ci` tag.** Tags aren't created through a UI form - they only
+come from the `tagOwners` field in the tailnet's Access Control policy file
+(admin console -> Access Controls -> the JSON editor at
+`https://login.tailscale.com/admin/acls/file`). Merge this into whatever's
+already there:
 
 ```json
-{
-  "tagOwners": { "tag:ci": ["autogroup:admin"] },
-  "acls": [
-    { "action": "accept", "src": ["tag:ci"], "dst": ["<server-tailnet-ip>:22", "<server-tailnet-ip>:8443"] }
-  ]
+"tagOwners": {
+  "tag:ci": []
 }
 ```
 
-In the Hetzner firewall, remove the `0.0.0.0/0` rules for `8443/tcp` and
-`22/tcp` and replace them with a rule scoped to the Tailscale CGNAT range:
+An empty owner list means only Owner/Admin roles can apply the tag manually -
+appropriate here since it's meant to be applied programmatically by the OAuth
+client below, not picked by a person.
+
+**Create the OAuth client** (admin console -> Settings -> OAuth clients ->
+Generate OAuth client): scope **Auth Keys -> Write** only - nothing else
+(no `Devices: Core`, `DNS`, `Routes`, etc. - this client's only job is minting
+a short-lived auth key scoped to `tag:ci`). Select `tag:ci` as the tag it's
+allowed to apply. Save the generated client ID/secret as GitHub repo secrets
+`TS_OAUTH_CLIENT_ID` / `TS_OAUTH_CLIENT_SECRET` immediately - the secret is
+only shown once.
+
+**Restrict what can actually reach the server**, in the same Access Controls
+policy file. Confirmed working (deny-by-default: an `acls` array alone is
+sufficient, no `grants` needed, and any device/identity not listed is
+rejected) - but note the policy file ships with a permissive default rule
+(`{"action": "accept", "src": ["*"], "dst": ["*:*"]}`); that has to be deleted,
+not left alongside a new rule, since ACL rules are additive and the wildcard
+would keep allowing everything regardless of anything more specific added
+after it:
+
+```json
+"acls": [
+  {
+    "action": "accept",
+    "src": ["tag:ci", "you@example.com"],
+    "dst": ["<server-tailnet-ip>:22", "<server-tailnet-ip>:8443"]
+  }
+]
+```
+
+Replace `you@example.com` with your own Tailscale login - this is what lets
+your own laptop reach the server too, not just CI. Referencing identities
+(the tag, your login) rather than raw `100.x` addresses matters here: CI's
+address changes on every single run (fresh ephemeral node each time), and even
+a personal device's tailnet address isn't guaranteed permanent.
+
+In the **Hetzner firewall**, remove the `0.0.0.0/0` rules for `8443/tcp` and
+`22/tcp` and replace them with a rule scoped to the whole Tailscale CGNAT
+range:
 
 ```
 100.64.0.0/10
 ```
 
+Use the full range here, not a single device's specific tailnet IP - Hetzner's
+firewall is a coarse "is this Tailscale traffic at all" gate, the ACL above is
+what actually decides which tailnet identities get through. Scoping this to
+one exact IP (e.g. just your laptop's) is fragile for no security benefit and
+risks self-lockout the moment that IP changes for any reason; the firewall
+UI itself lives outside the box's own SSH/network path, so if you ever do lock
+yourself out this way, fix it from the Hetzner web console, not the server.
 (Tailscale's own tunnel negotiates without an inbound port opened at the
 OS/cloud-firewall level, via NAT traversal and DERP relay fallback - this rule
 is about who's allowed to reach `8443`/`22` *once* they're on the tailnet, not
 about letting Tailscale's traffic in.)
 
+**Re-issue the CA's own server certificate to cover the tailnet address**,
+before touching the GitHub secrets - this is the step that's easy to miss and
+fails identically to the original public-IP SAN problem if skipped. step-ca's
+HTTPS API certificate only has SANs for whatever's in `dnsNames` in `ca.json`;
+the public DuckDNS domain being there doesn't help once you're connecting via
+the tailnet IP instead. `jq` is the safe way to edit this (avoids hand-editing
+JSON wrong):
+
+```
+sudo jq '.dnsNames = ["<server-tailnet-ip>"]' /var/lib/step-ca/.step/config/ca.json | sudo tee /var/lib/step-ca/.step/config/ca.json.new > /dev/null
+sudo mv /var/lib/step-ca/.step/config/ca.json.new /var/lib/step-ca/.step/config/ca.json
+sudo chown step-ca:step-ca /var/lib/step-ca/.step/config/ca.json
+sudo systemctl restart step-ca
+```
+
+(This replaces `dnsNames` outright rather than appending - keep the old
+DuckDNS domain in the list too, alongside the tailnet IP, if you still want
+non-tailnet access to work during the transition.)
+
+Verify the new SAN actually landed before changing any secrets:
+
+```
+step certificate inspect https://<server-tailnet-ip>:8443 --insecure --short
+```
+
+Update `ca-url` in `defaults.json` too, so future admin `step` commands
+default correctly (check both `/var/lib/step-ca/.step/config/defaults.json`
+and your own `~/.step/config/defaults.json` if you've ever run admin commands
+without `STEPPATH` set - see the caveat below):
+
+```
+sudo jq '.["ca-url"] = "https://<server-tailnet-ip>:8443"' /var/lib/step-ca/.step/config/defaults.json | sudo tee /var/lib/step-ca/.step/config/defaults.json.new > /dev/null
+sudo mv /var/lib/step-ca/.step/config/defaults.json.new /var/lib/step-ca/.step/config/defaults.json
+sudo chown step-ca:step-ca /var/lib/step-ca/.step/config/defaults.json
+```
+
+No need to re-run `step ca bootstrap` or change `DOKPLOY_CA_FINGERPRINT` - the
+root/intermediate CA certificate didn't change, only the leaf certificate's
+SANs did.
+
 Finally, point `DOKPLOY_CA_URL` and `DOKPLOY_SSH_HOST` at the server's tailnet
-address (or its Tailscale MagicDNS name, if enabled) instead of its public
-DuckDNS domain, and rerun the `migrate` job to confirm it now succeeds over the
-tailnet.
+address instead of its public DuckDNS domain, and rerun the `migrate` job to
+confirm it now succeeds over the tailnet.
 
 ## How a deploy flows end to end
 
@@ -512,3 +606,10 @@ tailnet.
   execution in a job that handles the provisioner password). Bump it and re-check
   the checksum step still passes when you want a newer `step` release, rather than
   letting it silently track `master`.
+- If step 6 is in place, admin `step` commands (bootstrap, provisioner list/update)
+  now need to target the server's tailnet address, not the old public domain -
+  and you need to be on the tailnet yourself to reach it at all. `~/.step/config/defaults.json`
+  (your own shell user's, distinct from `$STEPPATH`'s) is a common place for a
+  stale `ca-url` to linger if you ever ran an admin command without `STEPPATH`
+  set - it's what caused the `doesn't contain any IP SANs` error partway through
+  this setup, from a `step ca provisioner add` that silently used the wrong config.
