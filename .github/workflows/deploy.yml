@@ -121,7 +121,7 @@ jobs:
             --provisioner ci-migrate-provisioner \
             --provisioner-password-file /tmp/provisioner-pass.txt \
             --ca-url "${{ secrets.DOKPLOY_CA_URL }}")
-          step ssh certificate --token "$TOKEN" --sign \
+          step ssh certificate --token "$TOKEN" \
             --not-after 10m \
             ci-migrate /tmp/ci_ephemeral
           rm -f /tmp/provisioner-pass.txt
