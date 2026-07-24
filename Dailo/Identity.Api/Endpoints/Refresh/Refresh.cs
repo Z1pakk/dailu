@@ -60,7 +60,7 @@ internal static class Refresh
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new RefreshResponse(commandResult.Value!.AccessTokens);
+        var response = new RefreshResponse(commandResult.Value.AccessTokens);
 
         cookieService.SetCookie(
             RefreshTokenCookieOptions.CookieName,

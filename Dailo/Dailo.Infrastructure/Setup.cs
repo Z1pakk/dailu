@@ -44,7 +44,7 @@ public static class Setup
         if (dataEncryptionOptions.Key != null)
         {
             services.Configure<KeyManagementOptions>(options =>
-                options.XmlRepository = new SecretKeyXmlRepository(dataEncryptionOptions.Key!)
+                options.XmlRepository = new SecretKeyXmlRepository(dataEncryptionOptions.Key)
             );
         }
 

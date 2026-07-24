@@ -39,6 +39,6 @@ internal static class GetGoogleHealthProfile
             return result.ToTypedHttpResult();
         }
 
-        return TypedResults.Ok(new GetGoogleHealthProfileResponse(result.Value!.Profile));
+        return TypedResults.Ok(new GetGoogleHealthProfileResponse(result.Value.Profile));
     }
 }

@@ -49,7 +49,7 @@ internal static class RegisterUser
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new RegisterUserResponse(commandResult.Value!.AccessTokens);
+        var response = new RegisterUserResponse(commandResult.Value.AccessTokens);
 
         cookieService.SetCookie(
             RefreshTokenCookieOptions.CookieName,

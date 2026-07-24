@@ -19,7 +19,7 @@ public static class Setup
 {
     public const string TagDbConnectionString = "TagPostgresConnectionString";
 
-    public static IServiceCollection AddTagModule(
+    public static IServiceCollection AddTagPersistence(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -46,6 +46,16 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
+
+        return services;
+    }
+
+    public static IServiceCollection AddTagModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddTagPersistence(configuration);
 
         services.AddScoped(
             typeof(IPipelineBehavior<,>),

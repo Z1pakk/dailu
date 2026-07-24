@@ -36,7 +36,7 @@ internal static class GetHabits
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new GetHabitsResponse(commandResult.Value!.Habits);
+        var response = new GetHabitsResponse(commandResult.Value.Habits);
 
         return TypedResults.Ok(response);
     }

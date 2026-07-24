@@ -23,7 +23,7 @@ public class UserProfileService(IIdentityUserDataTransferService identityUserDat
             return result.ToTargetResult<UserProfileModel>();
         }
 
-        var userModel = result.Value!;
+        var userModel = result.Value;
 
         var profileModel = new UserProfileModel(
             userModel.Id,

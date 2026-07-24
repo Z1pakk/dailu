@@ -50,7 +50,7 @@ internal static class LoginUser
             return commandResult.ToTypedHttpResult();
         }
 
-        var response = new LoginUserResponse(commandResult.Value!.AccessTokens);
+        var response = new LoginUserResponse(commandResult.Value.AccessTokens);
 
         cookieService.SetCookie(
             RefreshTokenCookieOptions.CookieName,

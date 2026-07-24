@@ -12,6 +12,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="Dailo.Infrastructure/Dailo.Infrastructure.csproj" />
+    <Project Path="Dailo.MigrationsRunner/Dailo.MigrationsRunner.csproj" />
   </Folder>
   <Folder Name="/src/api/">
     <Project Path="Dailo.Api/Dailo.Api.csproj" />
@@ -19,7 +20,9 @@
   <Folder Name="/src/aspire/">
     <Project Path="Dailo.AppHost/Dailo.AppHost.csproj" />
   </Folder>
-  <Folder Name="/src/docs/" />
+  <Folder Name="/src/docs/">
+    <File Path="docs/ci-migrations-setup.md" />
+  </Folder>
   <Folder Name="/src/docs/ADR/">
     <File Path="docs/adr/000_template.md" />
     <File Path="docs/adr/001_database.md" />

@@ -19,7 +19,7 @@ public static class Setup
 {
     public const string HabitEntryDbConnectionString = "HabitEntryPostgresConnectionString";
 
-    public static IServiceCollection AddHabitEntryModule(
+    public static IServiceCollection AddHabitEntryPersistence(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -49,6 +49,16 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
+
+        return services;
+    }
+
+    public static IServiceCollection AddHabitEntryModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddHabitEntryPersistence(configuration);
 
         services.AddScoped(
             typeof(IPipelineBehavior<,>),

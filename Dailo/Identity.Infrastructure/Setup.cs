@@ -25,7 +25,7 @@ public static class Setup
 {
     public const string IdentityDbConnectionString = "IdentityPostgresConnectionString";
 
-    public static IServiceCollection AddIdentityModule(
+    public static IServiceCollection AddIdentityPersistence(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -63,6 +63,18 @@ public static class Setup
             .AddDefaultTokenProviders()
             .AddSignInManager();
 
+        services.AddScoped<IDataSeeder, RoleSeeder>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddIdentityModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddIdentityPersistence(configuration);
+
         services.AddScoped(
             typeof(IPipelineBehavior<,>),
             typeof(IdentityEventDispatchingBehavior<,>)
@@ -73,8 +85,6 @@ public static class Setup
 
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IAltchaService, AltchaService>();
-
-        services.AddScoped<IDataSeeder, RoleSeeder>();
 
         services.AddEndpoints(assemblies: IdentityApiRoot.Assembly);
 

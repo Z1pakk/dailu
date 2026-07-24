@@ -1,5 +1,5 @@
-using Habit.Api.Endpoints.GetHabitEntries;
 using HabitEntry.Api.Endpoints.CreateHabitEntry;
+using HabitEntry.Api.Endpoints.GetHabitEntries;
 using HabitEntry.Api.Endpoints.UpdateHabitEntry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
