@@ -123,7 +123,7 @@ jobs:
             --ca-url "${{ secrets.DOKPLOY_CA_URL }}")
           step ssh certificate --token "$TOKEN" \
             --not-after 10m \
-            --no-password --insecure \
+            --no-password --insecure --no-agent \
             ci-migrate /tmp/ci_ephemeral
           rm -f /tmp/provisioner-pass.txt
 
