@@ -83,6 +83,18 @@ jobs:
     needs: build-and-push
 
     steps:
+      # Joins the runner to the tailnet as a short-lived, single-use node (the
+      # OAuth client is exchanged for an ephemeral auth key at runtime - no
+      # standing VPN key lives in secrets). step-ca (8443) and sshd (22) are
+      # firewalled to only accept connections from the tailnet CIDR, so this
+      # has to succeed before either is reachable at all.
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+
       # Exchanges a provisioner secret (name + password, like an OAuth client
       # id/secret) for a one-time token, then exchanges that for an SSH
       # certificate valid ~10 minutes from our self-hosted step-ca. The cert's
