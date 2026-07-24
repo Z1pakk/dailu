@@ -307,7 +307,10 @@ STEPPATH=/var/lib/step-ca/.step step certificate fingerprint /var/lib/step-ca/.s
 
 Add repo secrets: `DOKPLOY_SSH_HOST`, `DOKPLOY_CA_URL` (step-ca's address, e.g.
 `https://<ca-hostname-or-ip>:8443`), `DOKPLOY_CA_FINGERPRINT` (from the command
-above), and `DOKPLOY_CA_PROVISIONER_PASSWORD` (from step 2).
+above), and `DOKPLOY_CA_PROVISIONER_PASSWORD` (from step 2). If you're following
+step 6 below, set `DOKPLOY_SSH_HOST` and the host portion of `DOKPLOY_CA_URL` to
+the server's **tailnet** address, not its public DNS name - CI reaches it over
+Tailscale, not the open internet, once that's in place.
 
 `migrate` job in `.github/workflows/deploy.yml`:
 
@@ -344,8 +347,9 @@ above), and `DOKPLOY_CA_PROVISIONER_PASSWORD` (from step 2).
             --provisioner ci-migrate-provisioner \
             --provisioner-password-file /tmp/provisioner-pass.txt \
             --ca-url "${{ secrets.DOKPLOY_CA_URL }}")
-          step ssh certificate --token "$TOKEN" --sign \
+          step ssh certificate --token "$TOKEN" \
             --not-after 10m \
+            --no-password --insecure --no-agent \
             ci-migrate /tmp/ci_ephemeral
           rm -f /tmp/provisioner-pass.txt
 
@@ -365,11 +369,95 @@ above), and `DOKPLOY_CA_PROVISIONER_PASSWORD` (from step 2).
           rm -f /tmp/ci_ephemeral /tmp/ci_ephemeral.pub /tmp/ci_ephemeral-cert.pub
 ```
 
-Verify the exact `step ca token` / `step ssh certificate` invocations (flag
-names/order) against `--help` on the CLI version you install before relying on
-this in the real pipeline - confirm the token generates non-interactively from
-the password file with no prompt, and that the resulting cert has `ci-migrate` as
-its principal.
+(Confirmed against `step` CLI source and docs - `step ssh certificate`'s `--sign`
+flag means "sign this *existing* public key file," not "generate and sign a new
+one." An earlier draft of this guide included `--sign` alongside `--token`,
+which fails on a fresh runner with `open /tmp/ci_ephemeral failed: no such file
+or directory`, since there's no existing key at that path to sign. With a
+`--token`, `step ssh certificate` already generates a new keypair and gets it
+signed - `--sign` doesn't belong in this invocation at all.
+
+Separately, by default `step ssh certificate` prompts interactively for a
+passphrase to encrypt the newly generated private key - there's no TTY on a
+GitHub Actions runner to answer that, which fails as `allocating terminal:
+open /dev/tty: no such device or address`. `--no-password --insecure` skips
+that prompt and writes an unencrypted key. That's fine specifically because
+this key is ephemeral - generated fresh, used once within its ~10 minute
+validity window, and deleted at the end of the same job - so a passphrase
+would add no real protection while still requiring somewhere to non-interactively
+supply it for the following `ssh` step anyway.
+
+By default `step ssh certificate` also tries to load the new cert+key into a
+running `ssh-agent` for convenience - useful when a human runs this locally,
+meaningless in CI, and it fails as `error connecting with ssh-agent: dial unix:
+missing address` since `SSH_AUTH_SOCK` isn't set on a bare runner. `--no-agent`
+skips that; the workflow already passes `-i /tmp/ci_ephemeral` directly to
+`ssh` in the next step, so no agent is needed anyway.)
+
+## 6. Restrict step-ca and sshd to the tailnet only
+
+Without this, `8443` (step-ca) and `22` (sshd) have to be reachable from
+whatever IP GitHub's hosted runners happen to get that run - which changes every
+run and can't be usefully allowlisted, so the practical alternative is leaving
+both open to `0.0.0.0/0`. The actual security boundary in that case is still
+the provisioner password and the scoped SSH cert (network reachability alone
+doesn't grant anything) - but it does mean both services are visible to
+internet-wide scanners. Putting them behind a VPN removes that exposure as a
+second, independent layer, without changing how the provisioner/cert model
+itself works.
+
+Install Tailscale on the server and join your tailnet:
+
+```
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+Note the address this box gets on the tailnet:
+
+```
+tailscale ip -4
+```
+
+In the Tailscale admin console (Settings -> OAuth clients), create an OAuth
+client scoped to create devices, with a `tag:ci` tag it's allowed to apply, and
+pre-authorize that tag under Settings -> Tags so tagged nodes join without
+manual approval each run. Save the generated client ID and secret as GitHub
+repo secrets `TS_OAUTH_CLIENT_ID` / `TS_OAUTH_CLIENT_SECRET` - this is what the
+`migrate` job exchanges, at runtime, for a short-lived single-use tailnet node;
+no standing VPN key lives in GitHub.
+
+Optionally restrict what `tag:ci` nodes can reach via the tailnet's own ACL
+(Access Controls in the admin console) as a second layer independent of the
+Hetzner firewall change below - the exact JSON syntax has not been verified
+against Tailscale's current docs, so check it against their ACL reference
+before applying:
+
+```json
+{
+  "tagOwners": { "tag:ci": ["autogroup:admin"] },
+  "acls": [
+    { "action": "accept", "src": ["tag:ci"], "dst": ["<server-tailnet-ip>:22", "<server-tailnet-ip>:8443"] }
+  ]
+}
+```
+
+In the Hetzner firewall, remove the `0.0.0.0/0` rules for `8443/tcp` and
+`22/tcp` and replace them with a rule scoped to the Tailscale CGNAT range:
+
+```
+100.64.0.0/10
+```
+
+(Tailscale's own tunnel negotiates without an inbound port opened at the
+OS/cloud-firewall level, via NAT traversal and DERP relay fallback - this rule
+is about who's allowed to reach `8443`/`22` *once* they're on the tailnet, not
+about letting Tailscale's traffic in.)
+
+Finally, point `DOKPLOY_CA_URL` and `DOKPLOY_SSH_HOST` at the server's tailnet
+address (or its Tailscale MagicDNS name, if enabled) instead of its public
+DuckDNS domain, and rerun the `migrate` job to confirm it now succeeds over the
+tailnet.
 
 ## How a deploy flows end to end
 
@@ -413,6 +501,11 @@ its principal.
   not from CI) to `run-migrations-as-root.sh`.
 - step-ca itself is now infrastructure you're running and must keep patched and
   available - if it's down, deploys can't migrate.
+- If step 6 is in place, Tailscale is now also a dependency in the deploy path -
+  if the `Connect to Tailscale` step fails or Tailscale's coordination service
+  is down, `migrate` fails before it ever reaches step-ca, same as step-ca being
+  down. It's an additional moving part traded for reduced public exposure, not
+  a strictly free improvement.
 - `STEP_CLI_VERSION` in the `migrate` job is pinned deliberately (was previously
   `curl | bash` against `smallstep/cli`'s mutable `master` branch - unpinned and
   unverified, so a compromise of that script would have been arbitrary code
