@@ -586,9 +586,16 @@ confirm it now succeeds over the tailnet.
   the real pipeline - it wasn't confirmed with full certainty against a live
   instance while writing this guide (unlike the SSH CA public key path and the
   `--ssh-user-max-dur` duration flag, which have both been verified).
-- `Dailo.Api` still runs its own `DatabaseInitializationService` at startup as a
-  safety net (harmless no-op if migrations already applied), kept intentionally
-  for local/dev workflows that don't go through this pipeline.
+- `Dailo.Api` only runs its own `DatabaseInitializationService` at startup when
+  `ASPNETCORE_ENVIRONMENT=Development` (`Dailo.Api/Program.cs`) - local/dev
+  workflows that don't go through this pipeline still get auto-migration, but
+  in any other environment (Production included) this pipeline's
+  `Dailo.MigrationsRunner` is now the *only* thing that ever applies
+  migrations. Confirm the deployed API's `ASPNETCORE_ENVIRONMENT` is actually
+  set to something other than `Development` - ASP.NET Core defaults to
+  `Production` when the variable is unset, but if it's explicitly set to
+  `Development` anywhere in the deployment config, this pipeline's isolation
+  from the running app silently stops being true.
 - If `docker pull` on the server ever fails with an auth error, the host isn't
   authenticated to GHCR for this new image the way it is for the existing two -
   add a `docker login` step (credentials sourced the same way as `migrations.env`,
