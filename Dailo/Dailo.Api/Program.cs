@@ -26,7 +26,7 @@ builder.Services.AddMediator(opt => opt.ServiceLifetime = ServiceLifetime.Scoped
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-if (!builder.IsOpenApiExecution())
+if (!builder.IsOpenApiExecution() && builder.Environment.IsDevelopment())
 {
     builder.AddDatabaseInitialization();
 }
