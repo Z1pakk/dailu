@@ -45,6 +45,7 @@ jobs:
         with:
           context: ./Dailo
           file: ./Dailo/Dailo.Api/Dockerfile
+          target: final
           push: true
           tags: |
             ${{ env.API_IMAGE }}:latest
@@ -68,8 +69,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./Dailo
-          file: ./Dailo/Dailo.Api/Dockerfile
-          target: migrations-runtime
+          file: ./Dailo/Dailo.MigrationsRunner/Dockerfile
           push: true
           tags: |
             ${{ env.MIGRATIONS_IMAGE }}:latest
