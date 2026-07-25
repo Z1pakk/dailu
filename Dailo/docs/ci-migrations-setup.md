@@ -9,8 +9,18 @@ and short-lived SSH certificates issued to CI via a shared provisioner secret.
 - `Dailo.MigrationsRunner` - standalone console project that reuses the existing
   `AddDatabaseInitialization()` hosted service to migrate + seed all 5 bounded
   contexts, then prints `MIGRATIONS_RUNNER_RESULT=SUCCESS`/`FAILURE` before exiting.
-- `Dailo.Api/Dockerfile` - has a `migrations-runtime` build target producing this
-  as its own image.
+- `Dailo.MigrationsRunner/Dockerfile` - a standalone Dockerfile for this image,
+  separate from `Dailo.Api/Dockerfile`. This was originally a second build
+  target (`migrations-runtime`) inside the API's own multi-stage Dockerfile,
+  which had a real bug: `migrations-runtime` was the *last* stage defined in
+  that file, and the API's own build step never passed `target: final`
+  explicitly - so `docker build` (whose default with no `--target` is the last
+  stage in the file) silently built and pushed the migrations-runner's content
+  under the `dailo-api` image tags instead. Splitting into a separate file
+  removes the "last stage wins by default" footgun entirely, at the cost of
+  duplicating the shared project-reference `COPY` lines between the two files
+  (kept intentionally verbose/duplicated rather than trimmed to a minimal
+  subset, to exactly match what's already proven to restore correctly).
 - `.github/workflows/deploy.yml` - builds/pushes `dailo-api`, `dailo-frontend`, and
   `dailo-migrations-runner` images, then runs a `migrate` job over SSH before the
   `deploy` job triggers the real app deployment (`needs: [build-and-push, migrate]`).

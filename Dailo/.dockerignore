@@ -11,6 +11,8 @@
 **/*.*proj.user
 **/*.dbmdl
 **/*.jfm
+**/*.UnitTests/
+**/*.IntegrationTests/
 **/azds.yaml
 **/bin
 **/charts
