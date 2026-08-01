@@ -19,7 +19,8 @@ public sealed record CreateHabitCommand(
     DateOnly? EndDate,
     MilestoneModel? Milestone,
     IEnumerable<Id<TagModel>> TagIds,
-    AutomationSource? AutomationSource
+    AutomationSource? AutomationSource,
+    HabitAutomationFilterModel? AutomationFilter = null
 ) : ICommand<Result<CreateHabitCommandResponse>>;
 
 public sealed record CreateHabitCommandResponse(Id<HabitModel> Id);
@@ -41,22 +42,25 @@ public sealed class CreateHabitCommandHandler(
         var existingTagIds = tags.Keys.Select(k => k.ToId()).ToHashSet();
 
         var habitResult = HabitAggregate.Create(
-            Id<HabitAggregate>.NewId(),
-            currentUserService.UserId,
-            request.Name,
-            request.Description,
-            request.Type,
-            request.Frequency.Type,
-            request.Frequency.TimesPerPeriod,
-            request.Target.Value,
-            request.Target.Unit,
-            request.EndDate,
-            request.Milestone?.Target,
-            request.Milestone?.Current,
-            requestedTagIds.Select(id => new Id(id.Value)).ToHashSet(),
-            existingTagIds,
-            lastCompletedAtUtc: null,
-            request.AutomationSource
+            new HabitAggregateCreateRequest(
+                Id<HabitAggregate>.NewId(),
+                currentUserService.UserId,
+                request.Name,
+                request.Description,
+                request.Type,
+                request.Frequency.Type,
+                request.Frequency.TimesPerPeriod,
+                request.Target.Value,
+                request.Target.Unit,
+                request.EndDate,
+                request.Milestone?.Target,
+                request.Milestone?.Current,
+                requestedTagIds.Select(id => new Id(id.Value)).ToHashSet(),
+                existingTagIds,
+                LastCompletedAtUtc: null,
+                request.AutomationSource,
+                request.AutomationFilter?.ToDomain()
+            )
         );
 
         if (habitResult.IsFailure)

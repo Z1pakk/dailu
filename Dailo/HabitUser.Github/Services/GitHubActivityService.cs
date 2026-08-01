@@ -1,5 +1,5 @@
 using Dailo.Events;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Github.Models;
 using Mediator;
 using Microsoft.Extensions.Logging;
@@ -55,12 +55,12 @@ public sealed class GitHubActivityService(
             cancellationToken
         );
 
-        if (eventsResult.IsFailure)
+        if (eventsResult is null || eventsResult.IsFailure)
         {
             logger.LogError(
                 "Failed to fetch GitHub events for user {IdentityUserId}: {Error}",
                 identityUserId,
-                eventsResult.Error
+                eventsResult?.Error
             );
 
             return Result.Failure("Failed to fetch GitHub events.");

@@ -1,10 +1,67 @@
 using Habit.Domain.Entities;
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects;
+using Habit.Domain.ValueObjects.AutomationFilters;
 using SharedKernel.ResultPattern;
 using StrictId;
 
 namespace Habit.Domain.Aggregates;
+
+public sealed record HabitAggregateCreateRequest(
+    Id<HabitAggregate> Id,
+    Guid UserId,
+    string Name,
+    string? Description,
+    HabitType Type,
+    FrequencyType FrequencyType,
+    int TimesPerPeriod,
+    int TargetValue,
+    string TargetUnit,
+    DateOnly? EndDate,
+    int? MilestoneTarget,
+    int? MilestoneCurrent,
+    IReadOnlySet<Id> TagIds,
+    IReadOnlySet<Id> ExistingTagIds,
+    DateTime? LastCompletedAtUtc,
+    AutomationSource? AutomationSource = null,
+    HabitAutomationFilter? AutomationFilter = null
+);
+
+public sealed record HabitAggregateRestoreRequest(
+    Id<HabitAggregate> Id,
+    Guid UserId,
+    string Name,
+    string? Description,
+    HabitType Type,
+    Frequency Frequency,
+    Target Target,
+    HabitStatus Status,
+    bool IsArchived,
+    DateOnly? EndDate,
+    Milestone? Milestone,
+    DateTime? LastCompletedAtUtc,
+    IReadOnlyList<HabitTagEntity> Tags,
+    Guid Version,
+    AutomationSource? AutomationSource,
+    HabitAutomationFilter? AutomationFilter
+);
+
+public sealed record HabitAggregateUpdateRequest(
+    string Name,
+    string? Description,
+    HabitType Type,
+    FrequencyType FrequencyType,
+    int TimesPerPeriod,
+    int TargetValue,
+    string TargetUnit,
+    DateOnly? EndDate,
+    int? MilestoneTarget,
+    int? MilestoneCurrent,
+    IReadOnlySet<Id> TagIds,
+    IReadOnlySet<Id> ExistingTagIds,
+    AutomationSource? AutomationSource,
+    HabitAutomationFilter? AutomationFilter = null
+);
 
 public sealed class HabitAggregate : Aggregate
 {
@@ -32,39 +89,26 @@ public sealed class HabitAggregate : Aggregate
 
     private AutomationSource? AutomationSource { get; set; }
 
-    public DateTime? LastCompletedAtUtc { get; private set; }
+    private DateTime? LastCompletedAtUtc { get; set; }
 
-    public IReadOnlyList<HabitTagEntity> Tags { get; private set; } = [];
+    private IReadOnlyList<HabitTagEntity> Tags { get; set; } = [];
+
+    private HabitAutomationFilter? AutomationFilter { get; set; }
 
     private HabitAggregate() { }
 
-    public static Result<HabitAggregate> Create(
-        Id<HabitAggregate> id,
-        Guid userId,
-        string name,
-        string? description,
-        HabitType type,
-        FrequencyType frequencyType,
-        int timesPerPeriod,
-        int targetValue,
-        string targetUnit,
-        DateOnly? endDate,
-        int? milestoneTarget,
-        int? milestoneCurrent,
-        IReadOnlySet<Id> tagIds,
-        IReadOnlySet<Id> existingTagIds,
-        DateTime? lastCompletedAtUtc,
-        AutomationSource? automationSource = null
-    )
+    public static Result<HabitAggregate> Create(HabitAggregateCreateRequest request)
     {
-        var tagIdList = tagIds.ToList();
+        var tagIdList = request.TagIds.ToList();
 
         if (tagIdList.Count > 20)
         {
             return Result<HabitAggregate>.BadRequest("A habit cannot have more than 20 tags.");
         }
 
-        var missingTagIds = tagIdList.Where(tagId => !existingTagIds.Contains(tagId)).ToList();
+        var missingTagIds = tagIdList
+            .Where(tagId => !request.ExistingTagIds.Contains(tagId))
+            .ToList();
         if (missingTagIds.Count > 0)
         {
             return Result<HabitAggregate>.NotFound(
@@ -72,22 +116,34 @@ public sealed class HabitAggregate : Aggregate
             );
         }
 
-        var frequencyResult = Frequency.Create(frequencyType, timesPerPeriod);
+        var frequencyResult = Frequency.Create(request.FrequencyType, request.TimesPerPeriod);
         if (frequencyResult.IsFailure)
         {
             return Result<HabitAggregate>.BadRequest(frequencyResult.Error);
         }
 
-        var targetResult = Target.Create(targetValue, targetUnit);
+        var targetResult = Target.Create(request.TargetValue, request.TargetUnit);
         if (targetResult.IsFailure)
         {
             return Result<HabitAggregate>.BadRequest(targetResult.Error);
         }
 
-        Milestone? milestone = null;
-        if (milestoneTarget is not null && milestoneCurrent is not null)
+        var automationResult = ValidateAutomation(
+            request.AutomationSource,
+            request.AutomationFilter
+        );
+        if (automationResult.IsFailure)
         {
-            var milestoneResult = Milestone.Create(milestoneTarget.Value, milestoneCurrent.Value);
+            return Result<HabitAggregate>.BadRequest(automationResult.Error);
+        }
+
+        Milestone? milestone = null;
+        if (request.MilestoneTarget is not null && request.MilestoneCurrent is not null)
+        {
+            var milestoneResult = Milestone.Create(
+                request.MilestoneTarget.Value,
+                request.MilestoneCurrent.Value
+            );
             if (milestoneResult.IsFailure)
             {
                 return Result<HabitAggregate>.BadRequest(milestoneResult.Error);
@@ -96,118 +152,104 @@ public sealed class HabitAggregate : Aggregate
             milestone = milestoneResult.Value;
         }
 
-        var habitId = id;
+        var habitId = request.Id;
 
         return Result<HabitAggregate>.Success(
             new HabitAggregate
             {
                 Id = habitId,
-                UserId = userId,
-                Name = name,
-                Description = description,
-                Type = type,
+                UserId = request.UserId,
+                Name = request.Name,
+                Description = request.Description,
+                Type = request.Type,
                 Frequency = frequencyResult.Value,
                 Target = targetResult.Value,
                 Status = HabitStatus.Ongoing,
                 IsArchived = false,
-                EndDate = endDate,
+                EndDate = request.EndDate,
                 Milestone = milestone,
-                AutomationSource = automationSource,
-                LastCompletedAtUtc = lastCompletedAtUtc,
+                AutomationSource = request.AutomationSource,
+                LastCompletedAtUtc = request.LastCompletedAtUtc,
                 Tags = tagIdList
                     .Select(tagId => new HabitTagEntity
                     {
                         Id = Id<HabitTagEntity>.NewId(),
                         HabitId = habitId.ToGuid(),
                         TagId = tagId,
-                        UserId = userId,
+                        UserId = request.UserId,
                     })
                     .ToList(),
+                AutomationFilter = request.AutomationFilter,
             }
         );
     }
 
-    public static HabitAggregate Restore(
-        Id<HabitAggregate> id,
-        Guid userId,
-        string name,
-        string? description,
-        HabitType type,
-        Frequency frequency,
-        Target target,
-        HabitStatus status,
-        bool isArchived,
-        DateOnly? endDate,
-        Milestone? milestone,
-        DateTime? lastCompletedAtUtc,
-        IReadOnlyList<HabitTagEntity> tags,
-        Guid version,
-        AutomationSource? automationSource
-    ) =>
+    public static HabitAggregate Restore(HabitAggregateRestoreRequest request) =>
         new()
         {
-            Id = id,
-            UserId = userId,
-            Name = name,
-            Description = description,
-            Type = type,
-            Frequency = frequency,
-            Target = target,
-            Status = status,
-            IsArchived = isArchived,
-            EndDate = endDate,
-            Milestone = milestone,
-            LastCompletedAtUtc = lastCompletedAtUtc,
-            Tags = tags,
-            Version = version,
-            AutomationSource = automationSource,
+            Id = request.Id,
+            UserId = request.UserId,
+            Name = request.Name,
+            Description = request.Description,
+            Type = request.Type,
+            Frequency = request.Frequency,
+            Target = request.Target,
+            Status = request.Status,
+            IsArchived = request.IsArchived,
+            EndDate = request.EndDate,
+            Milestone = request.Milestone,
+            LastCompletedAtUtc = request.LastCompletedAtUtc,
+            Tags = request.Tags,
+            Version = request.Version,
+            AutomationSource = request.AutomationSource,
+            AutomationFilter = request.AutomationFilter,
         };
 
-    public Result Update(
-        string name,
-        string? description,
-        HabitType type,
-        FrequencyType frequencyType,
-        int timesPerPeriod,
-        int targetValue,
-        string targetUnit,
-        DateOnly? endDate,
-        int? milestoneTarget,
-        int? milestoneCurrent,
-        IReadOnlySet<Id> tagIds,
-        IReadOnlySet<Id> existingTagIds,
-        AutomationSource? automationSource
-    )
+    public Result Update(HabitAggregateUpdateRequest request)
     {
-        var tagIdList = tagIds.ToList();
+        var tagIdList = request.TagIds.ToList();
 
         if (tagIdList.Count > 20)
         {
             return Result.BadRequest("A habit cannot have more than 20 tags.");
         }
 
-        var missingTagIds = tagIdList.Where(tagId => !existingTagIds.Contains(tagId)).ToList();
+        var missingTagIds = tagIdList
+            .Where(tagId => !request.ExistingTagIds.Contains(tagId))
+            .ToList();
         if (missingTagIds.Count > 0)
         {
             return Result.NotFound($"Tags not found: {string.Join(", ", missingTagIds)}");
         }
 
-        var frequencyResult = Frequency.Create(frequencyType, timesPerPeriod);
+        var frequencyResult = Frequency.Create(request.FrequencyType, request.TimesPerPeriod);
         if (frequencyResult.IsFailure)
         {
             return Result.BadRequest(frequencyResult.Error);
         }
 
-        var targetResult = Target.Create(targetValue, targetUnit);
+        var targetResult = Target.Create(request.TargetValue, request.TargetUnit);
         if (targetResult.IsFailure)
         {
             return Result.BadRequest(targetResult.Error);
         }
 
-        Milestone? milestone = null;
-        if (milestoneTarget is not null && milestoneCurrent is not null)
+        var automationResult = ValidateAutomation(
+            request.AutomationSource,
+            request.AutomationFilter
+        );
+        if (automationResult.IsFailure)
         {
-            var milestoneResult = Milestone.Create(milestoneTarget.Value, milestoneCurrent.Value);
+            return Result.BadRequest(automationResult.Error);
+        }
+
+        Milestone? milestone = null;
+        if (request.MilestoneTarget is not null && request.MilestoneCurrent is not null)
+        {
+            var milestoneResult = Milestone.Create(
+                request.MilestoneTarget.Value,
+                request.MilestoneCurrent.Value
+            );
             if (milestoneResult.IsFailure)
             {
                 return Result.BadRequest(milestoneResult.Error);
@@ -216,14 +258,14 @@ public sealed class HabitAggregate : Aggregate
             milestone = milestoneResult.Value;
         }
 
-        Name = name;
-        Description = description;
-        Type = type;
+        Name = request.Name;
+        Description = request.Description;
+        Type = request.Type;
         Frequency = frequencyResult.Value;
         Target = targetResult.Value;
-        EndDate = endDate;
+        EndDate = request.EndDate;
         Milestone = milestone;
-        AutomationSource = automationSource;
+        AutomationSource = request.AutomationSource;
         Tags = tagIdList
             .Select(tagId => new HabitTagEntity
             {
@@ -233,6 +275,7 @@ public sealed class HabitAggregate : Aggregate
                 UserId = UserId,
             })
             .ToList();
+        AutomationFilter = request.AutomationFilter;
 
         return Result.Success();
     }
@@ -250,6 +293,35 @@ public sealed class HabitAggregate : Aggregate
         }
 
         LastCompletedAtUtc = completedAtUtc;
+        return Result.Success();
+    }
+
+    private static Result ValidateAutomation(
+        AutomationSource? automationSource,
+        HabitAutomationFilter? automationFilter
+    )
+    {
+        if (automationFilter is not null && automationSource is null or Enums.AutomationSource.None)
+        {
+            return Result.BadRequest("Automation filter requires an automation source to be set.");
+        }
+
+        var isValidFilterType = (automationSource, automationFilter) switch
+        {
+            (_, null) => true,
+            (Enums.AutomationSource.Github, GithubAutomationFilter) => true,
+            (Enums.AutomationSource.Strava, StravaAutomationFilter) => true,
+            (Enums.AutomationSource.GoogleHealth, GoogleHealthAutomationFilter) => true,
+            _ => false,
+        };
+
+        if (!isValidFilterType)
+        {
+            return Result.BadRequest(
+                "Automation filter type does not match the automation source."
+            );
+        }
+
         return Result.Success();
     }
 
@@ -271,5 +343,6 @@ public sealed class HabitAggregate : Aggregate
             LastCompletedAtUtc = LastCompletedAtUtc,
             Tags = Tags.ToList(),
             Version = Version,
+            AutomationFilter = AutomationFilter,
         };
 }

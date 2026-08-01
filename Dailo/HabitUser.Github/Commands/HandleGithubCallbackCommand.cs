@@ -1,6 +1,6 @@
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Github.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;
@@ -9,7 +9,8 @@ using StrictId;
 
 namespace HabitUser.Github.Commands;
 
-public sealed record HandleGithubCallbackCommand(Guid IdentityUserId, string Code) : ICommand<Result>;
+public sealed record HandleGithubCallbackCommand(Guid IdentityUserId, string Code)
+    : ICommand<Result>;
 
 public sealed class HandleGithubCallbackCommandHandler(
     IHabitUserDbContext dbContext,
@@ -33,7 +34,10 @@ public sealed class HandleGithubCallbackCommandHandler(
 
         var habitUser = await dbContext
             .HabitUsers.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.IdentityUserId == request.IdentityUserId, cancellationToken);
+            .FirstOrDefaultAsync(
+                u => u.IdentityUserId == request.IdentityUserId,
+                cancellationToken
+            );
 
         if (habitUser is null)
         {

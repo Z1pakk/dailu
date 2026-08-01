@@ -34,5 +34,13 @@ public sealed class CreateHabitCommandValidator : AbstractValidator<CreateHabitC
                     .WithMessage("Milestone target must be greater than 0");
             }
         );
+
+        When(
+            x => x.AutomationSource is null,
+            () =>
+            {
+                RuleFor(x => x.AutomationFilter).Null();
+            }
+        );
     }
 }

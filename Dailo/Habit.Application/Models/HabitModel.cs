@@ -1,4 +1,5 @@
 using Habit.Domain.Enums;
+using Habit.Domain.ValueObjects.AutomationFilters;
 using StrictId;
 
 namespace Habit.Application.Models;
@@ -28,6 +29,8 @@ public class HabitModel
     public DateTime CreatedAtUtc { get; set; }
 
     public AutomationSource? AutomationSource { get; set; }
+
+    public HabitAutomationFilter? AutomationFilter { get; set; }
 
     public DateTime? LastCompletedAtUtc { get; set; }
 

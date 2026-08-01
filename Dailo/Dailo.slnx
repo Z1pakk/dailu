@@ -31,6 +31,9 @@
     <File Path="docs/adr/004_inter_module_communication.md" />
     <File Path="docs/adr/005_orm.md" />
     <File Path="docs/adr/006_cqrs.md" />
+    <File Path="docs/adr/007_secrets_management.md" />
+    <File Path="docs/adr/008_production_migrations.md" />
+    <File Path="docs/adr/009_production_vpn.md" />
   </Folder>
   <Folder Name="/src/modules/" />
   <Folder Name="/src/modules/habit-entry/">

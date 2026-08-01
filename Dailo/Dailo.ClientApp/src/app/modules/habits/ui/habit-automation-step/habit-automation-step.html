@@ -1,0 +1,98 @@
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-2">
+    <label for="automationSource" class="block">
+      Automation Source
+      <span class="text-sm font-normal text-surface-400">(optional)</span>
+    </label>
+    <p-select [formControl]="formGroup().controls.automationSource"
+              [options]="automationSourceSelectItems"
+              [invalid]="!!formGroup().controls.automationSource.getError('serverError') || (!!formGroup().controls.automationSource.errors && formGroup().controls.automationSource.dirty)"
+              appendTo="body"
+              name="automationSource"
+              inputId="automationSource"
+              optionLabel="label"
+              optionValue="value"
+              showClear
+              fluid />
+    @if (formGroup().controls.automationSource.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+  </div>
+
+  @if (formGroup().controls.automationSource.value === automationSources.github) {
+    <div class="flex flex-col gap-2">
+      <label for="githubRepositoryId" class="block">
+        Repository
+        <span class="text-sm font-normal text-surface-400">(optional)</span>
+      </label>
+      <p-select [formControl]="formGroup().controls.githubRepositoryId"
+                (onChange)="onGithubRepoChange($event.value)"
+                [options]="githubRepoSelectItems()"
+                [loading]="githubReposLoading()"
+                [filter]="true"
+                appendTo="body"
+                name="githubRepositoryId"
+                inputId="githubRepositoryId"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="githubReposLoading() ? 'Loading repositories…' : 'Any repository'"
+                showClear
+                fluid />
+    </div>
+    <div class="flex flex-col gap-2">
+      <label class="block">
+        Events
+        <span class="text-sm font-normal text-surface-400">(optional, any if none selected)</span>
+      </label>
+      <div class="flex gap-4">
+        @for (item of githubEventTypeSelectItems; track item.value) {
+          <label class="flex items-center gap-2">
+            <p-checkbox [formControl]="formGroup().controls.githubEventTypes"
+                        [value]="item.value"
+                        name="githubEventTypes"
+                        inputId="githubEventType-{{ item.value }}" />
+            {{ item.label }}
+          </label>
+        }
+      </div>
+    </div>
+  }
+
+  @if (formGroup().controls.automationSource.value === automationSources.strava) {
+    <div class="flex flex-col gap-2">
+      <label for="stravaActivityTypes" class="block">
+        Activity Types
+        <span class="text-sm font-normal text-surface-400">(optional, any if none selected)</span>
+      </label>
+      <p-multiselect [formControl]="formGroup().controls.stravaActivityTypes"
+                     [options]="stravaActivityTypeSelectItems"
+                     appendTo="body"
+                     name="stravaActivityTypes"
+                     inputId="stravaActivityTypes"
+                     optionLabel="label"
+                     optionValue="value"
+                     placeholder="Any activity type"
+                     display="chip"
+                     fluid />
+    </div>
+  }
+
+  @if (formGroup().controls.automationSource.value === automationSources.googleHealth) {
+    <div class="flex flex-col gap-2">
+      <label for="googleHealthMetrics" class="block">
+        Metrics
+        <span class="text-sm font-normal text-surface-400">(optional, both if none selected)</span>
+      </label>
+      <p-multiselect [formControl]="formGroup().controls.googleHealthMetrics"
+                     [options]="googleHealthMetricSelectItems"
+                     appendTo="body"
+                     name="googleHealthMetrics"
+                     inputId="googleHealthMetrics"
+                     optionLabel="label"
+                     optionValue="value"
+                     placeholder="Steps and Exercise"
+                     display="chip"
+                     fluid />
+    </div>
+  }
+</div>

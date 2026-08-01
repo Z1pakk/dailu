@@ -1,5 +1,6 @@
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects;
+using Habit.Domain.ValueObjects.AutomationFilters;
 using StrictId;
 
 namespace Habit.Domain.Entities;
@@ -31,4 +32,6 @@ public sealed class HabitEntity : BaseEntity<Id<HabitEntity>>
     public DateTime? LastCompletedAtUtc { get; set; }
 
     public ICollection<HabitTagEntity> Tags { get; set; } = [];
+
+    public HabitAutomationFilter? AutomationFilter { get; set; }
 }

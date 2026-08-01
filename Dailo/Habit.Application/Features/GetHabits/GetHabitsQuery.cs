@@ -43,6 +43,7 @@ public sealed class GetHabitsQueryHandler(
                 Milestone = h.Milestone,
                 CreatedAtUtc = h.CreatedAtUtc,
                 AutomationSource = h.AutomationSource,
+                AutomationFilter = h.AutomationFilter,
                 LastCompletedAtUtc = h.LastCompletedAtUtc,
                 TagIds = h.Tags.Select(t => t.TagId).ToList(),
             })
@@ -71,6 +72,7 @@ public sealed class GetHabitsQueryHandler(
                     ? new MilestoneModel(h.Milestone.Target, h.Milestone.Current)
                     : null,
                 AutomationSource = h.AutomationSource,
+                AutomationFilter = h.AutomationFilter,
                 CreatedAtUtc = h.CreatedAtUtc,
                 LastCompletedAtUtc = h.LastCompletedAtUtc,
                 Tags = h

@@ -4,6 +4,7 @@ import { HabitType } from '@habits/enums/habit-type.enum';
 import { HabitStatus } from '@habits/enums/habit-status.enum';
 import { AutomationSource } from '@habits/enums/automation-source.enum';
 import { MilestoneModel } from '@habits/models/milestone.model';
+import { AutomationFilterModel } from '@habits/models/automation-filter.model';
 import { TagModel } from '../../tags/models/tag.model';
 
 export interface HabitModel {
@@ -18,6 +19,7 @@ export interface HabitModel {
   endDate?: Date;
   milestone?: MilestoneModel;
   automationSource?: AutomationSource;
+  automationFilter?: AutomationFilterModel;
   tags: TagModel[];
 
   createdAtUtc: Date;

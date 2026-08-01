@@ -1,7 +1,7 @@
 using HabitUser.Application.Features.Integration.Models;
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;
 using SharedKernel.ResultPattern;

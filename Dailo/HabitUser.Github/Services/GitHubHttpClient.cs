@@ -29,8 +29,7 @@ public sealed class GitHubHttpClient(
         );
         request.Headers.Accept.Clear();
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Content = new FormUrlEncodedContent(
-        [
+        request.Content = new FormUrlEncodedContent([
             new KeyValuePair<string, string>("client_id", _options.ClientId),
             new KeyValuePair<string, string>("client_secret", _options.ClientSecret),
             new KeyValuePair<string, string>("code", code),
@@ -42,10 +41,7 @@ public sealed class GitHubHttpClient(
             var response = await httpclient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError(
-                    "GitHub code exchange failed: {StatusCode}",
-                    response.StatusCode
-                );
+                logger.LogError("GitHub code exchange failed: {StatusCode}", response.StatusCode);
                 return null;
             }
 
@@ -111,7 +107,7 @@ public sealed class GitHubHttpClient(
         }
     }
 
-    public async Task<Result<IEnumerable<GitHubEventModel>>> GetUserEventsAsync(
+    public async Task<Result<IEnumerable<GitHubEventModel>>?> GetUserEventsAsync(
         string userName,
         string accessToken,
         CancellationToken cancellationToken = default
@@ -249,6 +245,55 @@ public sealed class GitHubHttpClient(
                 repoFullName
             );
             return null;
+        }
+    }
+
+    public async Task<Result<IEnumerable<GitHubRepositoryModel>>?> GetUserRepositoriesAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var client = CreateGitHubClient(accessToken);
+        try
+        {
+            var response = await client.GetAsync(
+                "user/repos?per_page=100&sort=updated",
+                cancellationToken
+            );
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogError(
+                    "Failed to fetch GitHub repositories: {StatusCode}",
+                    response.StatusCode
+                );
+
+                return Result<IEnumerable<GitHubRepositoryModel>>.Failure(
+                    $"Failed to fetch GitHub repositories: {response.StatusCode}"
+                );
+            }
+
+            var mappedResponse = await response.Content.ReadFromJsonAsync<
+                IEnumerable<GitHubRepositoryResponse>
+            >(JsonSerializerOptions.Web, cancellationToken);
+            if (mappedResponse is null)
+            {
+                return null;
+            }
+
+            return Result<IEnumerable<GitHubRepositoryModel>>.Success(
+                mappedResponse.Select(r => new GitHubRepositoryModel
+                {
+                    Id = r.Id,
+                    FullName = r.FullName,
+                })
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch GitHub repositories");
+            return Result<IEnumerable<GitHubRepositoryModel>>.Failure(
+                "Failed to fetch GitHub repositories due to an unexpected error."
+            );
         }
     }
 

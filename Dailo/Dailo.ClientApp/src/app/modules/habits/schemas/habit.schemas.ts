@@ -2,6 +2,15 @@ import * as v from 'valibot';
 import { HabitType, habitTypes } from '@habits/enums/habit-type.enum';
 import { FrequencyType, frequencyTypes } from '@habits/enums/frequency-type.enum';
 import { AutomationSource, automationSources } from '@habits/enums/automation-source.enum';
+import { GithubEventType, githubEventTypes } from '@habits/enums/github-event-type.enum';
+import {
+  StravaActivityType,
+  stravaActivityTypes,
+} from '@habits/enums/strava-activity-type.enum';
+import {
+  GoogleHealthMetric,
+  googleHealthMetrics,
+} from '@habits/enums/google-health-metric.enum';
 import { notBlank, notBlankOptional } from '@shared/lib/form/not-blank';
 
 export const HabitNameSchema = v.pipe(
@@ -71,5 +80,25 @@ export const HabitTagIdsSchema = v.array(v.string());
 export const HabitAutomationSourceSchema = v.nullable(
   v.picklist(
     Object.values(automationSources) as [AutomationSource, ...AutomationSource[]],
+  ),
+);
+
+export const HabitGithubRepositoryIdSchema = v.nullable(v.number());
+
+export const HabitGithubRepositoryNameSchema = v.nullable(v.string());
+
+export const HabitGithubEventTypesSchema = v.array(
+  v.picklist(Object.values(githubEventTypes) as [GithubEventType, ...GithubEventType[]]),
+);
+
+export const HabitStravaActivityTypesSchema = v.array(
+  v.picklist(
+    Object.values(stravaActivityTypes) as [StravaActivityType, ...StravaActivityType[]],
+  ),
+);
+
+export const HabitGoogleHealthMetricsSchema = v.array(
+  v.picklist(
+    Object.values(googleHealthMetrics) as [GoogleHealthMetric, ...GoogleHealthMetric[]],
   ),
 );
