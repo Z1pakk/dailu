@@ -1,5 +1,3 @@
-using Dailo.Events;
-using Habit.DataTransfer.Enums;
 using Habit.DataTransfer.Models;
 using Habit.DataTransfer.Services;
 using HabitEntry.Application.IntegratedServices;
@@ -31,34 +29,5 @@ public class HabitService(IHabitDataTransferService habitDataTransferService) : 
                 (HabitEntryHabitType)kvp.Value.Type
             )
         );
-    }
-
-    public async Task<IReadOnlyList<HabitInfoModel>> GetByAutomationSourceAsync(
-        Guid userId,
-        IntegrationActivitySource source,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var automationSource = source switch
-        {
-            IntegrationActivitySource.Github => AutomationSource.Github,
-            IntegrationActivitySource.Strava => AutomationSource.Strava,
-            IntegrationActivitySource.GoogleHealth => AutomationSource.GoogleHealth,
-            _ => throw new ArgumentOutOfRangeException(nameof(source)),
-        };
-
-        var habits = await habitDataTransferService.GetByAutomationSourceAsync(
-            userId,
-            automationSource,
-            cancellationToken
-        );
-
-        return habits
-            .Select(h => new HabitInfoModel(
-                new Id(h.Id.Value),
-                h.Name,
-                (HabitEntryHabitType)h.Type
-            ))
-            .ToList();
     }
 }

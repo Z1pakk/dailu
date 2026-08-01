@@ -60,7 +60,8 @@ public sealed class GoogleHealthActivityService(
                 ExternalId: a.Id,
                 OccurredAtUtc: a.StartDateUtc,
                 Notes: BuildNotes(a.ExerciseType, a.DisplayName, a.ActiveDurationSeconds),
-                Value: Math.Max(1, a.ActiveDurationSeconds / 60)
+                Value: Math.Max(1, a.ActiveDurationSeconds / 60),
+                Source: new IntegrationActivitySourceDetails("Exercise")
             ))
             .ToList();
 
