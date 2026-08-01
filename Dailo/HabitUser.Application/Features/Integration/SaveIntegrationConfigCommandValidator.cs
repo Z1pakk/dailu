@@ -1,5 +1,5 @@
 using FluentValidation;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 
 namespace HabitUser.Application.Features.Integration;
 

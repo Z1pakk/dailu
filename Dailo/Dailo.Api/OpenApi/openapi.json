@@ -356,6 +356,27 @@
         }
       }
     },
+    "/api/habit-user/integrations/github/repos": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get the GitHub repositories accessible to the current authenticated user.",
+        "operationId": "GetGithubRepos",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGithubReposResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/habit-user/integrations/strava/connect": {
       "get": {
         "tags": [
@@ -837,6 +858,16 @@
                 "$ref": "#/components/schemas/AutomationSource"
               }
             ]
+          },
+          "automationFilter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HabitAutomationFilterModel"
+              }
+            ]
           }
         }
       },
@@ -957,6 +988,20 @@
           }
         }
       },
+      "GetGithubReposResponse": {
+        "required": [
+          "repositories"
+        ],
+        "type": "object",
+        "properties": {
+          "repositories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GitHubRepositoryModel"
+            }
+          }
+        }
+      },
       "GetGoogleHealthProfileResponse": {
         "required": [
           "profile"
@@ -1035,6 +1080,29 @@
           }
         }
       },
+      "GithubEventType": {
+        "type": "integer"
+      },
+      "GitHubRepositoryModel": {
+        "required": [
+          "id",
+          "fullName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "fullName": {
+            "type": "string"
+          }
+        }
+      },
       "GitHubUserProfileModel": {
         "type": "object",
         "properties": {
@@ -1096,6 +1164,9 @@
           }
         }
       },
+      "GoogleHealthMetric": {
+        "type": "integer"
+      },
       "GoogleHealthUserProfileModel": {
         "required": [
           "id",
@@ -1139,6 +1210,196 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "HabitAutomationFilter": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/HabitAutomationFilterGithubAutomationFilter"
+          },
+          {
+            "$ref": "#/components/schemas/HabitAutomationFilterStravaAutomationFilter"
+          },
+          {
+            "$ref": "#/components/schemas/HabitAutomationFilterGoogleHealthAutomationFilter"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "github": "#/components/schemas/HabitAutomationFilterGithubAutomationFilter",
+            "strava": "#/components/schemas/HabitAutomationFilterStravaAutomationFilter",
+            "google-health": "#/components/schemas/HabitAutomationFilterGoogleHealthAutomationFilter"
+          }
+        }
+      },
+      "HabitAutomationFilterGithubAutomationFilter": {
+        "required": [
+          "repositoryId",
+          "repositoryName",
+          "eventTypes"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "github"
+            ],
+            "type": "string"
+          },
+          "repositoryId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "repositoryName": {
+            "type": "string"
+          },
+          "eventTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GithubEventType"
+            }
+          }
+        }
+      },
+      "HabitAutomationFilterGoogleHealthAutomationFilter": {
+        "required": [
+          "metrics"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "google-health"
+            ],
+            "type": "string"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoogleHealthMetric"
+            }
+          }
+        }
+      },
+      "HabitAutomationFilterModel": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/HabitAutomationFilterModelGithubAutomationFilterModel"
+          },
+          {
+            "$ref": "#/components/schemas/HabitAutomationFilterModelStravaAutomationFilterModel"
+          },
+          {
+            "$ref": "#/components/schemas/HabitAutomationFilterModelGoogleHealthAutomationFilterModel"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "github": "#/components/schemas/HabitAutomationFilterModelGithubAutomationFilterModel",
+            "strava": "#/components/schemas/HabitAutomationFilterModelStravaAutomationFilterModel",
+            "google-health": "#/components/schemas/HabitAutomationFilterModelGoogleHealthAutomationFilterModel"
+          }
+        }
+      },
+      "HabitAutomationFilterModelGithubAutomationFilterModel": {
+        "required": [
+          "repositoryId",
+          "repositoryName",
+          "eventTypes"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "github"
+            ],
+            "type": "string"
+          },
+          "repositoryId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "repositoryName": {
+            "type": "string"
+          },
+          "eventTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GithubEventType"
+            }
+          }
+        }
+      },
+      "HabitAutomationFilterModelGoogleHealthAutomationFilterModel": {
+        "required": [
+          "metrics"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "google-health"
+            ],
+            "type": "string"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoogleHealthMetric"
+            }
+          }
+        }
+      },
+      "HabitAutomationFilterModelStravaAutomationFilterModel": {
+        "required": [
+          "activityTypes"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "strava"
+            ],
+            "type": "string"
+          },
+          "activityTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StravaActivityType"
+            }
+          }
+        }
+      },
+      "HabitAutomationFilterStravaAutomationFilter": {
+        "required": [
+          "activityTypes"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "strava"
+            ],
+            "type": "string"
+          },
+          "activityTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StravaActivityType"
+            }
           }
         }
       },
@@ -1278,6 +1539,16 @@
               },
               {
                 "$ref": "#/components/schemas/AutomationSource"
+              }
+            ]
+          },
+          "automationFilter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HabitAutomationFilter"
               }
             ]
           },
@@ -1658,6 +1929,9 @@
           }
         }
       },
+      "StravaActivityType": {
+        "type": "integer"
+      },
       "StravaAthlete": {
         "required": [
           "id",
@@ -1827,6 +2101,16 @@
               },
               {
                 "$ref": "#/components/schemas/AutomationSource"
+              }
+            ]
+          },
+          "automationFilter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HabitAutomationFilterModel"
               }
             ]
           }

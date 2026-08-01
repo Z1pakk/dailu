@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Habit.Domain.Entities;
+using Habit.Domain.ValueObjects.AutomationFilters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SharedInfrastructure.Persistence;
@@ -31,6 +33,14 @@ internal sealed class HabitEntityConfiguration : BaseEntityTypedConfiguration<Ha
             .WithOne(t => t.Habit)
             .HasForeignKey(b => b.HabitId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .Property(x => x.AutomationFilter)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonSerializerOptions.Web), // To DB
+                v =>
+                    JsonSerializer.Deserialize<HabitAutomationFilter?>(v, JsonSerializerOptions.Web) // From DB
+            );
 
         builder.HasIndex(h => new { h.UserId }).HasSoftDeleteFilter();
 

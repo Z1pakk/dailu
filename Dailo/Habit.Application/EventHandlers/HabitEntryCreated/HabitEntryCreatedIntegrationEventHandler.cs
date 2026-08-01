@@ -28,21 +28,24 @@ public sealed class HabitEntryCreatedIntegrationEventHandler(IHabitDbContext dbC
         }
 
         var aggregate = HabitAggregate.Restore(
-            new Id<HabitAggregate>(notification.HabitId),
-            entity.UserId,
-            entity.Name,
-            entity.Description,
-            entity.Type,
-            entity.Frequency,
-            entity.Target,
-            entity.Status,
-            entity.IsArchived,
-            entity.EndDate,
-            entity.Milestone,
-            entity.LastCompletedAtUtc,
-            entity.Tags.ToList(),
-            entity.Version, // preserves version so ToEntity() passes the concurrency check,
-            entity.AutomationSource
+            new HabitAggregateRestoreRequest(
+                new Id<HabitAggregate>(notification.HabitId),
+                entity.UserId,
+                entity.Name,
+                entity.Description,
+                entity.Type,
+                entity.Frequency,
+                entity.Target,
+                entity.Status,
+                entity.IsArchived,
+                entity.EndDate,
+                entity.Milestone,
+                entity.LastCompletedAtUtc,
+                entity.Tags.ToList(),
+                entity.Version, // preserves version so ToEntity() passes the concurrency check,
+                entity.AutomationSource,
+                entity.AutomationFilter
+            )
         );
 
         var result = aggregate.Complete(notification.CompletedAtUtc);

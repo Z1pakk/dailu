@@ -15,7 +15,7 @@ public interface IGitHubHttpClient
         CancellationToken cancellationToken = default
     );
 
-    Task<Result<IEnumerable<GitHubEventModel>>> GetUserEventsAsync(
+    Task<Result<IEnumerable<GitHubEventModel>>?> GetUserEventsAsync(
         string userName,
         string accessToken,
         CancellationToken cancellationToken = default
@@ -31,6 +31,11 @@ public interface IGitHubHttpClient
     Task<string?> GetPullRequestTitleAsync(
         string repoFullName,
         int prNumber,
+        string accessToken,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<Result<IEnumerable<GitHubRepositoryModel>>?> GetUserRepositoriesAsync(
         string accessToken,
         CancellationToken cancellationToken = default
     );

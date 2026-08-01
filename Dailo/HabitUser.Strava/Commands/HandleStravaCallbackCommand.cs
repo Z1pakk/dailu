@@ -1,6 +1,6 @@
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Strava.Models;
 using HabitUser.Strava.Services;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +10,8 @@ using StrictId;
 
 namespace HabitUser.Strava.Commands;
 
-public sealed record HandleStravaCallbackCommand(Guid IdentityUserId, string Code) : ICommand<Result>;
+public sealed record HandleStravaCallbackCommand(Guid IdentityUserId, string Code)
+    : ICommand<Result>;
 
 public sealed class HandleStravaCallbackCommandHandler(
     IHabitUserDbContext dbContext,
@@ -34,7 +35,10 @@ public sealed class HandleStravaCallbackCommandHandler(
 
         var habitUser = await dbContext
             .HabitUsers.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.IdentityUserId == request.IdentityUserId, cancellationToken);
+            .FirstOrDefaultAsync(
+                u => u.IdentityUserId == request.IdentityUserId,
+                cancellationToken
+            );
 
         if (habitUser is null)
         {

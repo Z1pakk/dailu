@@ -1,0 +1,131 @@
+<div class="flex flex-col gap-4">
+  <div class="flex gap-4">
+    <div class="flex flex-col gap-2 flex-1">
+      <label for="frequencyType" class="block">Frequency Type</label>
+      <p-select [formControl]="formGroup().controls.frequencyType"
+                [options]="frequencyTypeSelectItems"
+                [invalid]="!!formGroup().controls.frequencyType.getError('serverError') || (!!formGroup().controls.frequencyType.errors && formGroup().controls.frequencyType.dirty)"
+                appendTo="body"
+                name="frequencyType"
+                inputId="frequencyType"
+                fluid />
+      @if (formGroup().controls.frequencyType.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (formGroup().controls.frequencyType.getError('issue') && formGroup().controls.frequencyType.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ formGroup().controls.frequencyType.getError('issue') }}
+        </small>
+      }
+    </div>
+    <div class="flex flex-col gap-2 flex-1">
+      <label for="timesPerPeriod" class="block">Times Per Period</label>
+      <p-input-number
+        [formControl]="formGroup().controls.frequencyTimesPerPeriod"
+        [invalid]="!!formGroup().controls.frequencyTimesPerPeriod.getError('serverError') || (!!formGroup().controls.frequencyTimesPerPeriod.errors && formGroup().controls.frequencyTimesPerPeriod.dirty)"
+        [min]="1"
+        [max]="999"
+        name="timesPerPeriod"
+        inputId="timesPerPeriod"
+        showButtons
+        fluid />
+      @if (formGroup().controls.frequencyTimesPerPeriod.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (formGroup().controls.frequencyTimesPerPeriod.getError('issue') && formGroup().controls.frequencyTimesPerPeriod.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ formGroup().controls.frequencyTimesPerPeriod.getError('issue') }}
+        </small>
+      }
+    </div>
+  </div>
+  <div class="flex gap-4">
+    <div class="flex flex-col gap-2 flex-1">
+      <label for="targetValue" class="block">Target Value</label>
+      <p-input-number [formControl]="formGroup().controls.targetValue"
+                      [invalid]="!!formGroup().controls.targetValue.getError('serverError') || (!!formGroup().controls.targetValue.errors && formGroup().controls.targetValue.dirty)"
+                      [min]="1"
+                      [max]="9999"
+                      name="targetValue"
+                      inputId="targetValue"
+                      showButtons
+                      fluid />
+      @if (formGroup().controls.targetValue.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (formGroup().controls.targetValue.getError('issue') && formGroup().controls.targetValue.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ formGroup().controls.targetValue.getError('issue') }}
+        </small>
+      }
+    </div>
+    <div class="flex flex-col gap-2 flex-1">
+      <label for="targetUnit" class="block">Unit</label>
+      <div>
+        <input [formControl]="formGroup().controls.targetUnit"
+               [invalid]="!!formGroup().controls.targetUnit.getError('serverError') || (!!formGroup().controls.targetUnit.errors && formGroup().controls.targetUnit.dirty)"
+               [maxlength]="100"
+               name="targetUnit"
+               type="text"
+               id="targetUnit"
+               pInputText
+               fluid />
+        @if (formGroup().controls.targetUnit.getError('serverError'); as serverError) {
+          <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+        }
+        @if (formGroup().controls.targetUnit.getError('issue') && formGroup().controls.targetUnit.dirty) {
+          <small class="text-sm text-red-500 mt-1">
+            {{ formGroup().controls.targetUnit.getError('issue') }}
+          </small>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="flex flex-col gap-2">
+    <label for="endDate" class="block">
+      End Date
+      <span class="text-sm font-normal text-surface-400">(optional)</span>
+    </label>
+    <p-datepicker [formControl]="formGroup().controls.endDate"
+                  [invalid]="!!formGroup().controls.endDate.getError('serverError') || (!!formGroup().controls.endDate.errors && formGroup().controls.endDate.dirty)"
+                  [minDate]="today"
+                  [showButtonBar]="true"
+                  appendTo="body"
+                  name="endDate"
+                  inputId="endDate"
+                  dateFormat="dd/mm/yy"
+                  showClear
+                  fluid />
+    @if (formGroup().controls.endDate.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (formGroup().controls.endDate.getError('issue') && formGroup().controls.endDate.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ formGroup().controls.endDate.getError('issue') }}
+      </small>
+    }
+  </div>
+  <div class="flex flex-col gap-2">
+    <label for="milestoneTarget" class="block">
+      Milestone Target
+      <span class="text-sm font-normal text-surface-400">(optional)</span>
+    </label>
+    <p-input-number [formControl]="formGroup().controls.milestoneTarget"
+                    [invalid]="!!formGroup().controls.milestoneTarget.getError('serverError') || (!!formGroup().controls.milestoneTarget.errors && formGroup().controls.milestoneTarget.dirty)"
+                    [min]="1"
+                    [max]="9999"
+                    name="milestoneTarget"
+                    inputId="milestoneTarget"
+                    showButtons
+                    showClear
+                    fluid />
+    @if (formGroup().controls.milestoneTarget.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (formGroup().controls.milestoneTarget.getError('issue') && formGroup().controls.milestoneTarget.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ formGroup().controls.milestoneTarget.getError('issue') }}
+      </small>
+    }
+  </div>
+</div>

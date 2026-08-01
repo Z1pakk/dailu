@@ -1,6 +1,7 @@
 using Habit.Domain.Entities;
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects;
+using Habit.Domain.ValueObjects.AutomationFilters;
 using StrictId;
 
 namespace Habit.Application.Features.GetHabits.QueryModels;
@@ -30,6 +31,8 @@ public class GetHabitQueryModel
     public DateTime CreatedAtUtc { get; set; }
 
     public AutomationSource? AutomationSource { get; set; }
+
+    public HabitAutomationFilter? AutomationFilter { get; set; }
 
     public DateTime? LastCompletedAtUtc { get; set; }
 

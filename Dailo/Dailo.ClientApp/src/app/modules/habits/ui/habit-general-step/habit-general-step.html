@@ -1,0 +1,59 @@
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-2">
+    <label for="name" class="block required">Name</label>
+    <div>
+      <input [formControl]="formGroup().controls.name"
+             [invalid]="!!formGroup().controls.name.getError('serverError') || (!!formGroup().controls.name.errors && formGroup().controls.name.dirty)"
+             [maxLength]="100"
+             name="name"
+             type="text"
+             id="name"
+             pInputText
+             fluid />
+      @if (formGroup().controls.name.getError('serverError'); as serverError) {
+        <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+      }
+      @if (formGroup().controls.name.getError('issue') && formGroup().controls.name.dirty) {
+        <small class="text-sm text-red-500 mt-1">
+          {{ formGroup().controls.name.getError('issue') }}
+        </small>
+      }
+    </div>
+  </div>
+  <div class="flex flex-col gap-2">
+    <label for="description" class="block">Description</label>
+    <textarea [formControl]="formGroup().controls.description"
+              [invalid]="!!formGroup().controls.description.getError('serverError') || (!!formGroup().controls.description.errors && formGroup().controls.description.dirty)"
+              [maxLength]="500"
+              name="description"
+              id="description"
+              pInputTextarea
+              fluid></textarea>
+    @if (formGroup().controls.description.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (formGroup().controls.description.getError('issue') && formGroup().controls.description.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ formGroup().controls.description.getError('issue') }}
+      </small>
+    }
+  </div>
+  <div class="flex flex-col gap-2">
+    <label for="habitType" class="block">Type</label>
+    <p-select [formControl]="formGroup().controls.type"
+              [options]="habitTypeSelectItems"
+              [invalid]="!!formGroup().controls.type.getError('serverError') || (!!formGroup().controls.type.errors && formGroup().controls.type.dirty)"
+              appendTo="body"
+              name="habitType"
+              inputId="habitType"
+              fluid />
+    @if (formGroup().controls.type.getError('serverError'); as serverError) {
+      <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+    }
+    @if (formGroup().controls.type.getError('issue') && formGroup().controls.type.dirty) {
+      <small class="text-sm text-red-500 mt-1">
+        {{ formGroup().controls.type.getError('issue') }}
+      </small>
+    }
+  </div>
+</div>

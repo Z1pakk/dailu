@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.GoogleHealth.Models;
 using HabitUser.GoogleHealth.Models.Internal;
 using HabitUser.GoogleHealth.Options;

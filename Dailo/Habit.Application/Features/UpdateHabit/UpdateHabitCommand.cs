@@ -22,7 +22,8 @@ public sealed record UpdateHabitCommand(
     DateOnly? EndDate,
     MilestoneModel? Milestone,
     IEnumerable<Id<TagModel>> TagIds,
-    AutomationSource? AutomationSource
+    AutomationSource? AutomationSource,
+    HabitAutomationFilterModel? AutomationFilter = null
 ) : ICommand<Result>;
 
 public sealed class UpdateHabitCommandHandler(
@@ -56,37 +57,43 @@ public sealed class UpdateHabitCommandHandler(
         var existingTagIds = tags.Keys.Select(k => k.ToId()).ToHashSet();
 
         var aggregate = HabitAggregate.Restore(
-            new Id<HabitAggregate>(entity.Id.Value),
-            entity.UserId,
-            entity.Name,
-            entity.Description,
-            entity.Type,
-            entity.Frequency,
-            entity.Target,
-            entity.Status,
-            entity.IsArchived,
-            entity.EndDate,
-            entity.Milestone,
-            entity.LastCompletedAtUtc,
-            entity.Tags.ToList(),
-            entity.Version,
-            entity.AutomationSource
+            new HabitAggregateRestoreRequest(
+                new Id<HabitAggregate>(entity.Id.Value),
+                entity.UserId,
+                entity.Name,
+                entity.Description,
+                entity.Type,
+                entity.Frequency,
+                entity.Target,
+                entity.Status,
+                entity.IsArchived,
+                entity.EndDate,
+                entity.Milestone,
+                entity.LastCompletedAtUtc,
+                entity.Tags.ToList(),
+                entity.Version,
+                entity.AutomationSource,
+                entity.AutomationFilter
+            )
         );
 
         var updateResult = aggregate.Update(
-            request.Name,
-            request.Description,
-            request.Type,
-            request.Frequency.Type,
-            request.Frequency.TimesPerPeriod,
-            request.Target.Value,
-            request.Target.Unit,
-            request.EndDate,
-            request.Milestone?.Target,
-            request.Milestone?.Current,
-            requestedTagIds,
-            existingTagIds,
-            request.AutomationSource
+            new HabitAggregateUpdateRequest(
+                request.Name,
+                request.Description,
+                request.Type,
+                request.Frequency.Type,
+                request.Frequency.TimesPerPeriod,
+                request.Target.Value,
+                request.Target.Unit,
+                request.EndDate,
+                request.Milestone?.Target,
+                request.Milestone?.Current,
+                requestedTagIds,
+                existingTagIds,
+                request.AutomationSource,
+                request.AutomationFilter?.ToDomain()
+            )
         );
 
         if (updateResult.IsFailure)

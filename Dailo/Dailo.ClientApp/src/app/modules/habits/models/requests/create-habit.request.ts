@@ -3,6 +3,7 @@ import { AutomationSource } from '@habits/enums/automation-source.enum';
 import { FrequencyModel } from '@habits/models/frequency.model';
 import { TargetModel } from '@habits/models/target.model';
 import { MilestoneModel } from '@habits/models/milestone.model';
+import { AutomationFilterModel } from '@habits/models/automation-filter.model';
 
 export interface CreateHabitRequestModel {
   name: string;
@@ -14,4 +15,5 @@ export interface CreateHabitRequestModel {
   milestone: MilestoneModel | null;
   tagIds: string[];
   automationSource: AutomationSource | null;
+  automationFilter: AutomationFilterModel | null;
 }

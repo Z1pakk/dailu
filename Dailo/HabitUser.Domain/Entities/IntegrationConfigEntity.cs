@@ -1,4 +1,4 @@
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 
 namespace HabitUser.Domain.Entities;
 

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace HabitUser.Domain.Integrations;
+namespace HabitUser.Domain.ValueObjects.IntegrationConfigs;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(GithubIntegrationConfig), "github")]

@@ -1,5 +1,5 @@
 using HabitUser.Application.Features.Integration;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -35,10 +35,7 @@ internal static class SaveIntegrationConfig
         CancellationToken cancellationToken = default
     )
     {
-        var result = await sender.Send(
-            new SaveIntegrationConfigCommand(config),
-            cancellationToken
-        );
+        var result = await sender.Send(new SaveIntegrationConfigCommand(config), cancellationToken);
 
         if (result.IsFailure)
         {

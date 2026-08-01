@@ -1,6 +1,6 @@
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.GoogleHealth.Models;
 using HabitUser.GoogleHealth.Services;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +10,8 @@ using SharedKernel.User;
 
 namespace HabitUser.GoogleHealth.Queries;
 
-public sealed class GetGoogleHealthProfileQuery : IQuery<Result<GetGoogleHealthProfileQueryResponse>> { }
+public sealed class GetGoogleHealthProfileQuery
+    : IQuery<Result<GetGoogleHealthProfileQueryResponse>> { }
 
 public sealed record GetGoogleHealthProfileQueryResponse(GoogleHealthUserProfileModel Profile);
 
@@ -30,14 +31,17 @@ public sealed class GetGoogleHealthProfileQueryHandler(
         var config = await dbContext
             .IntegrationConfigs.AsNoTracking()
             .Where(x =>
-                x.HabitUser.IdentityUserId == userId && x.Provider == IntegrationProvider.GoogleHealth
+                x.HabitUser.IdentityUserId == userId
+                && x.Provider == IntegrationProvider.GoogleHealth
             )
             .Select(x => x.Config)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (config is not GoogleHealthIntegrationConfig googleHealthConfig)
         {
-            return Result<GetGoogleHealthProfileQueryResponse>.Failure("Google Health integration not found.");
+            return Result<GetGoogleHealthProfileQueryResponse>.Failure(
+                "Google Health integration not found."
+            );
         }
 
         var profile = await googleHealthHttpClient.GetUserProfileAsync(
@@ -47,7 +51,9 @@ public sealed class GetGoogleHealthProfileQueryHandler(
 
         if (profile is null)
         {
-            return Result<GetGoogleHealthProfileQueryResponse>.Failure("Failed to fetch Google Health profile.");
+            return Result<GetGoogleHealthProfileQueryResponse>.Failure(
+                "Failed to fetch Google Health profile."
+            );
         }
 
         return Result<GetGoogleHealthProfileQueryResponse>.Success(

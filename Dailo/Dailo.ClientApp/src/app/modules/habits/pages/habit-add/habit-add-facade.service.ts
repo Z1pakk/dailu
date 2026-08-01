@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, Signal } from '@angular/core';
+import { computed, inject, Injectable, resource, Signal } from '@angular/core';
 import { NonNullableFormBuilder } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import * as v from 'valibot';
@@ -19,11 +19,27 @@ import {
   HabitEndDateSchema,
   HabitTagIdsSchema,
   HabitAutomationSourceSchema,
+  HabitGithubRepositoryIdSchema,
+  HabitGithubRepositoryNameSchema,
+  HabitGithubEventTypesSchema,
+  HabitStravaActivityTypesSchema,
+  HabitGoogleHealthMetricsSchema,
 } from '@habits/schemas/habit.schemas';
-import { AutomationSource } from '@habits/enums/automation-source.enum';
+import { AutomationSource, automationSources } from '@habits/enums/automation-source.enum';
+import { GithubEventType } from '@habits/enums/github-event-type.enum';
+import { StravaActivityType } from '@habits/enums/strava-activity-type.enum';
+import { GoogleHealthMetric } from '@habits/enums/google-health-metric.enum';
 import { valibotValidator } from '@shared/lib/form/valibot.validator';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, EMPTY, map, Observable, startWith, tap } from 'rxjs';
+import {
+  catchError,
+  EMPTY,
+  firstValueFrom,
+  map,
+  Observable,
+  startWith,
+  tap,
+} from 'rxjs';
 import { HabitType, habitTypes } from '@habits/enums/habit-type.enum';
 import {
   FrequencyType,
@@ -34,15 +50,18 @@ import { HabitCreateHabit, HabitFetchHabits } from '@habits/state/habit.action';
 import { HttpErrorResponse } from '@angular/common/http';
 import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
 import { CreateHabitRequestModel } from '@habits/models/requests/create-habit.request';
+import { AutomationFilterModel } from '@habits/models/automation-filter.model';
 import { TagStateSelectors } from '@tags/state/tag.selector';
 import { SelectItem } from '@shared/lib/select-item/select-item.type';
 import { toLocalDateString } from '@shared/lib/date/to-local-date-string';
+import { UserProfileApi } from '@user-profile/api/user-profile.api';
 
 @Injectable()
 export class HabitAddFacadeService {
   private readonly _fb = inject(NonNullableFormBuilder);
   private readonly _store = inject(Store);
   private readonly _messageService = inject(MessageService);
+  private readonly _userProfileApi = inject(UserProfileApi);
 
   private readonly _$tags = this._store.selectSignal(
     TagStateSelectors.getSlices.tags,
@@ -95,7 +114,49 @@ export class HabitAddFacadeService {
         null,
         valibotValidator(HabitAutomationSourceSchema),
       ),
+      githubRepositoryId: this._fb.control<number | null>(
+        null,
+        valibotValidator(HabitGithubRepositoryIdSchema),
+      ),
+      githubRepositoryName: this._fb.control<string | null>(
+        null,
+        valibotValidator(HabitGithubRepositoryNameSchema),
+      ),
+      githubEventTypes: this._fb.control<GithubEventType[]>(
+        [],
+        valibotValidator(HabitGithubEventTypesSchema),
+      ),
+      stravaActivityTypes: this._fb.control<StravaActivityType[]>(
+        [],
+        valibotValidator(HabitStravaActivityTypesSchema),
+      ),
+      googleHealthMetrics: this._fb.control<GoogleHealthMetric[]>(
+        [],
+        valibotValidator(HabitGoogleHealthMetricsSchema),
+      ),
     });
+
+  private readonly _$automationSource = toSignal(
+    this.addHabitForm.controls.automationSource.valueChanges,
+    { initialValue: this.addHabitForm.controls.automationSource.value },
+  );
+
+  private readonly _githubReposResource = resource({
+    params: () =>
+      this._$automationSource() === automationSources.github ? {} : undefined,
+    loader: () => firstValueFrom(this._userProfileApi.getGithubRepos()),
+  });
+
+  public readonly $githubRepoSelectItems: Signal<SelectItem<number>[]> =
+    computed(() =>
+      (this._githubReposResource.value()?.repositories ?? []).map((r) => ({
+        label: r.fullName,
+        value: r.id,
+      })),
+    );
+
+  public readonly $githubReposLoading: Signal<boolean> =
+    this._githubReposResource.isLoading;
 
   public readonly $isFormValid: Signal<boolean> = toSignal(
     this.addHabitForm.statusChanges.pipe(
@@ -120,7 +181,34 @@ export class HabitAddFacadeService {
       milestoneTarget,
       tagIds,
       automationSource,
+      githubRepositoryId,
+      githubRepositoryName,
+      githubEventTypes,
+      stravaActivityTypes,
+      googleHealthMetrics,
     } = formValue;
+
+    const automationFilter: AutomationFilterModel | null = (() => {
+      if (
+        automationSource === automationSources.github &&
+        githubRepositoryId !== null &&
+        githubRepositoryName !== null
+      ) {
+        return {
+          type: 'github',
+          repositoryId: githubRepositoryId,
+          repositoryName: githubRepositoryName,
+          eventTypes: githubEventTypes,
+        };
+      }
+      if (automationSource === automationSources.strava) {
+        return { type: 'strava', activityTypes: stravaActivityTypes };
+      }
+      if (automationSource === automationSources.googleHealth) {
+        return { type: 'google-health', metrics: googleHealthMetrics };
+      }
+      return null;
+    })();
 
     const request = (<CreateHabitRequestModel>{
       name,
@@ -138,6 +226,7 @@ export class HabitAddFacadeService {
           : null,
       tagIds,
       automationSource,
+      automationFilter,
     }) satisfies CreateHabitRequestModel;
 
     return this._store.dispatch(new HabitCreateHabit(request)).pipe(

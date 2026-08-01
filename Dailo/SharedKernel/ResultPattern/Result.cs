@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http;
 
 namespace SharedKernel.ResultPattern;
@@ -6,7 +7,13 @@ public class Result
 {
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
-    public string? Error { get; }
+
+    [AllowNull]
+    public string Error
+    {
+        get => field ?? "An error occurred.";
+    } = null;
+
     public ResultType Type { get; }
 
     protected Result(bool isSuccess, string? error, ResultType type)

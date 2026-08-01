@@ -1,6 +1,6 @@
 ﻿using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.GoogleHealth.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;

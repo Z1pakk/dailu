@@ -1,0 +1,65 @@
+<div class="flex gap-6">
+  <div class="flex flex-col w-36 shrink-0 pr-6 border-r border-surface-200 dark:border-surface-700">
+    @for (step of steps(); track step.label; let i = $index; let last = $last) {
+      <button
+        type="button"
+        class="flex gap-3 text-left cursor-pointer"
+        (click)="goTo(i)"
+      >
+        <div class="flex flex-col items-center">
+          <div
+            class="flex items-center justify-center w-6 h-6 rounded-full text-xs shrink-0"
+            [class.bg-primary]="i <= activeIndex()"
+            [class.text-primary-contrast]="i <= activeIndex()"
+            [class.bg-surface-200]="i > activeIndex()"
+            [class.dark:bg-surface-700]="i > activeIndex()"
+          >
+            @if (i < activeIndex()) {
+              <i class="pi pi-check"></i>
+            } @else {
+              {{ i + 1 }}
+            }
+          </div>
+          @if (!last) {
+            <div
+              class="w-px flex-1 min-h-6"
+              [class.bg-primary]="i < activeIndex()"
+              [class.bg-surface-200]="i >= activeIndex()"
+              [class.dark:bg-surface-700]="i >= activeIndex()"
+            ></div>
+          }
+        </div>
+        <div class="pb-6" [class.opacity-60]="i !== activeIndex()">
+          <div class="font-semibold text-sm">{{ step.label }}</div>
+          <div class="text-xs text-surface-400">{{ step.description }}</div>
+        </div>
+      </button>
+    }
+  </div>
+
+  <div class="flex-1 flex flex-col gap-4 min-w-0">
+    <ng-content></ng-content>
+
+    <div class="flex justify-end gap-2 pt-2 border-t border-surface-200 dark:border-surface-700">
+      <p-button
+        type="button"
+        label="Back"
+        severity="secondary"
+        [text]="true"
+        [disabled]="activeIndex() === 0"
+        (click)="back()"
+      ></p-button>
+      @if (activeIndex() < steps().length - 1) {
+        <p-button
+          type="button"
+          label="Next"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          [outlined]="true"
+          [disabled]="nextDisabled()"
+          (click)="next()"
+        ></p-button>
+      }
+    </div>
+  </div>
+</div>

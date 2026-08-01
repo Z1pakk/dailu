@@ -1,5 +1,5 @@
 using Dailo.Events;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using Mediator;
 using Microsoft.Extensions.Logging;
 using SharedKernel.ResultPattern;
@@ -37,7 +37,11 @@ public sealed class GoogleHealthActivityService(
     {
         var after = lastSyncedAtUtc ?? timeProvider.GetUtcNow().UtcDateTime.Date;
 
-        var apiResult = await googleHealthApiClient.GetActivitiesAsync(config, after, cancellationToken);
+        var apiResult = await googleHealthApiClient.GetActivitiesAsync(
+            config,
+            after,
+            cancellationToken
+        );
 
         if (apiResult.IsFailure)
         {
@@ -74,15 +78,16 @@ public sealed class GoogleHealthActivityService(
             cancellationToken
         );
 
-        return new GoogleHealthActivityPollResult(Result.Success(), apiResult.Value.RefreshedConfig);
+        return new GoogleHealthActivityPollResult(
+            Result.Success(),
+            apiResult.Value.RefreshedConfig
+        );
     }
 
     private static string BuildNotes(string exerciseType, string? displayName, int durationSeconds)
     {
         var label = string.IsNullOrEmpty(displayName) ? exerciseType : displayName;
-        var duration = durationSeconds > 0
-            ? $" ({durationSeconds / 60} min)"
-            : string.Empty;
+        var duration = durationSeconds > 0 ? $" ({durationSeconds / 60} min)" : string.Empty;
         return $"[{label}]{duration}";
     }
 }

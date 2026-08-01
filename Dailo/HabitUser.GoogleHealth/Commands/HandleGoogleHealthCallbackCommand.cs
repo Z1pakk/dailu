@@ -1,6 +1,6 @@
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
-using HabitUser.Domain.Integrations;
+using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.GoogleHealth.Services;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;
@@ -9,7 +9,8 @@ using StrictId;
 
 namespace HabitUser.GoogleHealth.Commands;
 
-public sealed record HandleGoogleHealthCallbackCommand(Guid IdentityUserId, string Code) : ICommand<Result>;
+public sealed record HandleGoogleHealthCallbackCommand(Guid IdentityUserId, string Code)
+    : ICommand<Result>;
 
 public sealed class HandleGoogleHealthCallbackCommandHandler(
     IHabitUserDbContext dbContext,
@@ -33,7 +34,10 @@ public sealed class HandleGoogleHealthCallbackCommandHandler(
 
         var habitUser = await dbContext
             .HabitUsers.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.IdentityUserId == request.IdentityUserId, cancellationToken);
+            .FirstOrDefaultAsync(
+                u => u.IdentityUserId == request.IdentityUserId,
+                cancellationToken
+            );
 
         if (habitUser is null)
         {
