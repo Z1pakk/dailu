@@ -58,7 +58,8 @@ public sealed class StravaActivityService(
                 ExternalId: a.Id.ToString(CultureInfo.InvariantCulture),
                 OccurredAtUtc: a.StartDateUtc,
                 Notes: BuildNotes(a.Type, a.Name, a.Distance, a.Description),
-                Value: CalculateValue(a.Distance)
+                Value: CalculateValue(a.Distance),
+                Source: new IntegrationActivitySourceDetails(a.Type)
             ))
             .ToList();
 

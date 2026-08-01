@@ -1,11 +1,9 @@
 using Habit.Application.Persistence;
-using Habit.DataTransfer.Enums;
 using Habit.DataTransfer.Models;
 using Habit.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.User;
 using StrictId;
-using DomainAutomationSource = Habit.Domain.Enums.AutomationSource;
 
 namespace Habit.DataTransfer.Services;
 
@@ -15,16 +13,12 @@ public interface IHabitDataTransferService
         IEnumerable<Id<HabitModel>> ids,
         CancellationToken cancellationToken = default
     );
-
-    Task<IReadOnlyList<HabitModel>> GetByAutomationSourceAsync(
-        Guid userId,
-        AutomationSource source,
-        CancellationToken cancellationToken = default
-    );
 }
 
-public class HabitDataTransferService(IHabitDbContext dbContext, ICurrentUserService currentUserService)
-    : IHabitDataTransferService
+public class HabitDataTransferService(
+    IHabitDbContext dbContext,
+    ICurrentUserService currentUserService
+) : IHabitDataTransferService
 {
     public async Task<Dictionary<Id<HabitModel>, HabitModel>> GetByIdsAsync(
         IEnumerable<Id<HabitModel>> ids,
@@ -45,25 +39,5 @@ public class HabitDataTransferService(IHabitDbContext dbContext, ICurrentUserSer
             .ToDictionaryAsync(h => h.Id, cancellationToken);
 
         return habits;
-    }
-
-    public async Task<IReadOnlyList<HabitModel>> GetByAutomationSourceAsync(
-        Guid userId,
-        AutomationSource source,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var domainSource = (DomainAutomationSource)source;
-
-        return await dbContext
-            .Habits.AsNoTracking()
-            .Where(h => h.UserId == userId && h.AutomationSource == domainSource && !h.IsArchived)
-            .Select(h => new HabitModel
-            {
-                Id = new Id<HabitModel>(h.Id.Value),
-                Name = h.Name,
-                Type = h.Type,
-            })
-            .ToListAsync(cancellationToken);
     }
 }

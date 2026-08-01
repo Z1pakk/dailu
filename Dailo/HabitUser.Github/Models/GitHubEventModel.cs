@@ -12,6 +12,8 @@ public sealed record GitHubEventModel
 
     public string? RepoName { get; set; }
 
+    public long? RepoId { get; set; }
+
     public string? HeadCommitSha { get; set; }
 
     public string? CommitMessage { get; set; }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dailo.Events;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Github.Models;
@@ -109,7 +110,15 @@ public sealed class GitHubActivityService(
         }
 
         var activities = filteredEvents
-            .Select(e => new IntegrationActivityItem(e.Id, e.CreatedAtUtc, BuildNotes(e)))
+            .Select(e => new IntegrationActivityItem(
+                e.Id,
+                e.CreatedAtUtc,
+                BuildNotes(e),
+                Source: new IntegrationActivitySourceDetails(
+                    ToEventTypeName(e.Type),
+                    e.RepoId?.ToString(CultureInfo.InvariantCulture)
+                )
+            ))
             .ToList();
 
         if (activities.Count == 0)
@@ -128,6 +137,9 @@ public sealed class GitHubActivityService(
 
         return Result.Success();
     }
+
+    private static string ToEventTypeName(string rawType) =>
+        rawType == GitHubEventTypes.Push ? "Push" : "PullRequest";
 
     private static string? BuildNotes(GitHubEventModel e)
     {

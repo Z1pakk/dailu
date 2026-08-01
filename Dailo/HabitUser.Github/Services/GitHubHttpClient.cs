@@ -150,6 +150,7 @@ public sealed class GitHubHttpClient(
                     CreatedAtUtc = e.CreatedAtUtc,
                     Public = e.Public,
                     RepoName = e.Repo?.Name,
+                    RepoId = e.Repo?.Id,
                     HeadCommitSha = e.Payload?.Head,
                     PrNumber = e.Payload?.Number,
                     PrAction = e.Payload?.Action,
