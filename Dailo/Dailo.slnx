@@ -1,14 +1,18 @@
 <Solution>
   <Folder Name="/Solution Items/">
-    <File Path="../.github/renovate-global.json" />
-    <File Path="../.github/workflows/build.yml" />
-    <File Path="../.github/workflows/deploy.yml" />
-    <File Path="../.github/workflows/renovate.yml" />
     <File Path=".editorconfig" />
     <File Path="AGENTS.md" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/workflows/">
+    <File Path="../.github/renovate-global.json" />
+    <File Path="../.github/workflows/build-observability.yml" />
+    <File Path="../.github/workflows/build.yml" />
+    <File Path="../.github/workflows/deploy-observability.yml" />
+    <File Path="../.github/workflows/deploy.yml" />
+    <File Path="../.github/workflows/renovate.yml" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="Dailo.Infrastructure/Dailo.Infrastructure.csproj" />

@@ -1,6 +1,26 @@
 name: dailu-observability
 
 services:
+  observability-config-init:
+    image: ${OBSERVABILITY_CONFIG_IMAGE:?OBSERVABILITY_CONFIG_IMAGE is required}
+    restart: "no"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        cp /config/otel-collector-config.yaml /out/otel-collector/otel-collector-config.yaml
+        cp /config/tempo.yaml /out/tempo/tempo.yaml
+        cp /config/prometheus.yml /out/prometheus/prometheus.yml
+        cp /config/loki-config.yaml /out/loki/loki-config.yaml
+        cp -r /config/grafana/provisioning/. /out/grafana-provisioning/
+        cp -r /config/grafana/dashboards/. /out/grafana-dashboards/
+    volumes:
+      - otel-collector-config:/out/otel-collector
+      - tempo-config:/out/tempo
+      - prometheus-config:/out/prometheus
+      - loki-config:/out/loki
+      - grafana-provisioning-config:/out/grafana-provisioning
+      - grafana-dashboards-config:/out/grafana-dashboards
+
   otel-collector-storage-init:
     image: busybox
     restart: "no"
@@ -10,12 +30,14 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.158.0
-    command: ["--config=/etc/otel-collector-config.yaml"]
+    command: ["--config=/etc/otelcol-config/otel-collector-config.yaml"]
     restart: unless-stopped
     volumes:
-      - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+      - otel-collector-config:/etc/otelcol-config:ro
       - otel-collector-storage:/var/lib/otelcol/file_storage
     depends_on:
+      observability-config-init:
+        condition: service_completed_successfully
       otel-collector-storage-init:
         condition: service_completed_successfully
     networks:
@@ -24,11 +46,14 @@ services:
 
   tempo:
     image: grafana/tempo:2.10.7
-    command: ["-config.file=/etc/tempo.yaml"]
+    command: ["-config.file=/etc/tempo-config/tempo.yaml"]
     restart: unless-stopped
     volumes:
-      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-config:/etc/tempo-config:ro
       - tempo-data:/var/tempo
+    depends_on:
+      observability-config-init:
+        condition: service_completed_successfully
     networks:
       - default
       - dokploy-network
@@ -41,8 +66,11 @@ services:
       - "--storage.tsdb.retention.size=2GB"
     restart: unless-stopped
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-config:/etc/prometheus:ro
       - prometheus-data:/prometheus
+    depends_on:
+      observability-config-init:
+        condition: service_completed_successfully
     networks:
       - default
       - dokploy-network
@@ -52,8 +80,11 @@ services:
     command: ["-config.file=/etc/loki/loki-config.yaml"]
     restart: unless-stopped
     volumes:
-      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-config:/etc/loki:ro
       - loki-data:/loki
+    depends_on:
+      observability-config-init:
+        condition: service_completed_successfully
     networks:
       - default
       - dokploy-network
@@ -62,12 +93,13 @@ services:
     image: grafana/grafana:13.1.3
     restart: unless-stopped
     environment:
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:?GRAFANA_ROOT_URL is required}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-provisioning-config:/etc/grafana/provisioning:ro
+      - grafana-dashboards-config:/etc/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
       - "3100:3000"
@@ -75,9 +107,14 @@ services:
       - default
       - dokploy-network
     depends_on:
-      - tempo
-      - prometheus
-      - loki
+      observability-config-init:
+        condition: service_completed_successfully
+      tempo:
+        condition: service_started
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
 
 networks:
   dokploy-network:
@@ -89,3 +126,9 @@ volumes:
   loki-data:
   grafana-data:
   otel-collector-storage:
+  otel-collector-config:
+  tempo-config:
+  prometheus-config:
+  loki-config:
+  grafana-provisioning-config:
+  grafana-dashboards-config:

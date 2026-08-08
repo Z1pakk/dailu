@@ -1,0 +1,27 @@
+name: Deploy Observability Stack
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Build Observability Config"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Dokploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+
+      - name: Trigger Dokploy deployment
+        run: curl --fail -X POST "${{ secrets.DOKPLOY_OBSERVABILITY_WEBHOOK_URL }}"
