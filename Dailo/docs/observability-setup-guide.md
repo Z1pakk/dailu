@@ -732,22 +732,38 @@ This is the phase where the three signals actually connect to each other.
 ## Phase 7: Ship it to production via Dokploy
 
 1. Create `observability/docker-compose.override.prod.yml` — a fully standalone file (matches
-   how `dailu-api`/`dailu-frontend` are already deployed at the repo root, not a merge-override):
+   how `dailu-api`/`dailu-frontend` are already deployed at the repo root, not a merge-override).
+   This mirrors the local `observability/docker-compose.yml` built up through Phases 1–6,
+   including the file-storage permission fix and non-nested dashboards mount, with
+   production-specific networking and hardening:
 
    ```yaml
+   name: dailu-observability
+
    services:
+     otel-collector-storage-init:
+       image: busybox
+       restart: "no"
+       command: ["sh", "-c", "chown -R 10001:10001 /var/lib/otelcol/file_storage"]
+       volumes:
+         - otel-collector-storage:/var/lib/otelcol/file_storage
+
      otel-collector:
-       image: otel/opentelemetry-collector-contrib:0.114.0
+       image: otel/opentelemetry-collector-contrib:0.158.0
        command: ["--config=/etc/otel-collector-config.yaml"]
        restart: unless-stopped
        volumes:
-         - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml:ro
+         - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+         - otel-collector-storage:/var/lib/otelcol/file_storage
+       depends_on:
+         otel-collector-storage-init:
+           condition: service_completed_successfully
        networks:
          - default
          - dokploy-network
 
      tempo:
-       image: grafana/tempo:2.6.1
+       image: grafana/tempo:2.10.7
        command: ["-config.file=/etc/tempo.yaml"]
        restart: unless-stopped
        volumes:
@@ -758,7 +774,7 @@ This is the phase where the three signals actually connect to each other.
          - dokploy-network
 
      prometheus:
-       image: prom/prometheus:v3.0.1
+       image: prom/prometheus:v3.13.2
        command:
          - "--config.file=/etc/prometheus/prometheus.yml"
          - "--storage.tsdb.retention.time=7d"
@@ -772,7 +788,7 @@ This is the phase where the three signals actually connect to each other.
          - dokploy-network
 
      loki:
-       image: grafana/loki:3.3.2
+       image: grafana/loki:3.7.6
        command: ["-config.file=/etc/loki/loki-config.yaml"]
        restart: unless-stopped
        volumes:
@@ -783,17 +799,19 @@ This is the phase where the three signals actually connect to each other.
          - dokploy-network
 
      grafana:
-       image: grafana/grafana:11.3.1
+       image: grafana/grafana:13.1.3
        restart: unless-stopped
        environment:
          GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:?GRAFANA_ROOT_URL is required}
          GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+         GF_AUTH_ANONYMOUS_ENABLED: "false"
+         GF_USERS_ALLOW_SIGN_UP: "false"
        volumes:
          - ./grafana/provisioning:/etc/grafana/provisioning:ro
-         - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+         - ./grafana/dashboards:/etc/grafana/dashboards:ro
          - grafana-data:/var/lib/grafana
        ports:
-         - "${TAILSCALE_IP:?TAILSCALE_IP is required}:3100:3000"
+         - "3100:3000"
        networks:
          - default
          - dokploy-network
@@ -811,15 +829,33 @@ This is the phase where the three signals actually connect to each other.
      prometheus-data:
      loki-data:
      grafana-data:
+     otel-collector-storage:
    ```
 
-   Notice `grafana` is the only service with a `ports:` mapping, and it's bound to
-   `${TAILSCALE_IP}` specifically — not `0.0.0.0` — so it's reachable only from the host's
-   tailnet interface, the same pattern `step-ca`/`sshd` already use
-   ([ADR 009](adr/009_production_vpn.md)). The other four services need no host port at all;
-   `dailu-api` reaches the Collector purely over `dokploy-network` by service name. The host side
-   of Grafana's mapping is `3100`, not `3000` — Dokploy's own UI already occupies `3000` on this
-   host, same reasoning as the local Phase 3 setup.
+   `grafana` is the only service with a `ports:` mapping — the other four need no host port at
+   all; `dailu-api` reaches the Collector purely over `dokploy-network` by service name. This is
+   deliberately *not* routed through Dokploy's Traefik/domain feature: assigning a domain there is
+   a per-service action in the Dokploy UI with nothing in this compose file stopping someone from
+   later assigning one to `tempo`/`loki`/`prometheus` too — and those three have zero built-in
+   auth, so that mistake would fully expose all traces/logs/metrics with no login required. Using
+   a plain `ports:` mapping instead keeps "only Grafana is reachable" a fact of the compose file
+   itself, not a habit someone has to remember in a separate UI.
+
+   Grafana's port is **not** bound to a specific Tailscale IP in Docker (`"3100:3000"`, not
+   `"${TAILSCALE_IP}:3100:3000"`) — it's published normally, and access is restricted at the host
+   firewall instead, scoped to the `tailscale0` interface/tailnet CIDR. That's the same mechanism
+   `step-ca` (8443) and `sshd` (22) already use on this host
+   ([ADR 009](adr/009_production_vpn.md)), just applied via firewall rules rather than Docker's
+   own IP-binding — set that rule up yourself on the Hetzner host (see step 4a). `3100`, not
+   `3000`, is used for the host port since Dokploy's own UI already occupies `3000` on this host,
+   same reasoning as the local Phase 3 setup. The `GF_AUTH_ANONYMOUS_ENABLED`/
+   `GF_USERS_ALLOW_SIGN_UP` hardening stays regardless — Grafana's own login is the backstop if the
+   firewall rule is ever misconfigured.
+
+   `otel-collector-storage-init` reuses the same non-root-image permission fix from local Phase 3:
+   `otel/opentelemetry-collector-contrib` runs as UID `10001` and has no shell, so a fresh named
+   volume needs its ownership fixed by a separate container before the Collector can write its
+   persistent queue to it.
 
 2. In the root `docker-compose.override.prod.yml`, add one line to `dailu-api`'s
    `environment:` block:
@@ -830,27 +866,41 @@ This is the phase where the three signals actually connect to each other.
 
 3. Commit both files.
 
-4. **Deploy manually** (this touches live production infra, Tailscale, and Infisical secrets —
-   do this yourself, not via an agent):
+4. **Deploy manually** (this touches live production infra, the host firewall, and Infisical
+   secrets — do this yourself, not via an agent):
 
-   a. SSH to the Hetzner host and run `tailscale ip -4` — note the output as `TAILSCALE_IP`.
+   a. SSH to the Hetzner host and run `tailscale ip -4` — note the output; it's needed both to
+      compute `GRAFANA_ROOT_URL` below and for the firewall rule in step (b).
 
-   b. In the Dokploy UI, create a new **Compose** application (e.g. `dailo-observability`)
-      pointing at this repo with compose file path `observability/docker-compose.override.prod.yml`.
+   b. Add a firewall rule restricting host port `3100` to the `tailscale0` interface/tailnet
+      CIDR, the same mechanism already protecting `step-ca` (8443) and `sshd` (22)
+      ([ADR 009](adr/009_production_vpn.md)) — use whatever firewall tool those existing rules
+      use on this host, mirroring their scope for consistency. Docker publishes container ports
+      by inserting its own `iptables`/nftables rules ahead of most default-deny setups, so if the
+      existing rules were written assuming that ordering, verify this new one actually takes
+      effect against Docker-published ports before moving on — don't just assume it composes the
+      same way a plain host-process rule would.
 
-   c. Set its environment variables (values sourced from Infisical per
+   c. In the Dokploy UI, create a new **Compose** application (e.g. `dailo-observability`)
+      pointing at this repo with compose file path `observability/docker-compose.override.prod.yml`,
+      and enable **Auto Deploy**. Unlike `dailu-api`/`dailu-frontend`, nothing here needs a CI
+      build step — every image is off-the-shelf and versioned by tag, and all that changes on a
+      push is mounted config, so Dokploy's own git-pull-and-restart is sufficient; no GitHub
+      Actions job needed. Don't assign a domain to any service here — access is via the
+      firewall-scoped port from step (b), not Dokploy's Traefik.
+
+   d. Set its environment variables (values sourced from Infisical per
       [ADR 007](adr/007_secrets_management.md)):
-      - `TAILSCALE_IP` — from step (a)
       - `GRAFANA_ROOT_URL` — e.g. `http://<TAILSCALE_IP>:3100`
       - `GRAFANA_ADMIN_PASSWORD` — a generated strong password
 
-   d. Deploy. Confirm all five containers (`otel-collector`, `tempo`, `prometheus`, `loki`,
-      `grafana`) show healthy in the Dokploy UI.
+   e. Deploy. Confirm all six containers (`otel-collector-storage-init` exits 0,
+      `otel-collector`, `tempo`, `prometheus`, `loki`, `grafana`) show healthy in the Dokploy UI.
 
-   e. Redeploy the existing `dailu-api` Dokploy application so it picks up the new
+   f. Redeploy the existing `dailu-api` Dokploy application so it picks up the new
       `OTEL_EXPORTER_OTLP_ENDPOINT` env var from step 2.
 
-   f. Verify network isolation. From a device on the tailnet:
+   g. Verify network isolation. From a device on the tailnet:
 
       ```bash
       curl http://<TAILSCALE_IP>:3100

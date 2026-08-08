@@ -84,6 +84,7 @@
     <Project Path="Tag.UnitTests/Tag.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/observability/">
+    <File Path="observability/docker-compose.override.prod.yml" />
     <File Path="observability/docker-compose.yml" />
     <File Path="observability/otel-collector/otel-collector-config.yaml" />
   </Folder>
