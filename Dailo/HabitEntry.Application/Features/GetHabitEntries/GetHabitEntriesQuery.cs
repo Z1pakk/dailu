@@ -30,6 +30,7 @@ public sealed class GetHabitEntriesQueryHandler(
             .Where(h => h.UserId == currentUserService.UserId)
             .OrderByDescending(h => h.CompletedAtUtc)
             .ThenByDescending(h => h.CreatedAtUtc)
+            .TagWith($"GetHabitEntriesQueryHandler: UserId={currentUserService.UserId}")
             .ToListAsync(cancellationToken);
 
         var habitIds = entries.Select(e => e.HabitId).ToHashSet();

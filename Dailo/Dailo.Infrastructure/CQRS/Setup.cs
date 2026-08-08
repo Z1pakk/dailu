@@ -10,6 +10,7 @@ public static class Setup
 {
     public static IServiceCollection AddPipelines(this IServiceCollection services)
     {
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 

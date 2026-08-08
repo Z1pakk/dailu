@@ -47,6 +47,8 @@ jobs:
           file: ./Dailo/Dailo.Api/Dockerfile
           target: final
           push: true
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           tags: |
             ${{ env.API_IMAGE }}:latest
             ${{ env.API_IMAGE }}:${{ github.sha }}

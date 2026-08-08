@@ -4,6 +4,7 @@ using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Strava.Models;
 using Mediator;
 using Microsoft.Extensions.Logging;
+using SharedKernel.Event;
 using SharedKernel.ResultPattern;
 
 namespace HabitUser.Strava.Services;
@@ -25,7 +26,7 @@ public interface IStravaActivityService
 
 public sealed class StravaActivityService(
     IStravaHttpClient stravaApiClient,
-    IPublisher publisher,
+    IEventDispatcher eventDispatcher,
     TimeProvider timeProvider,
     ILogger<StravaActivityService> logger
 ) : IStravaActivityService
@@ -68,7 +69,7 @@ public sealed class StravaActivityService(
             return new StravaActivityPollResult(Result.Success());
         }
 
-        await publisher.Publish(
+        await eventDispatcher.SendAsync(
             new IntegrationActivitiesDetectedIntegrationEvent(
                 identityUserId,
                 IntegrationActivitySource.Strava,

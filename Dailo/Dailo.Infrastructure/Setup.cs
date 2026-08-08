@@ -1,8 +1,10 @@
+using System.Reflection;
 using Dailo.Infrastructure.Auth;
 using Dailo.Infrastructure.Cookie;
 using Dailo.Infrastructure.Cors;
 using Dailo.Infrastructure.CQRS;
 using Dailo.Infrastructure.DataProtection;
+using Dailo.Infrastructure.Observability;
 using Dailo.Infrastructure.ProblemDetails;
 using Dailo.Infrastructure.User;
 using Microsoft.AspNetCore.DataProtection;
@@ -47,6 +49,16 @@ public static class Setup
                 options.XmlRepository = new SecretKeyXmlRepository(dataEncryptionOptions.Key)
             );
         }
+
+        services.AddObservability(
+            "Dailu",
+            Assembly
+                .GetEntryAssembly()
+                ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion
+                ?? "unknown",
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
+        );
 
         return services;
     }
