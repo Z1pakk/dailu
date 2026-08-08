@@ -83,6 +83,24 @@
     <Project Path="Tag.Integrations/Tag.Integrations.csproj" />
     <Project Path="Tag.UnitTests/Tag.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/src/observability/">
+    <File Path="observability/docker-compose.yml" />
+    <File Path="observability/otel-collector/otel-collector-config.yaml" />
+  </Folder>
+  <Folder Name="/src/observability/grafana/">
+    <File Path="observability/grafana/dashboards/dailo-overview.json" />
+    <File Path="observability/grafana/dashboards/dashboards.yaml" />
+    <File Path="observability/grafana/provisioning/datasources/datasources.yaml" />
+  </Folder>
+  <Folder Name="/src/observability/loki/">
+    <File Path="observability/loki/loki-config.yaml" />
+  </Folder>
+  <Folder Name="/src/observability/prometheus/">
+    <File Path="observability/prometheus/prometheus.yml" />
+  </Folder>
+  <Folder Name="/src/observability/tempo/">
+    <File Path="observability/tempo/tempo.yaml" />
+  </Folder>
   <Folder Name="/src/shared/">
     <Project Path="Dailo.Events/Dailo.Events.csproj" />
     <Project Path="SharedInfrastructure/SharedInfrastructure.csproj" />

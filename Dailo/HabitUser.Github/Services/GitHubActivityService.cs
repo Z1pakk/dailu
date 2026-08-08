@@ -4,6 +4,7 @@ using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Github.Models;
 using Mediator;
 using Microsoft.Extensions.Logging;
+using SharedKernel.Event;
 using SharedKernel.ResultPattern;
 
 namespace HabitUser.Github.Services;
@@ -20,7 +21,7 @@ public interface IGitHubActivityService
 
 public sealed class GitHubActivityService(
     IGitHubHttpClient gitHubHttpClient,
-    IPublisher publisher,
+    IEventDispatcher eventDispatcher,
     TimeProvider timeProvider,
     ILogger<GitHubActivityService> logger
 ) : IGitHubActivityService
@@ -126,7 +127,7 @@ public sealed class GitHubActivityService(
             return Result.Success();
         }
 
-        await publisher.Publish(
+        await eventDispatcher.SendAsync(
             new IntegrationActivitiesDetectedIntegrationEvent(
                 identityUserId,
                 IntegrationActivitySource.Github,

@@ -2,6 +2,7 @@ using Dailo.Events;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using Mediator;
 using Microsoft.Extensions.Logging;
+using SharedKernel.Event;
 using SharedKernel.ResultPattern;
 
 namespace HabitUser.GoogleHealth.Services;
@@ -23,7 +24,7 @@ public interface IGoogleHealthActivityService
 
 public sealed class GoogleHealthActivityService(
     IGoogleHealthHttpClient googleHealthApiClient,
-    IPublisher publisher,
+    IEventDispatcher eventDispatcher,
     TimeProvider timeProvider,
     ILogger<GoogleHealthActivityService> logger
 ) : IGoogleHealthActivityService
@@ -70,7 +71,7 @@ public sealed class GoogleHealthActivityService(
             return new GoogleHealthActivityPollResult(Result.Success());
         }
 
-        await publisher.Publish(
+        await eventDispatcher.SendAsync(
             new IntegrationActivitiesDetectedIntegrationEvent(
                 identityUserId,
                 IntegrationActivitySource.GoogleHealth,
