@@ -1,6 +1,7 @@
 using Dailo.Api.Extensions;
 using Dailo.Infrastructure;
 using Dailo.Infrastructure.Database;
+using Dailo.Infrastructure.Observability;
 using Habit.Infrastructure;
 using HabitEntry.Infrastructure;
 using HabitUser.Infrastructure;
@@ -41,6 +42,8 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
 forwardedHeadersOptions.KnownIPNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
+
+app.UseMiddleware<ClientAddressLoggingMiddleware>();
 
 app.UseExceptionHandler();
 

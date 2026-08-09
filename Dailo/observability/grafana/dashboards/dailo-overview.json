@@ -2,15 +2,30 @@
   "title": "Dailo Overview",
   "uid": "dailo-overview",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 6,
   "refresh": "30s",
   "time": { "from": "now-1h", "to": "now" },
+
   "panels": [
+    {
+      "id": 6,
+      "title": "Unique visitors",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "count(sum by (client_address) (count_over_time({service_name=\"Dailu\"} | client_address != \"\" [$__range])))",
+          "refId": "A"
+        }
+      ]
+    },
     {
       "id": 1,
       "title": "p95 request latency",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
@@ -22,15 +37,17 @@
       ]
     },
     {
-      "id": 2,
-      "title": "Recent logs",
-      "type": "logs",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "id": 4,
+      "title": "HTTP error rate (5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{service_name=\"Dailu\"}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[5m])) / sum(rate(http_server_request_duration_seconds_count[5m]))",
+          "legendFormat": "5xx error rate",
           "refId": "A"
         }
       ]
@@ -39,13 +56,43 @@
       "id": 3,
       "title": "Requests by status code",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "options": { "xTickLabelRotation": -45, "xTickLabelSpacing": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(increase(http_server_request_duration_seconds_count[$__range])) by (http_response_status_code)",
           "legendFormat": "{{http_response_status_code}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "p95 latency by route",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le, http_route))",
+          "legendFormat": "{{http_route}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Recent logs",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{service_name=\"Dailu\"}",
           "refId": "A"
         }
       ]
