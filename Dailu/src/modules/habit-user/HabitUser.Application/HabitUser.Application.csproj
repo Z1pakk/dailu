@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="StrictId" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Dailu.Events\Dailu.Events.csproj" />
+    <ProjectReference Include="..\HabitUser.Domain\HabitUser.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\SharedKernel\SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

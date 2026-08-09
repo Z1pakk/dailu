@@ -26,7 +26,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Dailo
+        working-directory: Dailu
 
     steps:
       - uses: actions/checkout@v6
@@ -45,16 +45,16 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore Dailo.slnx
+        run: dotnet restore Dailu.slnx
 
       - name: Build
-        run: dotnet build Dailo.slnx --configuration Release --no-restore
+        run: dotnet build Dailu.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test Dailo.slnx --configuration Release --no-restore --no-build
+        run: dotnet test Dailu.slnx --configuration Release --no-restore --no-build
 
       - name: Publish
-        run: dotnet publish Dailo.slnx --configuration Release --no-restore --no-build
+        run: dotnet publish Dailu.slnx --configuration Release --no-restore --no-build
 
   build-frontend:
     name: build-frontend
@@ -66,7 +66,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Dailo/Dailo.ClientApp
+        working-directory: Dailu/src/frontend/Dailu.ClientApp
 
     steps:
       - uses: actions/checkout@v6
@@ -76,7 +76,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: Dailo/Dailo.ClientApp/package-lock.json
+          cache-dependency-path: Dailu/src/frontend/Dailu.ClientApp/package-lock.json
 
       - name: Install dependencies
         run: npm install
@@ -86,7 +86,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-          workdir: Dailo/Dailo.ClientApp
+          workdir: Dailu/src/frontend/Dailu.ClientApp
           eslint_flags: src
           filter_mode: added
           level: error

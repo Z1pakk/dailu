@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Dailu.Events\Dailu.Events.csproj" />
+    <ProjectReference Include="..\HabitUser.Application\HabitUser.Application.csproj" />
+    <ProjectReference Include="..\HabitUser.Domain\HabitUser.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\SharedInfrastructure\SharedInfrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Endpoints\" />
+    <Folder Include="Models\" />
+  </ItemGroup>
+</Project>

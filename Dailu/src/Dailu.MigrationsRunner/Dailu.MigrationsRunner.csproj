@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dailu.Infrastructure\Dailu.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\habit\Habit.Infrastructure\Habit.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\habit-entry\HabitEntry.Infrastructure\HabitEntry.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\habit-user\HabitUser.Infrastructure\HabitUser.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\tag\Tag.Infrastructure\Tag.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

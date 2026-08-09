@@ -43,8 +43,8 @@ jobs:
       - name: Build and push API image
         uses: docker/build-push-action@v6
         with:
-          context: ./Dailo
-          file: ./Dailo/Dailo.Api/Dockerfile
+          context: ./Dailu
+          file: ./Dailu/src/api/Dailu.Api/Dockerfile
           target: final
           push: true
           build-args: |
@@ -58,8 +58,8 @@ jobs:
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
         with:
-          context: ./Dailo/Dailo.ClientApp
-          file: ./Dailo/Dailo.ClientApp/Dockerfile
+          context: ./Dailu/src/frontend/Dailu.ClientApp
+          file: ./Dailu/src/frontend/Dailu.ClientApp/Dockerfile
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
@@ -70,8 +70,8 @@ jobs:
       - name: Build and push migrations-runner image
         uses: docker/build-push-action@v6
         with:
-          context: ./Dailo
-          file: ./Dailo/Dailo.MigrationsRunner/Dockerfile
+          context: ./Dailu
+          file: ./Dailu/src/Dailu.MigrationsRunner/Dockerfile
           push: true
           tags: |
             ${{ env.MIGRATIONS_IMAGE }}:latest
