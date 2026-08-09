@@ -5,6 +5,7 @@ using Habit.Infrastructure;
 using HabitEntry.Infrastructure;
 using HabitUser.Infrastructure;
 using Identity.Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
 using SharedInfrastructure.Endpoint;
 using Tag.Infrastructure;
@@ -32,6 +33,14 @@ if (!builder.IsOpenApiExecution() && builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
+
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 app.UseExceptionHandler();
 
