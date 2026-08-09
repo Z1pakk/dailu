@@ -1,10 +1,10 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path="../README.md" />
     <File Path=".editorconfig" />
     <File Path="AGENTS.md" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
-    <File Path="README.md" />
   </Folder>
   <Folder Name="/Solution Items/workflows/">
     <File Path="../.github/renovate-global.json" />
