@@ -94,7 +94,7 @@
   </Folder>
   <Folder Name="/src/observability/grafana/">
     <File Path="observability/grafana/dashboards/dailo-overview.json" />
-    <File Path="observability/grafana/dashboards/dashboards.yaml" />
+    <File Path="observability/grafana/provisioning/dashboards/dashboards.yaml" />
     <File Path="observability/grafana/provisioning/datasources/datasources.yaml" />
   </Folder>
   <Folder Name="/src/observability/loki/">

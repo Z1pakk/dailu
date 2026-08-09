@@ -33,6 +33,7 @@ services:
       GoogleHealth__ClientSecret: ${GOOGLE_HEALTH_CLIENT_SECRET:-}
       GoogleHealth__RedirectUri: ${GOOGLE_HEALTH_REDIRECT_URI:-}
       GoogleHealth__FrontendCallbackUrl: ${GOOGLE_HEALTH_FRONTEND_CALLBACK_URL:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
     networks:
       - default
       - dokploy-network
