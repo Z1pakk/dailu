@@ -869,8 +869,13 @@ This is the phase where the three signals actually connect to each other.
 4. **Deploy manually** (this touches live production infra, the host firewall, and Infisical
    secrets — do this yourself, not via an agent):
 
-   a. SSH to the Hetzner host and run `tailscale ip -4` — note the output; it's needed both to
-      compute `GRAFANA_ROOT_URL` below and for the firewall rule in step (b).
+   a. SSH to the Hetzner host and run `tailscale ip -4` — note the output for the firewall rule
+      in step (b). For actually reaching Grafana afterward, prefer the host's Tailscale MagicDNS
+      name over the raw IP (`tailscale status` shows it, e.g. `dailu-server.<tailnet-name>.ts.net`)
+      — it resolves to the same address for anything on the tailnet, but stays stable if the IP
+      ever changes. Note this is unrelated to Grafana's own config — `GF_SERVER_ROOT_URL` isn't
+      set here (see the note on `GRAFANA_ADMIN_PASSWORD`-only below), so this MagicDNS name is
+      purely how *you* reach Grafana, not something Grafana itself needs to know about.
 
    b. Add a firewall rule restricting host port `3100` to the `tailscale0` interface/tailnet
       CIDR, the same mechanism already protecting `step-ca` (8443) and `sshd` (22)
@@ -881,29 +886,44 @@ This is the phase where the three signals actually connect to each other.
       effect against Docker-published ports before moving on — don't just assume it composes the
       same way a plain host-process rule would.
 
-   c. In the Dokploy UI, create a new **Compose** application (e.g. `dailo-observability`)
-      pointing at this repo with compose file path `observability/docker-compose.override.prod.yml`,
-      and enable **Auto Deploy**. Unlike `dailu-api`/`dailu-frontend`, nothing here needs a CI
-      build step — every image is off-the-shelf and versioned by tag, and all that changes on a
-      push is mounted config, so Dokploy's own git-pull-and-restart is sufficient; no GitHub
-      Actions job needed. Don't assign a domain to any service here — access is via the
+   c. In the Dokploy UI, create a new **Compose** application (e.g. `dailo-observability`). Unlike
+      `dailu-api`/`dailu-frontend`, this repo isn't connected to Dokploy via GitHub — paste the
+      contents of `observability/docker-compose.override.prod.yml` directly as a **Raw** compose
+      source instead. Config files themselves aren't pulled from git either: they're baked into a
+      dedicated `dailo-observability-config` image (built by `.github/workflows/build-observability.yml`
+      whenever `observability/**` changes, pushed to GHCR) that the `observability-config-init`
+      container unpacks into named volumes on every deploy — see the compose file's top service for
+      how. `.github/workflows/deploy-observability.yml` then triggers this app's redeploy via
+      Dokploy webhook once that build succeeds, the same `curl`-a-webhook-URL pattern
+      `dailu-api`/`dailu-frontend` already use, just as its own dedicated workflow rather than a
+      job bolted onto `deploy.yml`. Don't assign a domain to any service here — access is via the
       firewall-scoped port from step (b), not Dokploy's Traefik.
 
    d. Set its environment variables (values sourced from Infisical per
       [ADR 007](adr/007_secrets_management.md)):
-      - `GRAFANA_ROOT_URL` — e.g. `http://<TAILSCALE_IP>:3100`
+      - `OBSERVABILITY_CONFIG_IMAGE` — e.g. `ghcr.io/<owner-lowercase>/dailo-observability-config:latest`
       - `GRAFANA_ADMIN_PASSWORD` — a generated strong password
 
-   e. Deploy. Confirm all six containers (`otel-collector-storage-init` exits 0,
-      `otel-collector`, `tempo`, `prometheus`, `loki`, `grafana`) show healthy in the Dokploy UI.
+      `GF_SERVER_ROOT_URL` is deliberately not set — Grafana still works fine for logging in and
+      viewing dashboards without it, and the only cost is self-referencing links (alert emails,
+      "Copy panel link") coming out pointing at the wrong address. Accepted trade-off for this
+      setup rather than another env var to keep in sync.
 
-   f. Redeploy the existing `dailu-api` Dokploy application so it picks up the new
+   e. Add the GitHub repo secret `DOKPLOY_OBSERVABILITY_WEBHOOK_URL`, sourced from this
+      application's webhook URL in the Dokploy UI, the same way `DOKPLOY_WEBHOOK_URL` was
+      originally obtained for `dailu-api`.
+
+   f. Push to `main` (or run `workflow_dispatch` manually) to trigger the first build+deploy.
+      Confirm all six containers (`otel-collector-storage-init` exits 0, `otel-collector`,
+      `tempo`, `prometheus`, `loki`, `grafana`) show healthy in the Dokploy UI.
+
+   g. Redeploy the existing `dailu-api` Dokploy application so it picks up the new
       `OTEL_EXPORTER_OTLP_ENDPOINT` env var from step 2.
 
-   g. Verify network isolation. From a device on the tailnet:
+   h. Verify network isolation. From a device on the tailnet:
 
       ```bash
-      curl http://<TAILSCALE_IP>:3100
+      curl http://<TAILSCALE_IP-or-MagicDNS-name>:3100
       ```
 
       should return Grafana's login page. From a device **not** on the tailnet:
