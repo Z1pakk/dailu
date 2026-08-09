@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "Dailo/observability/**"
+      - "Dailu/observability/**"
 
 env:
   REGISTRY: ghcr.io
@@ -41,8 +41,8 @@ jobs:
       - name: Build and push observability config image
         uses: docker/build-push-action@v6
         with:
-          context: ./Dailo/observability
-          file: ./Dailo/observability/Dockerfile
+          context: ./Dailu/observability
+          file: ./Dailu/observability/Dockerfile
           push: true
           tags: |
             ${{ env.OBSERVABILITY_CONFIG_IMAGE }}:latest
