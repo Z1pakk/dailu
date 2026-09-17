@@ -38,25 +38,49 @@ public sealed class GoogleHealthActivityService(
     {
         var after = lastSyncedAtUtc ?? timeProvider.GetUtcNow().UtcDateTime.Date;
 
-        var apiResult = await googleHealthApiClient.GetActivitiesAsync(
+        var activitiesResult = await googleHealthApiClient.GetActivitiesAsync(
             config,
             after,
             cancellationToken
         );
 
-        if (apiResult.IsFailure)
+        if (activitiesResult.IsFailure)
         {
             logger.LogError(
                 "Failed to fetch Google Health activities for user {UserId}: {Error}",
                 identityUserId,
-                apiResult.Error
+                activitiesResult.Error
             );
             return new GoogleHealthActivityPollResult(
                 Result.Failure("Failed to fetch Google Health activities.")
             );
         }
 
-        var activities = apiResult
+        // Reuse whatever config the exercise call ended up with, so the steps call doesn't
+        // attempt a redundant refresh against a token that was just rotated.
+        var effectiveConfig = activitiesResult.Value.RefreshedConfig ?? config;
+
+        var stepsResult = await googleHealthApiClient.GetStepsAsync(
+            effectiveConfig,
+            after,
+            cancellationToken
+        );
+
+        if (stepsResult.IsFailure)
+        {
+            logger.LogError(
+                "Failed to fetch Google Health steps for user {UserId}: {Error}",
+                identityUserId,
+                stepsResult.Error
+            );
+            return new GoogleHealthActivityPollResult(
+                Result.Failure("Failed to fetch Google Health steps.")
+            );
+        }
+
+        var refreshedConfig = stepsResult.Value.RefreshedConfig ?? activitiesResult.Value.RefreshedConfig;
+
+        var activities = activitiesResult
             .Value.Activities.Select(a => new IntegrationActivityItem(
                 ExternalId: a.Id,
                 OccurredAtUtc: a.StartDateUtc,
@@ -64,11 +88,22 @@ public sealed class GoogleHealthActivityService(
                 Value: Math.Max(1, a.ActiveDurationSeconds / 60),
                 Source: new IntegrationActivitySourceDetails("Exercise")
             ))
+            .Concat(
+                stepsResult.Value.Steps.Select(s => new IntegrationActivityItem(
+                    ExternalId: BuildStepsExternalId(identityUserId, s.Date),
+                    // DateOnly.ToDateTime always returns Kind=Unspecified; Npgsql rejects that
+                    // for a timestamptz column, so it must be marked Utc explicitly.
+                    OccurredAtUtc: DateTime.SpecifyKind(s.Date.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc),
+                    Notes: null,
+                    Value: (int)Math.Min(s.StepCount, int.MaxValue),
+                    Source: new IntegrationActivitySourceDetails("Steps")
+                ))
+            )
             .ToList();
 
         if (activities.Count == 0)
         {
-            return new GoogleHealthActivityPollResult(Result.Success());
+            return new GoogleHealthActivityPollResult(Result.Success(), refreshedConfig);
         }
 
         await eventDispatcher.SendAsync(
@@ -80,10 +115,7 @@ public sealed class GoogleHealthActivityService(
             cancellationToken
         );
 
-        return new GoogleHealthActivityPollResult(
-            Result.Success(),
-            apiResult.Value.RefreshedConfig
-        );
+        return new GoogleHealthActivityPollResult(Result.Success(), refreshedConfig);
     }
 
     private static string BuildNotes(string exerciseType, string? displayName, int durationSeconds)
@@ -92,4 +124,9 @@ public sealed class GoogleHealthActivityService(
         var duration = durationSeconds > 0 ? $" ({durationSeconds / 60} min)" : string.Empty;
         return $"[{label}]{duration}";
     }
+
+    // Deterministic per user+day so repeated polls of the same (still accumulating) day update
+    // the same habit entry instead of creating a new one every time.
+    private static string BuildStepsExternalId(Guid identityUserId, DateOnly date) =>
+        $"google-health-steps-{identityUserId:N}-{date:yyyy-MM-dd}";
 }
