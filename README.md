@@ -1,6 +1,7 @@
 # Dailu
 
-![Build](https://github.com/Z1pakk/devhabit/actions/workflows/build.yml/badge.svg)
+[![Build & Test](https://github.com/Z1pakk/dailu/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/Z1pakk/dailu/actions/workflows/build.yml)
+[![Deploy](https://github.com/Z1pakk/dailu/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/Z1pakk/dailu/actions/workflows/deploy.yml)
 
 **Live at [dailu.dev](https://dailu.dev)**
 
