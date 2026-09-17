@@ -31,7 +31,11 @@ internal static class GoogleHealthConnect
                         + $"?client_id={opts.ClientId}"
                         + $"&response_type=code"
                         + $"&redirect_uri={Uri.EscapeDataString(opts.RedirectUri)}"
-                        + $"&scope={Uri.EscapeDataString("https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly")}"
+                        + $"&scope={Uri.EscapeDataString(
+                            "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly "
+                                + "https://www.googleapis.com/auth/userinfo.profile "
+                                + "https://www.googleapis.com/auth/userinfo.email"
+                        )}"
                         + $"&access_type=offline"
                         + $"&prompt=consent"
                         + $"&state={Uri.EscapeDataString(state)}";
