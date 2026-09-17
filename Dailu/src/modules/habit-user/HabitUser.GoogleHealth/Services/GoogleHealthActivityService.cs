@@ -7,14 +7,9 @@ using SharedKernel.ResultPattern;
 
 namespace HabitUser.GoogleHealth.Services;
 
-public sealed record GoogleHealthActivityPollResult(
-    Result Result,
-    GoogleHealthIntegrationConfig? RefreshedConfig = null
-);
-
 public interface IGoogleHealthActivityService
 {
-    Task<GoogleHealthActivityPollResult> PollAndSendAsync(
+    Task<GoogleHealthPollResult> PollAndSendAsync(
         Guid identityUserId,
         GoogleHealthIntegrationConfig config,
         DateTime? lastSyncedAtUtc,
@@ -29,7 +24,7 @@ public sealed class GoogleHealthActivityService(
     ILogger<GoogleHealthActivityService> logger
 ) : IGoogleHealthActivityService
 {
-    public async Task<GoogleHealthActivityPollResult> PollAndSendAsync(
+    public async Task<GoogleHealthPollResult> PollAndSendAsync(
         Guid identityUserId,
         GoogleHealthIntegrationConfig config,
         DateTime? lastSyncedAtUtc,
@@ -51,34 +46,10 @@ public sealed class GoogleHealthActivityService(
                 identityUserId,
                 activitiesResult.Error
             );
-            return new GoogleHealthActivityPollResult(
+            return new GoogleHealthPollResult(
                 Result.Failure("Failed to fetch Google Health activities.")
             );
         }
-
-        // Reuse whatever config the exercise call ended up with, so the steps call doesn't
-        // attempt a redundant refresh against a token that was just rotated.
-        var effectiveConfig = activitiesResult.Value.RefreshedConfig ?? config;
-
-        var stepsResult = await googleHealthApiClient.GetStepsAsync(
-            effectiveConfig,
-            after,
-            cancellationToken
-        );
-
-        if (stepsResult.IsFailure)
-        {
-            logger.LogError(
-                "Failed to fetch Google Health steps for user {UserId}: {Error}",
-                identityUserId,
-                stepsResult.Error
-            );
-            return new GoogleHealthActivityPollResult(
-                Result.Failure("Failed to fetch Google Health steps.")
-            );
-        }
-
-        var refreshedConfig = stepsResult.Value.RefreshedConfig ?? activitiesResult.Value.RefreshedConfig;
 
         var activities = activitiesResult
             .Value.Activities.Select(a => new IntegrationActivityItem(
@@ -88,22 +59,11 @@ public sealed class GoogleHealthActivityService(
                 Value: Math.Max(1, a.ActiveDurationSeconds / 60),
                 Source: new IntegrationActivitySourceDetails("Exercise")
             ))
-            .Concat(
-                stepsResult.Value.Steps.Select(s => new IntegrationActivityItem(
-                    ExternalId: BuildStepsExternalId(identityUserId, s.Date),
-                    // DateOnly.ToDateTime always returns Kind=Unspecified; Npgsql rejects that
-                    // for a timestamptz column, so it must be marked Utc explicitly.
-                    OccurredAtUtc: DateTime.SpecifyKind(s.Date.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc),
-                    Notes: null,
-                    Value: (int)Math.Min(s.StepCount, int.MaxValue),
-                    Source: new IntegrationActivitySourceDetails("Steps")
-                ))
-            )
             .ToList();
 
         if (activities.Count == 0)
         {
-            return new GoogleHealthActivityPollResult(Result.Success(), refreshedConfig);
+            return new GoogleHealthPollResult(Result.Success(), activitiesResult.Value.RefreshedConfig);
         }
 
         await eventDispatcher.SendAsync(
@@ -115,7 +75,7 @@ public sealed class GoogleHealthActivityService(
             cancellationToken
         );
 
-        return new GoogleHealthActivityPollResult(Result.Success(), refreshedConfig);
+        return new GoogleHealthPollResult(Result.Success(), activitiesResult.Value.RefreshedConfig);
     }
 
     private static string BuildNotes(string exerciseType, string? displayName, int durationSeconds)
@@ -124,9 +84,4 @@ public sealed class GoogleHealthActivityService(
         var duration = durationSeconds > 0 ? $" ({durationSeconds / 60} min)" : string.Empty;
         return $"[{label}]{duration}";
     }
-
-    // Deterministic per user+day so repeated polls of the same (still accumulating) day update
-    // the same habit entry instead of creating a new one every time.
-    private static string BuildStepsExternalId(Guid identityUserId, DateOnly date) =>
-        $"google-health-steps-{identityUserId:N}-{date:yyyy-MM-dd}";
 }

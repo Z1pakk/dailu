@@ -13,6 +13,7 @@ public class PollGoogleHealthActivityCommand : ICommand<Result>;
 public class PollGoogleHealthActivityCommandHandler(
     IHabitUserDbContext dbContext,
     IGoogleHealthActivityService googleHealthActivityService,
+    IGoogleHealthStepsService googleHealthStepsService,
     TimeProvider timeProvider
 ) : ICommandHandler<PollGoogleHealthActivityCommand, Result>
 {
@@ -41,14 +42,28 @@ public class PollGoogleHealthActivityCommandHandler(
                 continue;
             }
 
-            var googleHealthResult = await googleHealthActivityService.PollAndSendAsync(
+            var activityResult = await googleHealthActivityService.PollAndSendAsync(
                 config.IdentityUserId,
                 googleHealthConfig,
                 config.LastSyncedAtUtc,
                 cancellationToken
             );
 
-            if (googleHealthResult.Result.IsFailure && googleHealthResult.RefreshedConfig is null)
+            // Reuse whatever config the activity call ended up with, so the steps call doesn't
+            // attempt a redundant refresh against a token that was just rotated.
+            var effectiveConfig = activityResult.RefreshedConfig ?? googleHealthConfig;
+
+            var stepsResult = await googleHealthStepsService.PollAndSendAsync(
+                config.IdentityUserId,
+                effectiveConfig,
+                config.LastSyncedAtUtc,
+                cancellationToken
+            );
+
+            var refreshedConfig = stepsResult.RefreshedConfig ?? activityResult.RefreshedConfig;
+            var succeeded = activityResult.Result.IsSuccess && stepsResult.Result.IsSuccess;
+
+            if (!succeeded && refreshedConfig is null)
             {
                 continue;
             }
@@ -63,12 +78,12 @@ public class PollGoogleHealthActivityCommandHandler(
                 continue;
             }
 
-            if (googleHealthResult.RefreshedConfig is not null)
+            if (refreshedConfig is not null)
             {
-                entity.Config = googleHealthResult.RefreshedConfig;
+                entity.Config = refreshedConfig;
             }
 
-            if (googleHealthResult.Result.IsFailure)
+            if (!succeeded)
             {
                 continue;
             }

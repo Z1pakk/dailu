@@ -18,6 +18,7 @@ public static class Setup
         });
 
         services.AddScoped<IGoogleHealthActivityService, GoogleHealthActivityService>();
+        services.AddScoped<IGoogleHealthStepsService, GoogleHealthStepsService>();
 
         services.AddValidateOptions<GoogleHealthOptions>();
 
