@@ -1,13 +1,13 @@
 {
   "mcpServers": {
     "code-review-graph": {
-      "command": "C:\\Users\\vlad\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "command": "python",
       "args": [
         "-m",
         "code_review_graph",
         "serve"
       ],
-      "cwd": "S:\\Study\\Dailu",
+      "cwd": "${CLAUDE_PROJECT_DIR}/Dailu",
       "type": "stdio"
     }
   }
