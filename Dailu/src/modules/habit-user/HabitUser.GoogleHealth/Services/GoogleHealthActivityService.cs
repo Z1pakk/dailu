@@ -7,14 +7,9 @@ using SharedKernel.ResultPattern;
 
 namespace HabitUser.GoogleHealth.Services;
 
-public sealed record GoogleHealthActivityPollResult(
-    Result Result,
-    GoogleHealthIntegrationConfig? RefreshedConfig = null
-);
-
 public interface IGoogleHealthActivityService
 {
-    Task<GoogleHealthActivityPollResult> PollAndSendAsync(
+    Task<GoogleHealthPollResult> PollAndSendAsync(
         Guid identityUserId,
         GoogleHealthIntegrationConfig config,
         DateTime? lastSyncedAtUtc,
@@ -29,7 +24,7 @@ public sealed class GoogleHealthActivityService(
     ILogger<GoogleHealthActivityService> logger
 ) : IGoogleHealthActivityService
 {
-    public async Task<GoogleHealthActivityPollResult> PollAndSendAsync(
+    public async Task<GoogleHealthPollResult> PollAndSendAsync(
         Guid identityUserId,
         GoogleHealthIntegrationConfig config,
         DateTime? lastSyncedAtUtc,
@@ -38,25 +33,25 @@ public sealed class GoogleHealthActivityService(
     {
         var after = lastSyncedAtUtc ?? timeProvider.GetUtcNow().UtcDateTime.Date;
 
-        var apiResult = await googleHealthApiClient.GetActivitiesAsync(
+        var activitiesResult = await googleHealthApiClient.GetActivitiesAsync(
             config,
             after,
             cancellationToken
         );
 
-        if (apiResult.IsFailure)
+        if (activitiesResult.IsFailure)
         {
             logger.LogError(
                 "Failed to fetch Google Health activities for user {UserId}: {Error}",
                 identityUserId,
-                apiResult.Error
+                activitiesResult.Error
             );
-            return new GoogleHealthActivityPollResult(
+            return new GoogleHealthPollResult(
                 Result.Failure("Failed to fetch Google Health activities.")
             );
         }
 
-        var activities = apiResult
+        var activities = activitiesResult
             .Value.Activities.Select(a => new IntegrationActivityItem(
                 ExternalId: a.Id,
                 OccurredAtUtc: a.StartDateUtc,
@@ -68,7 +63,7 @@ public sealed class GoogleHealthActivityService(
 
         if (activities.Count == 0)
         {
-            return new GoogleHealthActivityPollResult(Result.Success());
+            return new GoogleHealthPollResult(Result.Success(), activitiesResult.Value.RefreshedConfig);
         }
 
         await eventDispatcher.SendAsync(
@@ -80,10 +75,7 @@ public sealed class GoogleHealthActivityService(
             cancellationToken
         );
 
-        return new GoogleHealthActivityPollResult(
-            Result.Success(),
-            apiResult.Value.RefreshedConfig
-        );
+        return new GoogleHealthPollResult(Result.Success(), activitiesResult.Value.RefreshedConfig);
     }
 
     private static string BuildNotes(string exerciseType, string? displayName, int durationSeconds)

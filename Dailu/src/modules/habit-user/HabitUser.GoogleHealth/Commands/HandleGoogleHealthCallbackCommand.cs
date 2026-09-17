@@ -14,7 +14,8 @@ public sealed record HandleGoogleHealthCallbackCommand(Guid IdentityUserId, stri
 
 public sealed class HandleGoogleHealthCallbackCommandHandler(
     IHabitUserDbContext dbContext,
-    IGoogleHealthHttpClient googleHealthClient
+    IGoogleHealthHttpClient googleHealthClient,
+    TimeProvider timeProvider
 ) : ICommandHandler<HandleGoogleHealthCallbackCommand, Result>
 {
     public async ValueTask<Result> Handle(
@@ -68,6 +69,9 @@ public sealed class HandleGoogleHealthCallbackCommandHandler(
                     HabitUserId = habitUser.Id,
                     Provider = IntegrationProvider.GoogleHealth,
                     Config = config,
+                    // Seed with the connect time so the first poll starts from "now" instead of
+                    // falling back to the start of the current day.
+                    LastSyncedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
                 }
             );
         }

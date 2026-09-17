@@ -21,28 +21,54 @@ public sealed class HabitAutomationEntriesDetectedIntegrationEventHandler(
     {
         var incomingExternalIds = notification.Entries.Select(e => e.ExternalId).ToHashSet();
 
-        var existingExternalIds = await dbContext
-            .HabitEntries.AsNoTracking()
-            .Where(e =>
-                e.UserId == notification.UserId
-                && e.ExternalId != null
-                && incomingExternalIds.Contains(e.ExternalId)
-            )
-            .Select(e => e.ExternalId!)
-            .ToHashSetAsync(cancellationToken);
+        // Scoped to HabitId+ExternalId, not just ExternalId: the same external activity can
+        // match more than one habit (e.g. two habits both filtered on GoogleHealth Steps), and
+        // each of those habits needs its own entry rather than sharing/contending for one.
+        var existingByKey = (
+            await dbContext
+                .HabitEntries.AsNoTracking()
+                .Where(e =>
+                    e.UserId == notification.UserId
+                    && e.ExternalId != null
+                    && incomingExternalIds.Contains(e.ExternalId)
+                )
+                .ToListAsync(cancellationToken)
+        ).ToDictionary(e => (e.HabitId, ExternalId: e.ExternalId!));
 
-        var newEntries = notification
-            .Entries.Where(e => !existingExternalIds.Contains(e.ExternalId))
-            .ToList();
-
-        if (newEntries.Count == 0)
+        foreach (var entry in notification.Entries)
         {
-            return;
-        }
+            if (existingByKey.TryGetValue((entry.HabitId, entry.ExternalId), out var existing))
+            {
+                if (!entry.AllowUpdate)
+                {
+                    continue;
+                }
 
-        foreach (var entry in newEntries)
-        {
-            var result = HabitEntryAggregate.Create(
+                var aggregate = HabitEntryAggregate.Restore(
+                    new Id<HabitEntryAggregate>(existing.Id.Value),
+                    existing.UserId,
+                    existing.HabitId,
+                    existing.Value,
+                    existing.Notes,
+                    existing.Source,
+                    existing.ExternalId,
+                    existing.IsArchived,
+                    existing.CompletedAtUtc,
+                    existing.Version
+                );
+
+                var updateResult = aggregate.Update(entry.Value, entry.Notes, entry.OccurredAtUtc);
+
+                if (updateResult.IsFailure)
+                {
+                    continue;
+                }
+
+                dbContext.HabitEntries.Update(aggregate.ToEntity());
+                continue;
+            }
+
+            var createResult = HabitEntryAggregate.Create(
                 Id<HabitEntryAggregate>.NewId(),
                 notification.UserId,
                 entry.HabitId,
@@ -53,12 +79,12 @@ public sealed class HabitAutomationEntriesDetectedIntegrationEventHandler(
                 entry.OccurredAtUtc
             );
 
-            if (result.IsFailure)
+            if (createResult.IsFailure)
             {
                 continue;
             }
 
-            dbContext.HabitEntries.Add(result.Value.ToEntity());
+            dbContext.HabitEntries.Add(createResult.Value.ToEntity());
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

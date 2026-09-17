@@ -9,9 +9,20 @@ public sealed record GoogleHealthApiResult(
     GoogleHealthIntegrationConfig? RefreshedConfig = null
 );
 
+public sealed record GoogleHealthStepsApiResult(
+    IReadOnlyList<GoogleHealthStepsModel> Steps,
+    GoogleHealthIntegrationConfig? RefreshedConfig = null
+);
+
 public interface IGoogleHealthHttpClient
 {
     Task<Result<GoogleHealthApiResult>> GetActivitiesAsync(
+        GoogleHealthIntegrationConfig config,
+        DateTime? afterDateTimeUtc = null,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<Result<GoogleHealthStepsApiResult>> GetStepsAsync(
         GoogleHealthIntegrationConfig config,
         DateTime? afterDateTimeUtc = null,
         CancellationToken cancellationToken = default

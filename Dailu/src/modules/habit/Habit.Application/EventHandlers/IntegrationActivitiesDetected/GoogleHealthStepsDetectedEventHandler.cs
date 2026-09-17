@@ -8,7 +8,7 @@ using StrictId;
 
 namespace Habit.Application.EventHandlers.IntegrationActivitiesDetected;
 
-public sealed class GoogleHealthActivitiesDetectedEventHandler(
+public sealed class GoogleHealthStepsDetectedEventHandler(
     IHabitDbContext dbContext,
     IPublisher publisher
 ) : INotificationHandler<IntegrationActivitiesDetectedIntegrationEvent>
@@ -48,7 +48,7 @@ public sealed class GoogleHealthActivitiesDetectedEventHandler(
             {
                 if (
                     !TryParseMetric(activity.Source, out var metric)
-                    || metric != GoogleHealthMetric.Exercise
+                    || metric != GoogleHealthMetric.Steps
                     || !Matches(filter, metric)
                 )
                 {
@@ -61,7 +61,10 @@ public sealed class GoogleHealthActivitiesDetectedEventHandler(
                         activity.ExternalId,
                         activity.OccurredAtUtc,
                         activity.Notes,
-                        activity.Value
+                        activity.Value,
+                        // Steps re-report an accumulating total for the same day under the same
+                        // ExternalId, so later polls should update today's entry, not skip it.
+                        AllowUpdate: true
                     )
                 );
             }

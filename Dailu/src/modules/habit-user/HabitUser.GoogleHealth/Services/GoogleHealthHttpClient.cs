@@ -83,6 +83,54 @@ public sealed class GoogleHealthHttpClient(
         CancellationToken cancellationToken = default
     )
     {
+        var result = await FetchWithTokenAsync(
+            config,
+            (accessToken, ct) => FetchActivitiesAsync(accessToken, afterDateTimeUtc, ct),
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            return Result<GoogleHealthApiResult>.Failure(result.Error);
+        }
+
+        return Result<GoogleHealthApiResult>.Success(
+            new GoogleHealthApiResult(result.Value.Value, result.Value.RefreshedConfig)
+        );
+    }
+
+    public async Task<Result<GoogleHealthStepsApiResult>> GetStepsAsync(
+        GoogleHealthIntegrationConfig config,
+        DateTime? afterDateTimeUtc = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = await FetchWithTokenAsync(
+            config,
+            (accessToken, ct) => FetchStepsAsync(accessToken, afterDateTimeUtc, ct),
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            return Result<GoogleHealthStepsApiResult>.Failure(result.Error);
+        }
+
+        return Result<GoogleHealthStepsApiResult>.Success(
+            new GoogleHealthStepsApiResult(result.Value.Value, result.Value.RefreshedConfig)
+        );
+    }
+
+    private sealed record TokenFetchResult<T>(T Value, GoogleHealthIntegrationConfig? RefreshedConfig);
+
+    // Ensures the access token is valid before calling `fetch`, refreshing it up front if it's
+    // already known to be expired, and retrying once more on a 401 in case it was revoked early.
+    private async Task<Result<TokenFetchResult<T>>> FetchWithTokenAsync<T>(
+        GoogleHealthIntegrationConfig config,
+        Func<string, CancellationToken, Task<Result<T>>> fetch,
+        CancellationToken cancellationToken
+    )
+    {
         var utcNow = timeProvider.GetUtcNow().UtcDateTime;
 
         GoogleHealthIntegrationConfig? refreshedConfig = null;
@@ -93,7 +141,7 @@ public sealed class GoogleHealthHttpClient(
             var refreshed = await TryRefreshAsync(config, cancellationToken);
             if (refreshed is null)
             {
-                return Result<GoogleHealthApiResult>.Failure(
+                return Result<TokenFetchResult<T>>.Failure(
                     "Failed to refresh Google Health token."
                 );
             }
@@ -102,7 +150,7 @@ public sealed class GoogleHealthHttpClient(
             accessToken = refreshedConfig.AccessToken;
         }
 
-        var result = await FetchActivitiesAsync(accessToken, afterDateTimeUtc, cancellationToken);
+        var result = await fetch(accessToken, cancellationToken);
 
         if (result.IsFailure && result.Error == UnauthorizedError && refreshedConfig is null)
         {
@@ -111,27 +159,21 @@ public sealed class GoogleHealthHttpClient(
             var refreshed = await TryRefreshAsync(config, cancellationToken);
             if (refreshed is null)
             {
-                return Result<GoogleHealthApiResult>.Failure(
+                return Result<TokenFetchResult<T>>.Failure(
                     "Google Health token invalid and refresh failed."
                 );
             }
 
             refreshedConfig = refreshed;
-            result = await FetchActivitiesAsync(
-                refreshedConfig.AccessToken,
-                afterDateTimeUtc,
-                cancellationToken
-            );
+            result = await fetch(refreshedConfig.AccessToken, cancellationToken);
         }
 
         if (result.IsFailure)
         {
-            return Result<GoogleHealthApiResult>.Failure(result.Error);
+            return Result<TokenFetchResult<T>>.Failure(result.Error);
         }
 
-        return Result<GoogleHealthApiResult>.Success(
-            new GoogleHealthApiResult(result.Value, refreshedConfig)
-        );
+        return Result<TokenFetchResult<T>>.Success(new TokenFetchResult<T>(result.Value, refreshedConfig));
     }
 
     private async Task<GoogleHealthIntegrationConfig?> TryRefreshAsync(
@@ -327,6 +369,103 @@ public sealed class GoogleHealthHttpClient(
             );
         }
     }
+
+    private async Task<Result<IReadOnlyList<GoogleHealthStepsModel>>> FetchStepsAsync(
+        string accessToken,
+        DateTime? after,
+        CancellationToken cancellationToken
+    )
+    {
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            accessToken
+        );
+
+        var utcNow = timeProvider.GetUtcNow().UtcDateTime;
+        var startDate = (after ?? utcNow).Date;
+        var endDate = utcNow.Date.AddDays(1);
+
+        var requestBody = new GoogleHealthDailyRollupRequest
+        {
+            Range = new GoogleHealthCivilTimeIntervalRequest
+            {
+                Start = ToCivilDateTime(startDate),
+                End = ToCivilDateTime(endDate),
+            },
+        };
+
+        try
+        {
+            var response = await httpClient.PostAsJsonAsync(
+                "users/me/dataTypes/steps/dataPoints:dailyRollUp",
+                requestBody,
+                JsonSerializerOptions.Web,
+                cancellationToken
+            );
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogWarning("Google Health 401 on steps rollup. Body: {Body}", body);
+                return Result<IReadOnlyList<GoogleHealthStepsModel>>.Failure(UnauthorizedError);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogError(
+                    "Google Health steps rollup request failed: {StatusCode}. Body: {Body}",
+                    response.StatusCode,
+                    body
+                );
+                return Result<IReadOnlyList<GoogleHealthStepsModel>>.Failure(
+                    "Google Health API request failed."
+                );
+            }
+
+            var raw = await response.Content.ReadFromJsonAsync<GoogleHealthDailyRollupResponse>(
+                JsonSerializerOptions.Web,
+                cancellationToken
+            );
+
+            if (raw is null)
+            {
+                return Result<IReadOnlyList<GoogleHealthStepsModel>>.Success([]);
+            }
+
+            var steps = raw
+                .RollupDataPoints.Where(dp => dp.Steps is not null && dp.CivilStartTime?.Date is not null)
+                .Select(dp => new GoogleHealthStepsModel(
+                    Date: new DateOnly(
+                        dp.CivilStartTime!.Date!.Year,
+                        dp.CivilStartTime.Date.Month,
+                        dp.CivilStartTime.Date.Day
+                    ),
+                    StepCount: (long)dp.Steps!.CountSum
+                ))
+                .ToList();
+
+            return Result<IReadOnlyList<GoogleHealthStepsModel>>.Success(steps);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Google Health steps rollup request failed unexpectedly");
+            return Result<IReadOnlyList<GoogleHealthStepsModel>>.Failure(
+                "Google Health API request failed unexpectedly."
+            );
+        }
+    }
+
+    private static GoogleHealthCivilDateTimeRequest ToCivilDateTime(DateTime date) =>
+        new()
+        {
+            Date = new GoogleHealthCivilDateRequest
+            {
+                Year = date.Year,
+                Month = date.Month,
+                Day = date.Day,
+            },
+        };
 
     // Parses Google's duration format "1800s" into an integer number of seconds
     private static int ParseDurationSeconds(string? duration)
