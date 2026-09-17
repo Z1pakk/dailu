@@ -216,9 +216,12 @@ public sealed class GoogleHealthHttpClient(
             var response = await httpClient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                var responseMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 logger.LogError(
-                    "Google Health user info failed: {StatusCode}",
-                    response.StatusCode
+                    "Google Health user info failed: {StatusCode}. Response message: {ResponseMessage}",
+                    response.StatusCode,
+                    responseMessage
                 );
                 return null;
             }

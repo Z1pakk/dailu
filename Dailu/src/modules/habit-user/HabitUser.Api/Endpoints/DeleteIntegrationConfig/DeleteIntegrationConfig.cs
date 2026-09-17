@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HabitUser.Application.Features.Integration;
 using HabitUser.Domain.Entities;
 using Mediator;
@@ -32,7 +33,14 @@ internal static class DeleteIntegrationConfig
         CancellationToken cancellationToken = default
     )
     {
-        if (!Enum.TryParse<IntegrationProvider>(provider, ignoreCase: true, out var parsedProvider))
+        IntegrationProvider parsedProvider;
+        try
+        {
+            parsedProvider = JsonSerializer.Deserialize<IntegrationProvider>(
+                JsonSerializer.Serialize(provider)
+            );
+        }
+        catch (JsonException)
         {
             return TypedResults.Problem(
                 title: "Invalid provider",
