@@ -17,6 +17,8 @@ import { HabitEdit } from '@habits/pages/habit-edit/habit-edit';
 import { HabitEditModalFooter } from '@habits/pages/habit-edit/habit-edit-modal-footer';
 import { HabitListItem } from '@habits/pages/habit-list/ui/habit-list-item/habit-list-item';
 import { HabitModel } from '@habits/models/habit.model';
+import { HabitEntryGetHabitEntries } from '@habit-entries/state/habit-entry.action';
+import { HabitEntryStateSelectors } from '@habit-entries/state/habit-entry.selector';
 
 @Component({
   selector: 'app-habit-list',
@@ -33,8 +35,13 @@ export class HabitList implements OnInit {
     HabitStateSelectors.getSlices.habits,
   );
 
+  protected readonly $habitEntries = this._store.selectSignal(
+    HabitEntryStateSelectors.getSlices.habitEntries,
+  );
+
   ngOnInit() {
     this._store.dispatch(new HabitFetchHabits());
+    this._store.dispatch(new HabitEntryGetHabitEntries());
   }
 
   protected addHabit() {
