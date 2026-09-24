@@ -1,0 +1,104 @@
+<div class="mb-2 flex justify-end gap-1">
+  @for (option of rangeOptions; track option) {
+    <button
+      type="button"
+      (click)="setRange(option)"
+      class="rounded px-2 py-1 text-xs transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
+      [class.bg-blue-500]="range() === option"
+      [class.text-white]="range() === option"
+      [class.text-surface-500]="range() !== option">
+      {{ rangeLabels[option].label }}
+    </button>
+  }
+</div>
+
+<div class="flex gap-2">
+  <div class="flex w-8 shrink-0 flex-col justify-between py-0.5 text-right text-xs text-surface-400">
+    <span>{{ $maxValue() | number: '1.0-1' }}</span>
+    <span>{{ $midValue() | number: '1.0-1' }}</span>
+    <span>0</span>
+  </div>
+
+  <div
+    class="relative h-40 flex-1"
+    (pointermove)="onPointerMove($event)"
+    (pointerleave)="onPointerLeave()">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="block h-full w-full">
+      @for (gridY of gridYs; track gridY) {
+        <line
+          x1="0"
+          [attr.y1]="gridY"
+          x2="100"
+          [attr.y2]="gridY"
+          stroke-width="1"
+          vector-effect="non-scaling-stroke"
+          class="stroke-surface-200 dark:stroke-surface-800"
+        />
+      }
+
+      @if ($targetY(); as targetY) {
+        <line
+          x1="0"
+          [attr.y1]="targetY"
+          x2="100"
+          [attr.y2]="targetY"
+          stroke-width="1"
+          vector-effect="non-scaling-stroke"
+          class="stroke-surface-400 dark:stroke-surface-600"
+        />
+      }
+
+      <path [attr.d]="$areaPath()" class="fill-blue-500/10 dark:fill-blue-400/10" />
+
+      <polyline
+        [attr.points]="$polylinePoints()"
+        fill="none"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        vector-effect="non-scaling-stroke"
+        class="stroke-blue-500 dark:stroke-blue-400"
+      />
+
+      @if ($hoveredPoint(); as hovered) {
+        <line
+          [attr.x1]="hovered.x"
+          y1="0"
+          [attr.x2]="hovered.x"
+          y2="100"
+          stroke-width="1"
+          vector-effect="non-scaling-stroke"
+          class="stroke-surface-300 dark:stroke-surface-700"
+        />
+      }
+    </svg>
+
+    @if ($lastPoint(); as last) {
+      <div
+        #lastPointEl
+        class="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-(--p-content-background) bg-blue-500 dark:bg-blue-400"
+      ></div>
+    }
+
+    @if ($hoveredPoint(); as hovered) {
+      <div
+        #hoveredPointEl
+        class="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-(--p-content-background) bg-blue-500 dark:bg-blue-400"
+      ></div>
+
+      <div
+        #tooltipEl
+        class="pointer-events-none absolute -translate-x-1/2 -translate-y-[calc(100%+8px)] whitespace-nowrap rounded-md border border-(--surface-border) bg-(--p-content-background) px-2 py-1 text-xs shadow-md">
+        <div class="font-semibold">
+          {{ hovered.value | number: '1.0-2' }}{{ valueUnit() ? ' ' + valueUnit() : '' }}
+        </div>
+        <div class="text-surface-500">{{ hovered.date | date: $dateFormat() }}</div>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="mt-1 flex justify-between pl-10 text-xs text-surface-400">
+  <span>{{ $startDate() | date: $dateFormat() }}</span>
+  <span>{{ $endDate() | date: $dateFormat() }}</span>
+</div>

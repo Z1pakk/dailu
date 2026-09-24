@@ -57,13 +57,18 @@
                   icon="pi pi-ellipsis-v" />
       </div>
     </div>
-    <div>
+    <div class="flex items-center gap-3">
       <span class="text-surface-500 text-sm font-normal leading-tight">
         {{ habit().frequency.timesPerPeriod }} x {{ frequencyTypesLabels[habit().frequency.type] }}
       </span>
-      <span class="text-surface-500 text-sm font-normal leading-tight ml-2">
+      <span class="text-surface-500 text-sm font-normal leading-tight">
         {{ habit().target.value }} {{ habit().target.unit }}
       </span>
+      @if ($isMeasurable() && $trendValues().length > 0) {
+        <div class="h-7 w-24">
+          <app-sparkline [values]="$trendValues()" [target]="habit().target.value" />
+        </div>
+      }
     </div>
     <div class="text-right">
       <span class="text-surface-500 text-sm font-normal leading-tight">

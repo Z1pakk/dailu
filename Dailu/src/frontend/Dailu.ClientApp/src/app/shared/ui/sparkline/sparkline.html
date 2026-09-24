@@ -1,0 +1,40 @@
+@if ($hasData()) {
+  <svg [attr.viewBox]="viewBox" preserveAspectRatio="none" class="block h-full w-full">
+    @if ($targetY(); as targetY) {
+      <line
+        x1="0"
+        [attr.y1]="targetY"
+        x2="100"
+        [attr.y2]="targetY"
+        stroke-width="1"
+        vector-effect="non-scaling-stroke"
+        class="stroke-surface-300 dark:stroke-surface-700"
+      />
+    }
+    @if ($points().length > 1) {
+      <polyline
+        [attr.points]="$polylinePoints()"
+        fill="none"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        vector-effect="non-scaling-stroke"
+        class="stroke-surface-400 dark:stroke-surface-500"
+      />
+    }
+    @if ($lastPoint(); as last) {
+      <circle
+        [attr.cx]="last.x"
+        [attr.cy]="last.y"
+        r="3"
+        stroke-width="2"
+        vector-effect="non-scaling-stroke"
+        class="fill-blue-500 dark:fill-blue-400 stroke-surface-0 dark:stroke-surface-900"
+      />
+    }
+  </svg>
+} @else {
+  <div class="flex h-full w-full items-center justify-center">
+    <span class="text-surface-400 text-xs">No data</span>
+  </div>
+}
