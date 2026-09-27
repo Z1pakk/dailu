@@ -1,5 +1,6 @@
 using HabitUser.Api.Endpoints.DeleteIntegrationConfig;
 using HabitUser.Api.Endpoints.GetIntegrationConfigs;
+using HabitUser.Api.Endpoints.GetIntegrationSyncLogs;
 using HabitUser.Api.Endpoints.GetUserProfile;
 using HabitUser.Api.Endpoints.SaveIntegrationConfig;
 using HabitUser.Api.Endpoints.UpdateUserProfile;
@@ -21,5 +22,6 @@ public sealed class HabitUserGroup : IEndpointGroup
         group.MapGetIntegrationConfigsEndpoint();
         group.MapSaveIntegrationConfigEndpoint();
         group.MapDeleteIntegrationConfigEndpoint();
+        group.MapGetIntegrationSyncLogsEndpoint();
     }
 }

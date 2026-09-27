@@ -286,6 +286,52 @@
         }
       }
     },
+    "/api/habit-user/integrations/{provider}/sync-logs": {
+      "get": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Get the most recent sync log entries of an integration for the current authenticated user.",
+        "operationId": "GetIntegrationSyncLogs",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetIntegrationSyncLogsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
     "/api/habit-user/integrations/github/connect": {
       "get": {
         "tags": [
@@ -1055,6 +1101,20 @@
           }
         }
       },
+      "GetIntegrationSyncLogsResponse": {
+        "required": [
+          "logs"
+        ],
+        "type": "object",
+        "properties": {
+          "logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationSyncLogModel"
+            }
+          }
+        }
+      },
       "GetTagsResponse": {
         "required": [
           "tags"
@@ -1728,6 +1788,16 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "lastSync": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IntegrationSyncLogModel"
+              }
+            ]
           }
         }
       },
@@ -1745,6 +1815,16 @@
           "expiresAtUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "lastSync": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IntegrationSyncLogModel"
+              }
+            ]
           }
         }
       },
@@ -1773,8 +1853,61 @@
                 "$ref": "#/components/schemas/StravaAthleteInfo"
               }
             ]
+          },
+          "lastSync": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IntegrationSyncLogModel"
+              }
+            ]
           }
         }
+      },
+      "IntegrationSyncLogModel": {
+        "required": [
+          "startedAtUtc",
+          "finishedAtUtc",
+          "status",
+          "activitiesCount",
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "startedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IntegrationSyncStatus"
+          },
+          "activitiesCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "errorMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "IntegrationSyncStatus": {
+        "enum": [
+          "success",
+          "failed"
+        ]
       },
       "LoginUserCommand": {
         "required": [

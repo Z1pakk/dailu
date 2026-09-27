@@ -11,7 +11,8 @@ namespace HabitUser.Strava.Services;
 
 public sealed record StravaActivityPollResult(
     Result Result,
-    StravaIntegrationConfig? RefreshedConfig = null
+    StravaIntegrationConfig? RefreshedConfig = null,
+    int ActivitiesCount = 0
 );
 
 public interface IStravaActivityService
@@ -66,7 +67,7 @@ public sealed class StravaActivityService(
 
         if (activities.Count == 0)
         {
-            return new StravaActivityPollResult(Result.Success());
+            return new StravaActivityPollResult(Result.Success(), apiResult.Value.RefreshedConfig);
         }
 
         await eventDispatcher.SendAsync(
@@ -78,7 +79,11 @@ public sealed class StravaActivityService(
             cancellationToken
         );
 
-        return new StravaActivityPollResult(Result.Success(), apiResult.Value.RefreshedConfig);
+        return new StravaActivityPollResult(
+            Result.Success(),
+            apiResult.Value.RefreshedConfig,
+            activities.Count
+        );
     }
 
     private static string BuildNotes(string type, string name, float distance, string? description)

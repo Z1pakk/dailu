@@ -1,8 +1,10 @@
+using HabitUser.Application.Features.Integration.SyncLogs;
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Github.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SharedKernel.CQRS;
 using SharedKernel.ResultPattern;
 
@@ -13,7 +15,8 @@ public sealed record PollGithubActivityCommand : ICommand<Result>;
 public sealed class PollGithubActivityCommandHandler(
     IHabitUserDbContext dbContext,
     IGitHubActivityService githubActivityService,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    ILogger<PollGithubActivityCommandHandler> logger
 ) : ICommandHandler<PollGithubActivityCommand, Result>
 {
     public async ValueTask<Result> Handle(
@@ -21,49 +24,55 @@ public sealed class PollGithubActivityCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        var userIntegrationConfigs = await dbContext
-            .IntegrationConfigs.AsNoTracking()
-            .Select(x => new
-            {
-                x.Id,
-                x.HabitUser.IdentityUserId,
-                x.Provider,
-                x.Config,
-                x.LastSyncedAtUtc,
-            })
+        var integrationConfigs = await dbContext
+            .IntegrationConfigs.Include(x => x.HabitUser)
             .Where(c => c.Provider == IntegrationProvider.Github)
             .ToListAsync(cancellationToken);
 
-        foreach (var config in userIntegrationConfigs)
+        foreach (var entity in integrationConfigs)
         {
-            if (config.Config is not GithubIntegrationConfig githubConfig)
+            if (entity.Config is not GithubIntegrationConfig githubConfig)
             {
                 continue;
             }
 
-            var result = await githubActivityService.PollAndSendAsync(
-                config.IdentityUserId,
-                githubConfig,
-                config.LastSyncedAtUtc,
-                cancellationToken
+            var startedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+            var activitiesCount = 0;
+            string? errorMessage;
+
+            try
+            {
+                var result = await githubActivityService.PollAndSendAsync(
+                    entity.HabitUser.IdentityUserId,
+                    githubConfig,
+                    entity.LastSyncedAtUtc,
+                    cancellationToken
+                );
+
+                activitiesCount = result.ActivitiesCount;
+                errorMessage = result.Result.IsFailure ? result.Result.Error : null;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "GitHub polling failed for config {ConfigId}", entity.Id);
+                errorMessage = "Unexpected error while syncing GitHub.";
+            }
+
+            var finishedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+
+            dbContext.AddSyncLog(
+                entity.Id,
+                startedAtUtc,
+                finishedAtUtc,
+                entity.LastSyncedAtUtc,
+                activitiesCount,
+                errorMessage
             );
 
-            if (result.IsFailure)
+            if (errorMessage is null)
             {
-                continue;
+                entity.LastSyncedAtUtc = finishedAtUtc;
             }
-
-            var entity = await dbContext.IntegrationConfigs.FirstOrDefaultAsync(
-                c => c.Id == config.Id,
-                cancellationToken
-            );
-
-            if (entity is null)
-            {
-                continue;
-            }
-
-            entity.LastSyncedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

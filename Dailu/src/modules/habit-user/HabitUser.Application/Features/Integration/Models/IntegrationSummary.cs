@@ -6,7 +6,10 @@ namespace HabitUser.Application.Features.Integration.Models;
 [JsonDerivedType(typeof(GithubIntegrationSummary), "github")]
 [JsonDerivedType(typeof(StravaIntegrationSummary), "strava")]
 [JsonDerivedType(typeof(GoogleHealthIntegrationSummary), "google-health")]
-public abstract record IntegrationSummary;
+public abstract record IntegrationSummary
+{
+    public IntegrationSyncLogModel? LastSync { get; init; }
+}
 
 public sealed record GithubIntegrationSummary(DateTime? ExpiresAtUtc) : IntegrationSummary;
 

@@ -22,6 +22,7 @@ public sealed class HabitUserDbContext(
 
     public DbSet<HabitUserEntity> HabitUsers => Set<HabitUserEntity>();
     public DbSet<IntegrationConfigEntity> IntegrationConfigs => Set<IntegrationConfigEntity>();
+    public DbSet<IntegrationSyncLogEntity> IntegrationSyncLogs => Set<IntegrationSyncLogEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

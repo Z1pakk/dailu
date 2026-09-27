@@ -24,11 +24,12 @@ import {
   OAuthPopupService,
 } from '@shared/lib/oauth-popup/oauth-popup.service';
 import { GoogleHealthConnectedCard } from './ui/google-health-connected-card/google-health-connected-card';
+import { IntegrationSyncStatus } from '../ui/integration-sync-status/integration-sync-status';
 import { GoogleHealthProfileCard } from './ui/google-health-profile-card/google-health-profile-card';
 
 @Component({
   selector: 'app-profile-google-health-integration',
-  imports: [Button, GoogleHealthConnectedCard, GoogleHealthProfileCard],
+  imports: [Button, GoogleHealthConnectedCard, GoogleHealthProfileCard, IntegrationSyncStatus],
   templateUrl: './profile-google-health-integration.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

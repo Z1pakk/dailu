@@ -250,16 +250,19 @@ function buildSummary(
       type: 'strava',
       expiresAtUtc: config.expiresAtUtc,
       athlete: null,
+      lastSync: null,
     } satisfies StravaIntegrationSummary;
   }
   if (config.type === 'google-health') {
     return {
       type: 'google-health',
       expiresAtUtc: config.expiresAtUtc,
+      lastSync: null,
     } satisfies GoogleHealthIntegrationSummary;
   }
   return {
     type: 'github',
     expiresAtUtc: config.expiresAtUtc,
+    lastSync: null,
   } satisfies GithubIntegrationSummary;
 }

@@ -9,6 +9,8 @@ import { IntegrationConfig } from '@user-profile/models/integration-config.model
 import { GitHubUserProfileModel } from '@user-profile/models/github-user-profile.model';
 import { GitHubRepositoryModel } from '@user-profile/models/github-repository.model';
 import { GoogleHealthUserProfileModel } from '@user-profile/models/google-health-user-profile.model';
+import { GetIntegrationSyncLogsResponseModel } from '@user-profile/models/responses/get-integration-sync-logs.response';
+import { IntegrationProviderType } from '@user-profile/models/integration-summary.model';
 
 @Injectable({
   providedIn: 'root',
@@ -40,6 +42,16 @@ export class UserProfileApi {
 
   public revokeIntegrationConfig(provider: string): Observable<void> {
     return this._http.delete<void>(`${this.baseUrl}/habit-user/integrations/${provider}`);
+  }
+
+  public getIntegrationSyncLogs(
+    provider: IntegrationProviderType,
+    take: number,
+  ): Observable<GetIntegrationSyncLogsResponseModel> {
+    return this._http.get<GetIntegrationSyncLogsResponseModel>(
+      `${this.baseUrl}/habit-user/integrations/${provider}/sync-logs`,
+      { params: { take } },
+    );
   }
 
   public getStravaConnectUrl(): Observable<{ authUrl: string }> {

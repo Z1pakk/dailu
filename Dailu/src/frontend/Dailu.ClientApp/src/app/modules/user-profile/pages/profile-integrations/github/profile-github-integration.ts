@@ -24,11 +24,12 @@ import {
   OAuthPopupService,
 } from '@shared/lib/oauth-popup/oauth-popup.service';
 import { GithubConnectedCard } from './ui/github-connected-card/github-connected-card';
+import { IntegrationSyncStatus } from '../ui/integration-sync-status/integration-sync-status';
 import { GithubProfileCard } from './ui/github-profile-card/github-profile-card';
 
 @Component({
   selector: 'app-profile-github-integration',
-  imports: [Button, GithubConnectedCard, GithubProfileCard],
+  imports: [Button, GithubConnectedCard, GithubProfileCard, IntegrationSyncStatus],
   templateUrl: './profile-github-integration.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

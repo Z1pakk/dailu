@@ -8,4 +8,5 @@ public interface IHabitUserDbContext : IAppDbContextBase
 {
     DbSet<HabitUserEntity> HabitUsers { get; }
     DbSet<IntegrationConfigEntity> IntegrationConfigs { get; }
+    DbSet<IntegrationSyncLogEntity> IntegrationSyncLogs { get; }
 }

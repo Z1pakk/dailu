@@ -5,5 +5,6 @@ namespace HabitUser.GoogleHealth.Services;
 
 public sealed record GoogleHealthPollResult(
     Result Result,
-    GoogleHealthIntegrationConfig? RefreshedConfig = null
+    GoogleHealthIntegrationConfig? RefreshedConfig = null,
+    int ActivitiesCount = 0
 );
