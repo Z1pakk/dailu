@@ -4,6 +4,7 @@
   </div>
 } @else if ($showConnected()) {
   <app-strava-connected-card />
+  <app-integration-sync-status provider="strava" [lastSync]="$stravaSummary()?.lastSync" />
   <app-strava-profile-card />
 } @else {
   <div class="self-stretch flex flex-col items-start gap-4">

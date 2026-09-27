@@ -4,6 +4,7 @@
   </div>
 } @else if ($showConnected()) {
   <app-github-connected-card />
+  <app-integration-sync-status provider="github" [lastSync]="$githubSummary()?.lastSync" />
   <app-github-profile-card />
 } @else {
   <div class="self-stretch flex flex-col items-start gap-4">

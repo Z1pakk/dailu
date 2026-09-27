@@ -24,11 +24,12 @@ import {
   OAuthPopupService,
 } from '@shared/lib/oauth-popup/oauth-popup.service';
 import { StravaConnectedCard } from './ui/strava-connected-card/strava-connected-card';
+import { IntegrationSyncStatus } from '../ui/integration-sync-status/integration-sync-status';
 import { StravaProfileCard } from './ui/strava-profile-card/strava-profile-card';
 
 @Component({
   selector: 'app-profile-strava-integration',
-  imports: [Button, StravaConnectedCard, StravaProfileCard],
+  imports: [Button, StravaConnectedCard, StravaProfileCard, IntegrationSyncStatus],
   templateUrl: './profile-strava-integration.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

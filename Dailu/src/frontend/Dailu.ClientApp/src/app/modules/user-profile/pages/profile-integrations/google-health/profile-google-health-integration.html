@@ -4,6 +4,7 @@
   </div>
 } @else if ($showConnected()) {
   <app-google-health-connected-card />
+  <app-integration-sync-status provider="google-health" [lastSync]="$googleHealthSummary()?.lastSync" />
   <app-google-health-profile-card />
 } @else {
   <div class="self-stretch flex flex-col items-start gap-4">

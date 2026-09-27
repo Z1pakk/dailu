@@ -78,7 +78,11 @@ public sealed class GoogleHealthStepsService(
             cancellationToken
         );
 
-        return new GoogleHealthPollResult(Result.Success(), stepsResult.Value.RefreshedConfig);
+        return new GoogleHealthPollResult(
+            Result.Success(),
+            stepsResult.Value.RefreshedConfig,
+            steps.Count
+        );
     }
 
     // Deterministic per user+day so repeated polls of the same (still accumulating) day update

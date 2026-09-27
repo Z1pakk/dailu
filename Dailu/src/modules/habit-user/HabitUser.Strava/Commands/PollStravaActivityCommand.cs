@@ -1,8 +1,10 @@
+using HabitUser.Application.Features.Integration.SyncLogs;
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Entities;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Strava.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SharedKernel.CQRS;
 using SharedKernel.ResultPattern;
 
@@ -13,7 +15,8 @@ public sealed record PollStravaActivityCommand : ICommand<Result>;
 public sealed class PollStravaActivityCommandHandler(
     IHabitUserDbContext dbContext,
     IStravaActivityService stravaActivityService,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    ILogger<PollStravaActivityCommandHandler> logger
 ) : ICommandHandler<PollStravaActivityCommand, Result>
 {
     public async ValueTask<Result> Handle(
@@ -21,59 +24,60 @@ public sealed class PollStravaActivityCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        var userIntegrationConfigs = await dbContext
-            .IntegrationConfigs.AsNoTracking()
-            .Select(x => new
-            {
-                x.Id,
-                x.HabitUser.IdentityUserId,
-                x.Provider,
-                x.Config,
-                x.LastSyncedAtUtc,
-            })
+        var integrationConfigs = await dbContext
+            .IntegrationConfigs.Include(x => x.HabitUser)
             .Where(c => c.Provider == IntegrationProvider.Strava)
             .ToListAsync(cancellationToken);
 
-        foreach (var config in userIntegrationConfigs)
+        foreach (var entity in integrationConfigs)
         {
-            if (config.Config is not StravaIntegrationConfig stravaConfig)
+            if (entity.Config is not StravaIntegrationConfig stravaConfig)
             {
                 continue;
             }
 
-            var stravaResult = await stravaActivityService.PollAndSendAsync(
-                config.IdentityUserId,
-                stravaConfig,
-                config.LastSyncedAtUtc,
-                cancellationToken
+            var startedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+            var activitiesCount = 0;
+            string? errorMessage;
+
+            try
+            {
+                var stravaResult = await stravaActivityService.PollAndSendAsync(
+                    entity.HabitUser.IdentityUserId,
+                    stravaConfig,
+                    entity.LastSyncedAtUtc,
+                    cancellationToken
+                );
+
+                if (stravaResult.RefreshedConfig is not null)
+                {
+                    entity.Config = stravaResult.RefreshedConfig;
+                }
+
+                activitiesCount = stravaResult.ActivitiesCount;
+                errorMessage = stravaResult.Result.IsFailure ? stravaResult.Result.Error : null;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Strava polling failed for config {ConfigId}", entity.Id);
+                errorMessage = "Unexpected error while syncing Strava.";
+            }
+
+            var finishedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+
+            dbContext.AddSyncLog(
+                entity.Id,
+                startedAtUtc,
+                finishedAtUtc,
+                entity.LastSyncedAtUtc,
+                activitiesCount,
+                errorMessage
             );
 
-            if (stravaResult.Result.IsFailure && stravaResult.RefreshedConfig is null)
+            if (errorMessage is null)
             {
-                continue;
+                entity.LastSyncedAtUtc = finishedAtUtc;
             }
-
-            var entity = await dbContext.IntegrationConfigs.FirstOrDefaultAsync(
-                c => c.Id == config.Id,
-                cancellationToken
-            );
-
-            if (entity is null)
-            {
-                continue;
-            }
-
-            if (stravaResult.RefreshedConfig is not null)
-            {
-                entity.Config = stravaResult.RefreshedConfig;
-            }
-
-            if (stravaResult.Result.IsFailure)
-            {
-                continue;
-            }
-
-            entity.LastSyncedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -6,6 +6,7 @@ using HabitUser.Github;
 using HabitUser.GoogleHealth;
 using HabitUser.Infrastructure.Database;
 using HabitUser.Infrastructure.Pipeline;
+using HabitUser.Infrastructure.Workers;
 using HabitUser.Integrations;
 using HabitUser.Strava;
 using Mediator;
@@ -80,6 +81,8 @@ public static class Setup
         services.AddStravaModule();
 
         services.AddGoogleHealthModule();
+
+        services.AddHostedService<IntegrationSyncLogCleanupWorker>();
 
         return services;
     }

@@ -9,9 +9,11 @@ using SharedKernel.ResultPattern;
 
 namespace HabitUser.Github.Services;
 
+public sealed record GitHubActivityPollResult(Result Result, int ActivitiesCount = 0);
+
 public interface IGitHubActivityService
 {
-    Task<Result> PollAndSendAsync(
+    Task<GitHubActivityPollResult> PollAndSendAsync(
         Guid identityUserId,
         GithubIntegrationConfig config,
         DateTime? lastSyncedAtUtc = null,
@@ -26,7 +28,7 @@ public sealed class GitHubActivityService(
     ILogger<GitHubActivityService> logger
 ) : IGitHubActivityService
 {
-    public async Task<Result> PollAndSendAsync(
+    public async Task<GitHubActivityPollResult> PollAndSendAsync(
         Guid identityUserId,
         GithubIntegrationConfig config,
         DateTime? lastSyncedAtUtc = null,
@@ -38,7 +40,9 @@ public sealed class GitHubActivityService(
             || config.ExpiresAtUtc < timeProvider.GetUtcNow().UtcDateTime
         )
         {
-            return Result.Failure("GitHub access token is missing or expired.");
+            return new GitHubActivityPollResult(
+                Result.Failure("GitHub access token is missing or expired.")
+            );
         }
 
         var userProfile = await gitHubHttpClient.GetUserProfileAsync(
@@ -48,7 +52,9 @@ public sealed class GitHubActivityService(
 
         if (userProfile?.Login is null)
         {
-            return Result.Failure("Failed to fetch GitHub user profile or login is missing.");
+            return new GitHubActivityPollResult(
+                Result.Failure("Failed to fetch GitHub user profile or login is missing.")
+            );
         }
 
         var eventsResult = await gitHubHttpClient.GetUserEventsAsync(
@@ -65,7 +71,9 @@ public sealed class GitHubActivityService(
                 eventsResult?.Error
             );
 
-            return Result.Failure("Failed to fetch GitHub events.");
+            return new GitHubActivityPollResult(
+                Result.Failure("Failed to fetch GitHub events.")
+            );
         }
 
         var todayDay = timeProvider.GetUtcNow().UtcDateTime.Date.AddDays(-7);
@@ -124,7 +132,7 @@ public sealed class GitHubActivityService(
 
         if (activities.Count == 0)
         {
-            return Result.Success();
+            return new GitHubActivityPollResult(Result.Success());
         }
 
         await eventDispatcher.SendAsync(
@@ -136,7 +144,7 @@ public sealed class GitHubActivityService(
             cancellationToken
         );
 
-        return Result.Success();
+        return new GitHubActivityPollResult(Result.Success(), activities.Count);
     }
 
     private static string ToEventTypeName(string rawType) =>

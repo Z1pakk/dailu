@@ -75,7 +75,11 @@ public sealed class GoogleHealthActivityService(
             cancellationToken
         );
 
-        return new GoogleHealthPollResult(Result.Success(), activitiesResult.Value.RefreshedConfig);
+        return new GoogleHealthPollResult(
+            Result.Success(),
+            activitiesResult.Value.RefreshedConfig,
+            activities.Count
+        );
     }
 
     private static string BuildNotes(string exerciseType, string? displayName, int durationSeconds)

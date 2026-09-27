@@ -32,7 +32,32 @@ public sealed class GetIntegrationConfigsQueryHandler(
             .IntegrationConfigs.Where(x => x.HabitUser.IdentityUserId == userId)
             .ToListAsync(cancellationToken);
 
-        var summaries = entities.Select(ToSummary).ToList();
+        var configIds = entities.Select(x => x.Id).ToList();
+
+        var lastSyncs = await dbContext
+            .IntegrationSyncLogs.AsNoTracking()
+            .Where(x => configIds.Contains(x.IntegrationConfigId))
+            .GroupBy(x => x.IntegrationConfigId)
+            .Select(g =>
+                g.OrderByDescending(x => x.StartedAtUtc)
+                    .Select(x => new
+                    {
+                        x.IntegrationConfigId,
+                        Log = new IntegrationSyncLogModel(
+                            x.StartedAtUtc,
+                            x.FinishedAtUtc,
+                            x.Status,
+                            x.ActivitiesCount,
+                            x.ErrorMessage
+                        ),
+                    })
+                    .First()
+            )
+            .ToDictionaryAsync(x => x.IntegrationConfigId, x => x.Log, cancellationToken);
+
+        var summaries = entities
+            .Select(x => ToSummary(x) with { LastSync = lastSyncs.GetValueOrDefault(x.Id) })
+            .ToList();
 
         return Result<GetIntegrationConfigsQueryResponse>.Success(
             new GetIntegrationConfigsQueryResponse(summaries)
