@@ -35,6 +35,36 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Knowledge graph of the codebase (callers, dependents, test coverage, impact radius).
+      # A full build takes seconds, so it is rebuilt fresh on every run instead of cached.
+      - name: Build code-review-graph
+        run: |
+          pip install --quiet code-review-graph==2.3.9
+          code-review-graph build -q --repo "$GITHUB_WORKSPACE"
+          code-review-graph status --repo "$GITHUB_WORKSPACE"
+
+      # Expose only read-only graph tools to Claude via MCP
+      - name: Configure code-review-graph MCP server
+        run: |
+          cat > "$RUNNER_TEMP/mcp-config.json" <<EOF
+          {
+            "mcpServers": {
+              "code-review-graph": {
+                "command": "code-review-graph",
+                "args": [
+                  "serve",
+                  "--repo", "$GITHUB_WORKSPACE",
+                  "--tools", "detect_changes_tool,get_review_context_tool,get_impact_radius_tool,get_affected_flows_tool,query_graph_tool,semantic_search_nodes_tool,get_minimal_context_tool"
+                ]
+              }
+            }
+          }
+          EOF
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -49,16 +79,23 @@ jobs:
 
             Steps:
             1. Read the diff with `gh pr diff <PR NUMBER>`.
-            2. Post each concrete issue as an inline comment on the exact line.
-            3. ALWAYS finish with exactly one summary, using the summary template
+            2. Use the code-review-graph MCP tools before reading whole files:
+               - `detect_changes_tool` (base = the PR's base branch, e.g. `origin/develop`) for risk-scored changes
+               - `get_review_context_tool` for source snippets of the changed code
+               - `get_impact_radius_tool` / `query_graph_tool` (callers_of, tests_for) to find
+                 broken callers and missing tests
+               Fall back to Read/Grep only when the graph doesn't cover what you need.
+            3. Post each concrete issue as an inline comment on the exact line.
+            4. ALWAYS finish with exactly one summary, using the summary template
                from the guidelines, even if there are no issues:
                - If a Claude tracking comment exists on this PR, write the summary
                  as the final content of that tracking comment.
                - Otherwise post it with `gh pr comment <PR NUMBER> --body-file <file>`
                  (write the body to a temp file first; don't pass multi-line text inline).
-          # Allow Claude to read the diff and post inline + summary comments
+          # Allow Claude to read the diff, query the graph, and post inline + summary comments
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Write,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --mcp-config ${{ runner.temp }}/mcp-config.json
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,mcp__code-review-graph,Write,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
 
   ci-success:
     if: |

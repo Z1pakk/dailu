@@ -10,6 +10,7 @@
     <File Path="../.github/renovate-global.json" />
     <File Path="../.github/workflows/build-observability.yml" />
     <File Path="../.github/workflows/build.yml" />
+    <File Path="../.github/workflows/claude-review.yml" />
     <File Path="../.github/workflows/deploy-observability.yml" />
     <File Path="../.github/workflows/deploy.yml" />
     <File Path="../.github/workflows/renovate.yml" />
