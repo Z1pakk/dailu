@@ -51,6 +51,9 @@ After the inline comments, always post **exactly one** top-level PR comment that
 
 **Verdict:** ✅ Looks good / ⚠️ Changes suggested / ❌ Changes required
 
+<If `gh pr checks` shows the build or tests failing, state that here first,
+e.g. "⚠️ CI is currently failing (build-backend)." Omit this line if CI is green.>
+
 <1–2 sentence overview of what the PR does and its overall quality>
 
 ### 🔴 Must fix
