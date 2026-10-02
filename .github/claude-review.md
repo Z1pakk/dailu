@@ -40,4 +40,32 @@ Report real problems, most severe first:
 
 - Post **inline comments** on the exact lines for concrete issues. Explain what goes wrong and suggest a fix.
 - Mark severity at the start of each comment: 🔴 must fix, 🟡 should fix, 🔵 suggestion.
-- Finish with **one summary comment**: a 1–2 sentence overview, then the issues grouped by severity. If nothing significant is found, say so briefly. Don't invent problems.
+- Don't invent problems. If nothing significant is found, say so briefly.
+
+### Summary comment (required)
+
+After the inline comments, always post **exactly one** top-level PR comment that summarizes the whole review. Use this template:
+
+```markdown
+## 🤖 Claude Review Summary
+
+**Verdict:** ✅ Looks good / ⚠️ Changes suggested / ❌ Changes required
+
+<1–2 sentence overview of what the PR does and its overall quality>
+
+### 🔴 Must fix
+- **<short title>** (`path/to/File.cs`) — <one line: problem and fix>
+
+### 🟡 Should fix
+- **<short title>** (`path/to/File.cs`) — <one line>
+
+### 🔵 Suggestions
+- **<short title>** (`path/to/File.cs`) — <one line>
+
+### ✅ What's good
+- <1–3 bullets on things done well, if any>
+```
+
+- Leave out any severity section that has no items.
+- Each bullet is one line; the details belong in the inline comments.
+- Verdict: ❌ if there is any 🔴, ⚠️ if only 🟡/🔵, ✅ if nothing to report.
