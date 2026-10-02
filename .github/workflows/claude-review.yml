@@ -1,10 +1,23 @@
 name: Claude PR Review
 
+# 1. review          — reviews new/ready PRs, or on "@claude" comments
+# 2. ci-success      — after "Build & Test" passes on a PR, updates the CI status comment (no Claude usage)
+# 3. ci-failure      — after "Build & Test" fails on a PR, Claude reads the logs and explains how to fix it
+#
+# CI jobs keep ONE status comment per PR up to date. Claude only reads code there;
+# nothing from the PR is built or executed.
+
 on:
   pull_request:
     types: [opened, ready_for_review]
   issue_comment:
     types: [created]
+  workflow_run:
+    workflows: ["Build & Test"]
+    types: [completed]
+
+env:
+  CI_COMMENT_MARKER: "<!-- claude-ci-report -->"
 
 jobs:
   review:
@@ -26,9 +39,41 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Knowledge graph of the codebase (callers, dependents, test coverage, impact radius).
+      # A full build takes seconds, so it is rebuilt fresh on every run instead of cached.
+      - name: Build code-review-graph
+        run: |
+          pip install --quiet code-review-graph==2.3.9
+          code-review-graph build -q --repo "$GITHUB_WORKSPACE"
+          code-review-graph status --repo "$GITHUB_WORKSPACE"
+
+      # Expose only read-only graph tools to Claude via MCP
+      - name: Configure code-review-graph MCP server
+        run: |
+          cat > "$RUNNER_TEMP/mcp-config.json" <<EOF
+          {
+            "mcpServers": {
+              "code-review-graph": {
+                "command": "code-review-graph",
+                "args": [
+                  "serve",
+                  "--repo", "$GITHUB_WORKSPACE",
+                  "--tools", "detect_changes_tool,get_review_context_tool,get_impact_radius_tool,get_affected_flows_tool,query_graph_tool,semantic_search_nodes_tool,get_minimal_context_tool"
+                ]
+              }
+            }
+          }
+          EOF
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Creates one tracking comment on the PR that Claude fills with the final summary
+          track_progress: true
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
@@ -37,13 +82,161 @@ jobs:
             Read .github/claude-review.md and follow those review guidelines exactly.
 
             Steps:
-            1. Check CI status with `gh pr checks <PR NUMBER>`. If the build
-               or tests are failing, lead the summary comment with that fact.
-            2. Read the diff with `gh pr diff <PR NUMBER>`.
+            1. Read the diff with `gh pr diff <PR NUMBER>`.
+            2. Use the code-review-graph MCP tools before reading whole files:
+               - `detect_changes_tool` (base = the PR's base branch, e.g. `origin/develop`) for risk-scored changes
+               - `get_review_context_tool` for source snippets of the changed code
+               - `get_impact_radius_tool` / `query_graph_tool` (callers_of, tests_for) to find
+                 broken callers and missing tests
+               Fall back to Read/Grep only when the graph doesn't cover what you need.
             3. Post each concrete issue as an inline comment on the exact line.
-            4. ALWAYS finish by posting exactly one summary comment with
-               `gh pr comment <PR NUMBER> --body "..."`, using the summary
-               template from the guidelines. Do this even if there are no issues.
-          # Allow Claude to read the diff and CI status, and post inline + summary comments
+            4. ALWAYS finish with exactly one summary, using the summary template
+               from the guidelines, even if there are no issues:
+               - If a Claude tracking comment exists on this PR, write the summary
+                 as the final content of that tracking comment.
+               - Otherwise post it with `gh pr comment <PR NUMBER> --body-file <file>`
+                 (write the body to a temp file first; don't pass multi-line text inline).
+          # Allow Claude to read the diff, query the graph, and post inline + summary comments
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr checks:*)"
+            --mcp-config ${{ runner.temp }}/mcp-config.json
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,mcp__code-review-graph,Write,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+
+  ci-success:
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.pull_requests[0]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Update CI status comment
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          script: |
+            const marker = process.env.CI_COMMENT_MARKER;
+            const body = [
+              marker,
+              "## ✅ CI passed",
+              "",
+              `**Build & Test** succeeded for \`${process.env.HEAD_SHA.slice(0, 7)}\`.`,
+              "",
+              `[View run](${process.env.RUN_URL})`,
+            ].join("\n");
+
+            const issue_number = Number(process.env.PR_NUMBER);
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            }
+
+  ci-failure:
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.pull_requests[0]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout PR code (read-only)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Collect failed job logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.ci-report"
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json jobs \
+            --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name) → failed step: \([.steps[] | select(.conclusion == "failure") | .name] | join(", "))"' \
+            > "$GITHUB_WORKSPACE/.ci-report/failed-jobs.txt"
+          # Keep only the tail of the logs so the prompt stays small
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed \
+            | tail -n 1500 > "$GITHUB_WORKSPACE/.ci-report/failed-logs.txt"
+
+      - name: Analyze failure with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            The "Build & Test" CI workflow failed for PR #${{ github.event.workflow_run.pull_requests[0].number }}
+            (branch `${{ github.event.workflow_run.head_branch }}`, commit `${{ github.event.workflow_run.head_sha }}`).
+            Run: ${{ github.event.workflow_run.html_url }}
+
+            Failed jobs and steps are in: .ci-report/failed-jobs.txt
+            The tail of the failed logs is in: .ci-report/failed-logs.txt
+            The PR's code is checked out in the current directory. Read `Dailu/AGENTS.md` for project context.
+
+            Your task:
+            1. Read both files and find the root cause (the first real error, not follow-on noise).
+            2. Look at the relevant source files to confirm the cause.
+            3. Write your report to `.ci-report/report.md` using EXACTLY this format:
+
+            ## ❌ CI failed: <short title of the root cause>
+
+            **Failed:** <job name> → <step name>
+
+            ### What went wrong
+            <2–4 sentences in plain language. Quote the key error line in a code block.>
+
+            ### How to fix
+            <Concrete steps. Name files and line numbers. Include a code snippet or the exact
+            command to run locally (e.g. `dotnet build`, `dotnet test --filter ...`, `npm run lint`) when useful.>
+
+            ### Confidence
+            <High / Medium / Low, with one sentence why. If the failure looks flaky or
+            infrastructure-related (network, timeout, runner), say so and suggest re-running.>
+
+            Do not modify any repository files. Only write the report file.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Write"
+
+      - name: Post failure report
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        with:
+          script: |
+            const fs = require("fs");
+            const marker = process.env.CI_COMMENT_MARKER;
+            const reportPath = `${process.env.GITHUB_WORKSPACE}/.ci-report/report.md`;
+
+            const report = fs.existsSync(reportPath)
+              ? fs.readFileSync(reportPath, "utf8").trim()
+              : "## ❌ CI failed\n\nClaude couldn't analyze this failure. Check the run logs.";
+
+            const body = [marker, report, "", `[View run](${process.env.RUN_URL})`].join("\n");
+
+            const issue_number = Number(process.env.PR_NUMBER);
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            }
