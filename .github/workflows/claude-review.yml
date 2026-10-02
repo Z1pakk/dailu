@@ -27,8 +27,18 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+
             Review this pull request.
             Read .github/claude-review.md and follow those review guidelines exactly.
+
+            Steps:
+            1. Read the diff with `gh pr diff <PR NUMBER>`.
+            2. Post each concrete issue as an inline comment on the exact line.
+            3. ALWAYS finish by posting exactly one summary comment with
+               `gh pr comment <PR NUMBER> --body "..."`, using the summary
+               template from the guidelines. Do this even if there are no issues.
           # Allow Claude to read the diff and post inline + summary comments
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
