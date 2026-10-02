@@ -1,7 +1,7 @@
 # PR Review Guidelines
 
 Instructions for Claude when reviewing pull requests in this repo.
-Read `AGENTS.md` first for the project architecture and conventions.
+Read `Dailu/AGENTS.md` first for the project architecture and conventions.
 
 ## What to focus on
 
@@ -21,7 +21,7 @@ Report real problems, most severe first:
 - Commands with user input need a FluentValidation validator.
 - Use the typed IDs (`Id<T>`) instead of raw `Guid`/`int` for entity identifiers.
 - Endpoints follow the existing `IEndpointGroup` / Minimal API patterns.
-- New behavior in handlers or domain logic should have tests under `src/tests`.
+- New behavior in handlers or domain logic should have tests under `Dailu/src/tests`.
 
 ## Frontend rules (Angular)
 
