@@ -1,6 +1,5 @@
 using HabitEntry.Api.Endpoints.CreateHabitEntry;
 using HabitEntry.Api.Endpoints.GetHabitEntries;
-using HabitEntry.Api.Endpoints.GetHabitStreak;
 using HabitEntry.Api.Endpoints.UpdateHabitEntry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +16,6 @@ public sealed class HabitEntryGroup : IEndpointGroup
 
         group.MapCreateHabitEntryEndpoint();
         group.MapGetHabitEntriesEndpoint();
-        group.MapGetHabitStreakEndpoint();
         group.MapUpdateHabitEntryEndpoint();
     }
 }
