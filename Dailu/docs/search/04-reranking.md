@@ -6,7 +6,7 @@ with a chat model, instead of adding a new model or container. Building this in 
 both consumers get it for free, instead of each reimplementing it.
 
 This phase is optional hardening. Do it after the search module and the coach are both working
-end to end, and you've actually seen cosine similarity put a less-relevant result above a more
+end to end, and you've actually seen the fused ranking put a less-relevant result above a more
 relevant one.
 
 **Why vector search ranking is approximate in the first place.** Embedding a query and embedding
@@ -23,10 +23,10 @@ too slow to run over every row — it only makes sense on a short, already-filte
 which is the whole reason for the over-fetch pattern below.
 
 ```
-query ──► embed ──► pgvector cosine search, OVER-FETCH (e.g. top 20) ──► IReranker ──► top 5
-                     WHERE user_id = @me AND embedding_model = @model         │
-                                                                 IChatClient (this module's own)
-                                                                 reorders by relevance, not distance
+query ──► text leg + semantic leg (phase 3) ──► RRF merge, OVER-FETCH (e.g. top 20) ──► IReranker ──► top 5
+                                                                                        │
+                                                                         IChatClient (this module's own)
+                                                                         reorders by relevance, not rank
 ```
 
 **This phase needs its own `IChatClient`.** `search`'s `AiSetup.cs` (phase 1) only registered
@@ -191,30 +191,30 @@ keep it a few lines, not a general parser.
 
 ## Step 4.4: Wire it into `SearchService`
 
-Over-fetch before reranking, apply `MinSimilarity` first so you never spend a reranker call on
-results that are already too far off (phase 3, step 3.4):
+Rerank the **fused** list, not either leg on its own — otherwise the reranker never sees the
+partial/typo matches that only the text leg found. Both legs already applied their thresholds
+(`MinSimilarity`, `MinWordSimilarity`, phase 3 step 3.4), so you never spend a reranker call on
+results that are already too far off. Only the fused list is over-fetched:
 
 ```csharp
 var overFetch = Math.Clamp(take * 4, take, 40);
 
-var rows = await db.SearchIndex.AsNoTracking()
-    .Where(/* same filters as phase 3 */)
-    .Select(/* same projection */)
-    .OrderBy(x => x.Distance)
-    .Take(overFetch)
-    .ToListAsync(ct);
+var textHits = await TextLegAsync(scoped, query, ct);         // phase 3, unchanged
+var semanticHits = await SemanticLegAsync(scoped, query, ct); // phase 3, unchanged
 
-var candidates = rows
-    .Select(r => new { r, Similarity = 1 - r.Distance })
-    .Where(x => x.Similarity >= MinSimilarity)
-    .ToList();
+var candidates = Fuse(textHits, semanticHits).Take(overFetch).ToList();
 
-var order = rerankEnabled
-    ? await reranker.RankAsync(query, candidates.Select(c => c.r.Text).ToList(), take, ct)
+var order = rerankEnabled && query.Length >= MinSemanticQueryLength
+    ? await reranker.RankAsync(query, candidates.Select(c => c.Row.Text).ToList(), take, ct)
     : Enumerable.Range(0, Math.Min(take, candidates.Count));
 
-return order.Select(i => ToHit(candidates[i].r, candidates[i].Similarity)).ToList();
+return order.Select(i => ToHit(candidates[i], names)).ToList();
 ```
+
+`PerLegLimit` (phase 3) must be at least `overFetch` for this to have enough candidates — raise
+it to 40 alongside this change. Skip reranking for very short queries for the same reason the
+semantic leg skips them: a 1–2 character query gives the model nothing to judge relevance on,
+and substring order is already the right answer there.
 
 `rerankEnabled` comes from `Ai:Search:RerankEnabled` (config, default `true`) so you can A/B it
 or turn it off instantly without a deploy if it misbehaves in production. Because both the

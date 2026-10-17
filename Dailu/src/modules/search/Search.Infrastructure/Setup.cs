@@ -5,7 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OllamaSharp;
 using OpenAI;
+using Search.Application.Ai;
 using Search.Application.Persistence;
+using Search.Infrastructure.Ai;
 using Search.Infrastructure.Database;
 using Search.Infrastructure.Options;
 using SharedInfrastructure.Options;
@@ -23,6 +25,8 @@ public static class Setup
     {
         services.AddSearchPersistence(configuration);
         services.AddAiClients();
+
+        services.AddSingleton<IEmbeddingTextFormatter, NomicEmbeddingTextFormatter>();
 
         return services;
     }

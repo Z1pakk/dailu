@@ -85,7 +85,7 @@ public sealed record NoteSearchHit(
     string? HabitName,
     DateTime OccurredAtUtc,
     string Text,
-    double Similarity
+    double Score                // search's fused rank score; for ordering only
 );
 
 public interface INoteSearchService
@@ -110,7 +110,7 @@ public sealed class NoteSearchService(ISearchDataTransferService search) : INote
 
         return hits
             .Select(h => new NoteSearchHit(
-                h.EntityId, h.HabitId!.Value, h.HabitName, h.OccurredAtUtc!.Value, h.DisplayText, h.Similarity))
+                h.EntityId, h.HabitId!.Value, h.HabitName, h.OccurredAtUtc!.Value, h.DisplayText, h.Score))
             .ToList();
     }
 }

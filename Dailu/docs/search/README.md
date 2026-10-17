@@ -5,14 +5,19 @@ habit names/descriptions, tags, and habit entry notes. It's a standalone module,
 `ai-coach` — the plain search box and the AI coach's `search_notes` tool are two different
 consumers of the same index.
 
+Search is **hybrid**: every query runs a *text* match (partial words, prefixes, typos — via
+Postgres `pg_trgm`) and a *meaning* match (embeddings — via pgvector) over the same rows, and
+merges the two result lists. Typing `runn` or `Runing` finds "Morning run"; typing
+`exhausted` finds "completely drained after work".
+
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step. Do it,
 commit, then move on, because later phases assume the earlier ones work.
 
 | Phase | File | What you end up with |
 |---|---|---|
-| 1 | [01-foundation.md](01-foundation.md) | Ollama + pgvector running locally, this module's own AI-client wiring, a new `search` module |
-| 2 | [02-indexing.md](02-indexing.md) | Habits, tags, and entry notes are embedded and stored in one Postgres table, kept in sync by plain in-process integration event handlers |
-| 3 | [03-search-endpoint.md](03-search-endpoint.md) | `GET /search?q=...` plus a search box in the UI, and `Search.DataTransfer` for other modules (ai-coach) to call |
+| 1 | [01-foundation.md](01-foundation.md) | Ollama + pgvector + pg_trgm running locally, this module's own AI-client wiring, a new `search` module |
+| 2 | [02-indexing.md](02-indexing.md) | Habits, tags, and entry notes are stored (text + embedding) in one Postgres table, kept in sync by plain in-process integration event handlers |
+| 3 | [03-search-endpoint.md](03-search-endpoint.md) | `GET /search?q=...` with hybrid (partial/fuzzy text + semantic) matching, a search box in the UI, and `Search.DataTransfer` for other modules (ai-coach) to call |
 
 ### Post-launch hardening (optional)
 
@@ -40,7 +45,10 @@ The [ai-coach guide](../ai-coach/README.md) builds the chat coach on top of this
 | Embedding size | Fixed at **768** values | A pgvector index needs a fixed size; `nomic-embed-text` (local) outputs 768 |
 | **Index shape** | **One table, one `entity_type` discriminator column** (`habit`, `tag`, `entry_note`) — not a separate table per entity type | One index writer, one query path, one place to add a fourth entity type later. The alternative (a table per type) means triplicating the indexing and query code for no real isolation benefit |
 | Index updates | **Plain in-process event handlers that embed inline** — no outbox, inbox, or background worker yet | Smallest thing that works; costs some request latency and has no retry. The [outbox/inbox guide](../outbox-inbox/README.md) is the upgrade path |
-| Ranking | **Vector-only first.** Add Postgres trigram (`pg_trgm`) scoring on top only if short-text results (habit/tag names) feel worse than plain keyword matching once you've used it for a while | Short strings like "Morning run" don't play to cosine similarity's strengths the way free-text notes do; don't build the hybrid path before you've felt the gap |
+| Ranking | **Hybrid from day one: `pg_trgm` text matching + pgvector semantic matching, merged with reciprocal rank fusion (RRF)** | Partial input (`runn`, `morn`) and typos (`Runing`) are a hard requirement for a search box, and embeddings are bad at both — a 4-letter fragment produces a noisy vector. Trigrams are bad at synonyms. Each covers the other's blind spot |
+| Text matching | `pg_trgm` (`ILIKE '%q%'` substring match + `word_similarity` for typos), GIN `gin_trgm_ops` index on `text` | Ships with Postgres (contrib), no new service; case-insensitive out of the box; works on the same `text` column the embedding was built from, so no extra column |
+| Short queries | Queries under **3 characters** skip the embedding call and run text matching only | One or two characters carry no meaning for an embedding model, and trigrams need ≥ 3 characters to say anything — a plain substring match is all that's useful |
+| Degradation | If the embedding provider is down, search returns **text-only results** instead of an error | The text leg only needs Postgres; a search box that still finds "Morning run" while Ollama is restarting is better than a 503 |
 | Consumers | The plain search box (this module's own endpoint) **and** `ai-coach`'s `search_notes` tool, both through the same `ISearchService` | They must never drift into two different ranking behaviors for the same query |
 
 ## How it fits together
@@ -48,11 +56,15 @@ The [ai-coach guide](../ai-coach/README.md) builds the chat coach on top of this
 ```
  Angular                         Dailu.Api (modular monolith)                       Infra
  ───────                         ────────────────────────────                       ─────
- Search box ──GET /search?q=&types=──► Search.Api ──► ISearchService ──► embed query ──► Ollama
+ Search box ──GET /search?q=&types=──► Search.Api ──► ISearchService
                                                               │
-                                                              ▼
-                                                   cosine search in pgvector
-                                                   (search.search_index, filtered by user_id)
+                                    ┌─────────────────────────┴─────────────────────────┐
+                                    ▼                                                   ▼
+                        text leg (pg_trgm)                                semantic leg (pgvector)
+                  text ILIKE '%q%' OR word_similarity                embed query ──► Ollama
+                                    │                              cosine distance on embedding
+                                    └──────────────► RRF merge ◄────────────────────────┘
+                                         (search.search_index, filtered by user_id)
 
  ai-coach's search_notes tool ──► Search.DataTransfer ──► same ISearchService
 
@@ -85,6 +97,18 @@ The [ai-coach guide](../ai-coach/README.md) builds the chat coach on top of this
   operator (wrapped here as `.CosineDistance(...)` by the EF Core provider) directly inside
   Postgres, so "find the 10 closest vectors" is one indexed SQL query, not an application-level
   loop over every row.
+- **Trigram matching.** `pg_trgm` splits text into overlapping 3-character chunks ("run" →
+  `"  r"`, `" ru"`, `"run"`, `"un "`) and compares two strings by how many chunks they share.
+  "Runing" and "Running" share most of their trigrams, so a typo still scores high, while
+  "tired" and "exhausted" share none — the opposite strengths and weaknesses of embeddings.
+  `word_similarity(q, text)` compares the query against the *best-matching part* of the text, so
+  a short query isn't penalized for the text being long. A GIN index with `gin_trgm_ops` makes
+  both `ILIKE '%q%'` and the similarity operators indexable.
+- **Reciprocal rank fusion (RRF).** The two legs produce scores on unrelated scales (cosine
+  similarity vs. trigram similarity), so adding them directly is meaningless. RRF ignores the raw
+  scores and uses only each row's *position* in each list: `score = Σ 1 / (60 + rank)`. A row
+  near the top of both lists beats a row at the top of only one, and no score calibration is
+  needed when the embedding model changes.
 - **Entity-type discriminator.** This is the same idea as "single table inheritance": instead of
   a `habits_index`, `tags_index`, and `entry_notes_index` table that each need their own indexing
   and query code, one `search_index` table carries an `entity_type` column that says *what kind*
@@ -97,7 +121,7 @@ The [ai-coach guide](../ai-coach/README.md) builds the chat coach on top of this
 - [Ollama](https://ollama.com) installed and running locally (not started by Aspire or Docker
   for now).
 - Docker running for Postgres (`docker-compose.yml`, already switched to a `pgvector/pgvector`
-  image).
+  image). `pg_trgm` is a contrib extension that already ships in that image.
 - About 1 GB of free disk space for the embedding model (`nomic-embed-text` is small).
 - `ollama pull nomic-embed-text` before starting phase 2.
 

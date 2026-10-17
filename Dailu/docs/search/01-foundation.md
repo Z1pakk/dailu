@@ -1,6 +1,6 @@
 # Phase 1: foundation
 
-Goal: Ollama and pgvector run locally, the `search` module exists with its AI clients wired from
+Goal: Ollama, pgvector, and pg_trgm run locally, the `search` module exists with its AI clients wired from
 config, and its one entity — `SearchIndexEntryEntity` — has a table in the `search` schema. There
 are no user-facing features yet; phase 2 starts filling the table.
 
@@ -28,8 +28,8 @@ src/modules/search/
     Database/SearchDbContext.cs                 ✱ + pgvector extension, SearchIndex set
     Database/SearchDbContextDesignFactory.cs    ✱ for dotnet ef
     Database/Configurations/
-      SearchIndexEntryEntityConfiguration.cs    ✱ table, indexes, vector(768) column
-    Database/Migrations/                        ✱ Search_Create
+      SearchIndexEntryEntityConfiguration.cs    ✱ table, indexes, vector(768) column, trigram index
+    Database/Migrations/                        ✱ Search_Create (vector + pg_trgm extensions)
     Setup.cs                                    ✱ AddSearchModule / AddSearchPersistence
   Search.ArchitectureTests/                     ✱
   Search.Api/, Search.DataTransfer/,
@@ -60,11 +60,17 @@ versions aren't pinned here on purpose.
 <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="x.y.z" />
 ```
 
+> **No trigram package.** `pg_trgm` support (`EF.Functions.TrigramsWordSimilarity`, `ILike`, ...)
+> is built into `Npgsql.EntityFrameworkCore.PostgreSQL` itself, which is already in central
+> package management. The old `Npgsql.EntityFrameworkCore.PostgreSQL.Trigrams` plugin (last
+> release 5.0.10, 2021) is deprecated — don't add it, and there's no `UseTrigrams()` call.
+
 | Package | Used by | What for |
 |---|---|---|
 | `Pgvector` | `Search.Domain` | The `Vector` type for the entity's `Embedding` property — no EF dependency in Domain |
 | `Microsoft.Extensions.AI.Abstractions` | `Search.Application` | `IEmbeddingGenerator` for phase 2's index writer and phase 3's search service — interfaces only |
 | `Pgvector.EntityFrameworkCore` | `Search.Application`, `Search.Infrastructure` | `.CosineDistance(...)` in LINQ queries (Application, phase 3); `UseVector()` and the `vector` column mapping (Infrastructure) |
+| `Npgsql.EntityFrameworkCore.PostgreSQL` (existing) | `Search.Application`, `Search.Infrastructure` | `EF.Functions.ILike(...)` and `EF.Functions.TrigramsWordSimilarity(...)` in LINQ queries (Application, phase 3) — add the reference to `Search.Application`; Infrastructure already has it for `UseNpgsql` |
 | `Microsoft.Extensions.AI` | `Search.Infrastructure` | `AddEmbeddingGenerator`, `.UseOpenTelemetry()`, and `IChatClient` (phase 4 reranking) |
 | `Microsoft.Extensions.AI.OpenAI` | `Search.Infrastructure` | Adapter for any OpenAI-compatible API (used in production) |
 | `OllamaSharp` | `Search.Infrastructure` | Ollama client; implements `IChatClient` and `IEmbeddingGenerator` directly |
@@ -96,6 +102,11 @@ length array of floats, stored efficiently), distance operators (`<=>` for cosin
 Euclidean, `<#>` for inner product), and two index methods (`hnsw` and `ivfflat`) that make
 "find the nearest vectors" fast on large tables instead of a full scan. This module only uses
 the column type and the cosine operator for now — no index yet, see the decision in step 1.8.
+
+The second extension this module needs, **`pg_trgm`** (trigram matching for partial and fuzzy
+text search), is part of Postgres's standard *contrib* bundle. It's already compiled into both
+the official image and the `pgvector/pgvector` image, so it only needs `CREATE EXTENSION` — which
+the migration does for you (step 1.8).
 
 The plain `postgres` image doesn't compile pgvector in, so it can't be installed by just running
 `CREATE EXTENSION vector` — the extension's binary has to exist in the image first. The
@@ -144,7 +155,7 @@ Copy the shape of an existing module (for example `tag`) into `src/modules/searc
 | Project | Holds | References |
 |---|---|---|
 | `Search.Domain` | Entities and enums — plain classes, no EF, no AI | `SharedKernel`, `StrictId`, `Pgvector` |
-| `Search.Application` | `ISearchDbContext`, the AI interfaces, index writer (phase 2), search service + query (phase 3), event handlers | `Search.Domain`, `SharedKernel`, `Dailu.Events`, `Microsoft.EntityFrameworkCore`, `Microsoft.Extensions.AI.Abstractions`, `Pgvector.EntityFrameworkCore` |
+| `Search.Application` | `ISearchDbContext`, the AI interfaces, index writer (phase 2), search service + query (phase 3), event handlers | `Search.Domain`, `SharedKernel`, `Dailu.Events`, `Microsoft.EntityFrameworkCore`, `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.Extensions.AI.Abstractions`, `Pgvector.EntityFrameworkCore` |
 | `Search.Infrastructure` | DbContext, EF configurations, migrations, options, AI client setup, `Setup.cs` | `Search.Application`, `SharedInfrastructure`, the AI and Npgsql packages |
 | `Search.Api` | Endpoint group `/search` (phase 3) | `Search.Application` |
 | `Search.DataTransfer` | `ISearchDataTransferService` for `ai-coach` (phase 3) | `Search.Application` |
@@ -451,7 +462,7 @@ public sealed class SearchIndexEntryEntity : BaseEntity<Id<SearchIndexEntryEntit
     public required SearchEntityType EntityType { get; set; }
     public required Guid EntityId { get; set; }            // habit id, tag id, or habit entry id
     public Guid? HabitId { get; set; }                     // EntryNote only: lets results link back to the habit
-    public required string Text { get; set; }              // exactly what was embedded (before the prefix)
+    public required string Text { get; set; }              // exactly what was embedded (before the prefix); also the trigram-matched column
     public required string ContentHash { get; set; }       // SHA-256 of Text, to skip re-embedding unchanged text
     public DateTime? OccurredAtUtc { get; set; }           // EntryNote only: the entry's date, for date filters
 
@@ -466,6 +477,9 @@ Why these fields:
   habit, per tag, per entry note — which is what lets phase 2 upsert instead of append.
 - **`UserId`** is stored, not looked up, because `search` can't query other modules' tables. It's
   the security boundary for every query in phase 3.
+- **`Text`** serves both search legs: it's what gets embedded *and* what partial/fuzzy matching
+  runs against. No separate lowercased or "search" column — `ILIKE` and `pg_trgm` are already
+  case-insensitive, and one column means the two legs can never see different text.
 - **`HabitId`, `OccurredAtUtc`** only make sense for notes and are null otherwise — the price of
   one table instead of three (see the README's "entity-type discriminator").
 - **`ContentHash`** and **`EmbeddingModel`** together answer "is the stored vector still right?"
@@ -500,9 +514,21 @@ internal sealed class SearchIndexEntryEntityConfiguration
         builder.Property(x => x.ContentHash).HasMaxLength(64);
         builder.Property(x => x.Embedding).HasColumnType("vector(768)");
         builder.Property(x => x.EmbeddingModel).HasMaxLength(100);
+
+        // partial + fuzzy text matching (phase 3's text leg)
+        builder.HasIndex(x => x.Text).HasMethod("gin").HasOperators("gin_trgm_ops");
     }
 }
 ```
+
+**Why a GIN trigram index, when the vector column gets none.** A normal B-tree index on `text`
+can't help `ILIKE '%run%'` — the leading `%` means there's no prefix to seek on. A GIN index
+with `gin_trgm_ops` indexes every trigram of every row, so Postgres can answer substring and
+similarity filters by intersecting trigram lists instead of scanning. At a few thousand rows per
+user the planner may still prefer the `user_id` index; the GIN index is there so text search
+doesn't degrade as the table grows, and unlike HNSW it's exact — it never drops matches. Writes
+to this table are rare (one per habit/tag/note edit), so the extra index maintenance is
+negligible.
 
 `768` is hard-coded in the column type because pgvector needs a fixed size at the schema level.
 If you ever switch to a model with a different size, that's a migration *and* a config change
@@ -535,9 +561,9 @@ public interface ISearchDbContext : IAppDbContextBase
 `SearchDbContext` adds `public DbSet<SearchIndexEntryEntity> SearchIndex => Set<SearchIndexEntryEntity>();`
 — the configuration is picked up by the existing `ApplyConfigurationsFromAssembly(...)` call.
 
-### Enable pgvector in the DbContext
+### Enable pgvector and pg_trgm in the DbContext
 
-Only this module needs vectors. In `AddSearchPersistence`:
+Only this module needs vectors and trigrams. In `AddSearchPersistence`:
 
 ```csharp
 services.AddDbContext<ISearchDbContext, SearchDbContext>(opt =>
@@ -547,7 +573,7 @@ services.AddDbContext<ISearchDbContext, SearchDbContext>(opt =>
             {
                 b.MigrationsAssembly(AssemblyReference.Assembly)
                     .MigrationsHistoryTable(HistoryRepository.DefaultTableName, SearchSchema.NAME);
-                b.UseVector();                       // ← pgvector type mapping
+                b.UseVector();                       // ← pgvector type mapping (trigrams need nothing here)
                 b.EnableRetryOnFailure(3, TimeSpan.FromSeconds(30), null);
             }
         )
@@ -560,30 +586,42 @@ And in `SearchDbContext.OnModelCreating`:
 ```csharp
 modelBuilder.HasDefaultSchema(Schema);
 modelBuilder.HasPostgresExtension("vector");   // migration runs CREATE EXTENSION IF NOT EXISTS vector
+modelBuilder.HasPostgresExtension("pg_trgm");  // ...and CREATE EXTENSION IF NOT EXISTS pg_trgm
 modelBuilder.ApplyConfigurationsFromAssembly(AssemblyReference.Assembly);
 ```
 
 Also add `UseVector()` to the design-time factory's `UseNpgsql(...)` call, or `dotnet ef` won't
-understand the `vector` column.
+understand the `vector` column. The trigram index needs no extra setup — `HasMethod("gin")` and
+`HasOperators("gin_trgm_ops")` are plain Npgsql index configuration.
 
 ### The migration
 
 Create the first migration (`Search_Create`) from inside `Search.Infrastructure`, following
-AGENTS.md. It should contain `CREATE EXTENSION IF NOT EXISTS vector` and the `search.search_index`
-table with its two indexes and an `embedding vector(768)` column.
+AGENTS.md. It should contain `CREATE EXTENSION IF NOT EXISTS vector`,
+`CREATE EXTENSION IF NOT EXISTS pg_trgm`, and the `search.search_index` table with its three
+indexes (unique `(entity_type, entity_id)`, `(user_id, entity_type)`, and the GIN trigram index
+on `text`) and an `embedding vector(768)` column.
+
+> The extensions are created in the database, not the `search` schema. `pg_trgm`'s functions and
+> operator classes are then found through `search_path` (normally `public`). If the migration
+> fails with `operator class "gin_trgm_ops" does not exist`, the extension landed in a schema
+> that isn't on the path — check with `\dx`.
 
 ---
 
 ## ✅ Verify
 
 1. `ollama list` shows `nomic-embed-text`.
-2. The migration applies, `\dx` in psql lists the `vector` extension, and `\d search.search_index`
-   shows `embedding | vector(768)` and the unique `(entity_type, entity_id)` index.
-3. A throwaway test (or a scratch endpoint you delete afterwards) resolves
+2. The migration applies, `\dx` in psql lists both the `vector` and `pg_trgm` extensions, and
+   `\d search.search_index` shows `embedding | vector(768)`, the unique `(entity_type, entity_id)`
+   index, and a `gin (text gin_trgm_ops)` index.
+3. `SELECT word_similarity('runing', 'Morning run');` returns a value well above `0.3` —
+   trigrams are working.
+4. A throwaway test (or a scratch endpoint you delete afterwards) resolves
    `IEmbeddingGenerator<string, Embedding<float>>`, embeds
    `IEmbeddingTextFormatter.ForDocument("morning run")`, and gets back
    `IAiModelInfo.EmbeddingDimensions` (768) numbers.
-4. Starting the API with `Ai:Embeddings:Model` removed fails at startup with a validation error.
-5. The architecture tests pass: `dotnet test src/tests/Dailu.ArchitectureTests`.
+5. Starting the API with `Ai:Embeddings:Model` removed fails at startup with a validation error.
+6. The architecture tests pass: `dotnet test src/tests/Dailu.ArchitectureTests`.
 
 Commit: `feat(search): module scaffold, AI client wiring, search_index table`.

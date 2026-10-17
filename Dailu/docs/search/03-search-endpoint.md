@@ -1,17 +1,31 @@
 # Phase 3: the search endpoint
 
-Goal: `GET /search?q=...` returns the user's habits, tags, and entry notes whose text is closest
-**in meaning** to the query, and the UI gets a search box. The same query code is exposed as
-`Search.DataTransfer` so `ai-coach`'s `search_notes` tool can reuse it — build it as a reusable
-service, not inside the endpoint.
+Goal: `GET /search?q=...` returns the user's habits, tags, and entry notes that match the query
+**by text** — including partial words (`runn`, `morn`) and typos (`Runing`) — **or by meaning**
+(`exhausted` → "completely drained after work"), and the UI gets a search box. The same query
+code is exposed as `Search.DataTransfer` so `ai-coach`'s `search_notes` tool can reuse it — build
+it as a reusable service, not inside the endpoint.
 
 ```
-"when did I feel exhausted?" ──► embed (search_query: ...) ──► pgvector cosine distance
-                                                     WHERE user_id = @me AND embedding_model = @model
-                                                     AND entity_type IN (@requestedTypes)
-                                                     ORDER BY distance LIMIT 10
-                                  ──► hydrate habit names (Habit.DataTransfer) ──► results
+                       ┌─► text leg:     WHERE user_id = @me AND entity_type IN (@types)
+                       │                 AND (text ILIKE '%q%' OR word_similarity(q, text) >= @minWord)
+                       │                 ORDER BY match score DESC LIMIT 20
+"runing" / "exhausted" ┤
+                       │   (skipped if q < 3 chars or embedding fails)
+                       └─► semantic leg: embed (search_query: ...) ──► cosine distance
+                                         WHERE user_id = @me AND embedding_model = @model
+                                         AND entity_type IN (@types)
+                                         ORDER BY distance LIMIT 20, drop < @minSimilarity
+                                │
+                     RRF merge by (entity_type, entity_id) ──► top `take`
+                                │
+                     hydrate habit names (Habit.DataTransfer) ──► results
 ```
+
+**Why two queries instead of one SQL statement.** The semantic leg needs an embedding first (an
+HTTP call to the model), and it can fail or be skipped independently; the text leg can't. Two
+small, separately-limited queries over one user's rows are cheap, keep each leg's filter and
+threshold readable, and make "text-only fallback" a matter of not running the second one.
 
 ---
 
@@ -20,6 +34,13 @@ service, not inside the endpoint.
 `Search.Application/Search/ISearchService.cs`:
 
 ```csharp
+[Flags]
+public enum SearchMatch
+{
+    Text = 1,                   // matched as a substring or fuzzily (pg_trgm)
+    Semantic = 2,               // matched by meaning (embedding)
+}
+
 public sealed record SearchHit(
     SearchEntityType EntityType,
     Guid EntityId,
@@ -27,7 +48,8 @@ public sealed record SearchHit(
     string? HabitName,          // only set for EntryNote hits
     string DisplayText,         // habit name, tag name, or the note text itself
     DateTime? OccurredAtUtc,    // only set for EntryNote hits
-    double Similarity           // 1 - cosine distance, 0..1 (higher = closer)
+    SearchMatch Match,          // which leg(s) found it — Text, Semantic, or both
+    double Score                // fused RRF score; only meaningful for ordering
 );
 
 public interface ISearchService
@@ -51,48 +73,137 @@ public sealed class SearchService(
     IEmbeddingTextFormatter formatter,
     IAiModelInfo modelInfo,
     ICurrentUserService currentUser,
-    IHabitLookupService habits          // Search's own interface, implemented in Search.Integrations
+    IHabitLookupService habits,         // Search's own interface, implemented in Search.Integrations
+    ILogger<SearchService> logger
 ) : ISearchService
 {
-    private const double MinSimilarity = 0.35;   // tune it, see 3.4
+    private const double MinSimilarity = 0.35;       // semantic leg cutoff — tune it, see 3.4
+    private const double MinWordSimilarity = 0.3;    // text leg cutoff — tune it, see 3.4
+    private const int MinSemanticQueryLength = 3;    // shorter queries are text-only
+    private const int PerLegLimit = 20;              // candidates per leg before fusion
+    private const int RrfK = 60;                     // standard RRF constant
+
+    private sealed record Candidate(
+        SearchEntityType EntityType, Guid EntityId, Guid? HabitId,
+        DateTime? OccurredAtUtc, string Text);
 
     public async Task<IReadOnlyList<SearchHit>> SearchAsync(
         string query, IReadOnlySet<SearchEntityType>? types, int take,
         DateTime? fromUtc, DateTime? toUtc, CancellationToken ct)
     {
-        var queryVector = new Vector(
-            await embedder.GenerateVectorAsync(formatter.ForQuery(query), cancellationToken: ct));
+        query = query.Trim();
+        take = Math.Clamp(take, 1, 25);
 
         var userId = currentUser.UserId;
-
-        var rows = await db.SearchIndex.AsNoTracking()
+        var scoped = db.SearchIndex.AsNoTracking()
             .Where(x => x.UserId == userId
-                        && x.EmbeddingModel == modelInfo.EmbeddingModel
                         && (types == null || types.Contains(x.EntityType))
                         && (fromUtc == null || x.OccurredAtUtc == null || x.OccurredAtUtc >= fromUtc)
-                        && (toUtc == null || x.OccurredAtUtc == null || x.OccurredAtUtc < toUtc))
+                        && (toUtc == null || x.OccurredAtUtc == null || x.OccurredAtUtc < toUtc));
+
+        var textHits = await TextLegAsync(scoped, query, ct);
+        var semanticHits = await SemanticLegAsync(scoped, query, ct);
+
+        var fused = Fuse(textHits, semanticHits).Take(take).ToList();
+
+        var habitIds = fused.Where(f => f.Row.HabitId is not null).Select(f => f.Row.HabitId!.Value).Distinct();
+        var names = await habits.GetNamesAsync(habitIds, ct);
+
+        return fused
+            .Select(f => new SearchHit(
+                f.Row.EntityType, f.Row.EntityId, f.Row.HabitId,
+                f.Row.HabitId is { } id ? names.GetValueOrDefault(id) : null,
+                f.Row.Text, f.Row.OccurredAtUtc, f.Match, f.Score))
+            .ToList();
+    }
+
+    // Partial words and typos. Model-independent: no embedding_model filter, so it keeps
+    // finding every row even mid re-embedding (phase 2) or with the embedding provider down.
+    private static async Task<List<Candidate>> TextLegAsync(
+        IQueryable<SearchIndexEntryEntity> scoped, string query, CancellationToken ct)
+    {
+        var pattern = $"%{EscapeLike(query)}%";
+
+        return await scoped
+            .Where(x => EF.Functions.ILike(x.Text, pattern, @"\")
+                        || EF.Functions.TrigramsWordSimilarity(query, x.Text) >= MinWordSimilarity)
+            // exact substring matches first, then the closest fuzzy ones
+            .OrderByDescending(x => EF.Functions.ILike(x.Text, pattern, @"\"))
+            .ThenByDescending(x => EF.Functions.TrigramsWordSimilarity(query, x.Text))
+            .Take(PerLegLimit)
+            .Select(x => new Candidate(x.EntityType, x.EntityId, x.HabitId, x.OccurredAtUtc, x.Text))
+            .ToListAsync(ct);
+    }
+
+    // Meaning. Skipped for very short queries; degrades to "no semantic hits" if the
+    // embedding provider fails, so the search still answers with text matches.
+    private async Task<List<Candidate>> SemanticLegAsync(
+        IQueryable<SearchIndexEntryEntity> scoped, string query, CancellationToken ct)
+    {
+        if (query.Length < MinSemanticQueryLength)
+            return [];
+
+        Vector queryVector;
+        try
+        {
+            queryVector = new Vector(
+                await embedder.GenerateVectorAsync(formatter.ForQuery(query), cancellationToken: ct));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Query embedding failed; returning text matches only");
+            return [];
+        }
+
+        var rows = await scoped
+            .Where(x => x.EmbeddingModel == modelInfo.EmbeddingModel)
             .Select(x => new
             {
-                x.EntityType, x.EntityId, x.HabitId, x.OccurredAtUtc, x.Text,
+                Row = new Candidate(x.EntityType, x.EntityId, x.HabitId, x.OccurredAtUtc, x.Text),
                 Distance = x.Embedding.CosineDistance(queryVector),
             })
             .OrderBy(x => x.Distance)
-            .Take(Math.Clamp(take, 1, 25))
+            .Take(PerLegLimit)
             .ToListAsync(ct);
 
-        var habitIds = rows.Where(r => r.HabitId is not null).Select(r => r.HabitId!.Value).Distinct();
-        var names = await habits.GetNamesAsync(habitIds, ct);
-
-        return rows
-            .Select(r => new SearchHit(
-                r.EntityType, r.EntityId, r.HabitId,
-                r.HabitId is { } id ? names.GetValueOrDefault(id) : null,
-                r.Text, r.OccurredAtUtc, 1 - r.Distance))
-            .Where(h => h.Similarity >= MinSimilarity)
-            .ToList();
+        return rows.Where(r => 1 - r.Distance >= MinSimilarity).Select(r => r.Row).ToList();
     }
+
+    // Reciprocal rank fusion: only list positions matter, never the raw scores.
+    private static IEnumerable<(Candidate Row, SearchMatch Match, double Score)> Fuse(
+        List<Candidate> textHits, List<Candidate> semanticHits) =>
+        textHits.Select((row, rank) => (row, match: SearchMatch.Text, rank))
+            .Concat(semanticHits.Select((row, rank) => (row, match: SearchMatch.Semantic, rank)))
+            .GroupBy(x => (x.row.EntityType, x.row.EntityId))
+            .Select(g => (
+                Row: g.First().row,
+                Match: g.Aggregate((SearchMatch)0, (m, x) => m | x.match),
+                Score: g.Sum(x => 1.0 / (RrfK + x.rank + 1))))
+            .OrderByDescending(x => x.Score);
+
+    private static string EscapeLike(string s) =>
+        s.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
 }
 ```
+
+**How the text leg handles each kind of input:**
+
+| Typed | Matches | Because |
+|---|---|---|
+| `run`, `runn`, `morn` | "Morning run" | `ILIKE '%runn%'` — plain substring, case-insensitive |
+| `Runing`, `mornin run` | "Morning run" | `word_similarity` — most trigrams shared with a part of the text |
+| `ru` | "Morning run", "Running club" | substring only; trigram similarity is unreliable this short, and the semantic leg is skipped |
+| `exhausted` | nothing in this leg | no shared characters with "completely drained" — the semantic leg finds it |
+
+**Why `word_similarity`, not `similarity`.** `similarity(a, b)` compares the *whole* strings, so
+`runing` against a 200-character note scores near zero even if "running" is in it.
+`word_similarity(query, text)` scores the query against its best-matching *extent* of the text,
+which is what a search box wants. The Npgsql EF Core provider translates
+`EF.Functions.TrigramsWordSimilarity(query, text)` to it directly — no plugin needed.
+
+**Why escape `%` and `_`.** They're `LIKE` wildcards. Without escaping, a user typing `100%`
+gets a pattern that matches far more than they meant. It's not a security issue (the pattern is
+a parameter, not concatenated SQL), just a correctness one.
 
 **Why the `Where` runs before the distance computation, not after.** This is a `WHERE` clause
 with an `ORDER BY` on a computed expression — Postgres evaluates the filters first (cheap,
@@ -143,7 +254,8 @@ app.MapGet("/search", async (string q, string? types, int? take, ISender sender,
 `types` is an optional comma-separated list (`habit,tag,entry_note`); omit it to search
 everything. Map it in a new `SearchGroup : IEndpointGroup` with prefix `/search`.
 
-Response item: `{ entityType, entityId, habitId, habitName, displayText, occurredAtUtc, similarity }`.
+Response item: `{ entityType, entityId, habitId, habitName, displayText, occurredAtUtc, match, score }`,
+where `match` is `["text"]`, `["semantic"]`, or both.
 
 ### `Search.DataTransfer`: exposing this to `ai-coach`
 
@@ -179,20 +291,30 @@ modules/search/
 
 - Add `...searchRoutes` to the `app` children in `main/app.routes.ts`, and a menu item
   ("Search") in `core/layout/main-layout/main-menu/main-menu.ts`.
-- Search box: debounce 400 ms, minimum 3 characters, `switchMap` to cancel stale requests.
+- Search box: debounce 250 ms, minimum **2** characters, `switchMap` to cancel stale requests.
+  Partial matching makes search-as-you-type useful, so the box should start answering early;
+  2-character queries are cheap because they're text-only (no embedding call).
+- Highlight the typed substring in `displayText` when `match` includes `text` — it shows the user
+  *why* a result appeared. Semantic-only hits have nothing to highlight, which is fine.
 - Group results by `entityType` (Habits, Tags, Notes) with a small heading per group, in that
   order — habits and tags are usually what the user is looking for when they type a short query,
   notes dominate for longer, descriptive queries.
 - Each result links appropriately: a habit result → the habit's detail page, a tag result → the
   habits filtered by that tag, a note result → the entries list filtered to that habit and date.
-- The similarity score isn't meaningful to users. Use it for ordering only, or show it only in
+- The score isn't meaningful to users. Use it for ordering only, or show it (with `match`) only in
   development.
 - Show an empty state that sets expectations: "Search looks across your **habits, tags, and
   entry notes**."
 
 ---
 
-## Step 3.4: Tune the threshold with real data
+## Step 3.4: Tune the thresholds with real data
+
+There are two cutoffs, one per leg: `MinSimilarity` (cosine, semantic leg) and
+`MinWordSimilarity` (trigram, text leg). Fusion has no threshold of its own — RRF only reorders
+what the legs let through.
+
+### `MinSimilarity` (semantic leg)
 
 **Why a threshold is needed at all.** Cosine similarity always returns *some* number for any two
 pieces of text — even "banana" and "quantum physics" get a similarity score, just a low one.
@@ -215,28 +337,46 @@ it once:
 4. Put the value(s) in config (`Ai:Search:MinSimilarity`) rather than a constant, because they
    change when the embedding model changes.
 
-**Optional hybrid search, and why trigram is the natural complement.** Semantic search is weak
-on exact tokens such as numbers, repo names, or short exact habit/tag names, because the
-embedding model is optimized for *meaning*, not *spelling* — "5k" and "5000m" are semantically
-close but character-wise unrelated, while a typo'd habit name ("Runing") stays character-wise
-close but can drift in embedding space. Postgres trigram similarity (`pg_trgm`) works the
-opposite way: it breaks text into overlapping 3-character chunks and compares those, so it's
-strong exactly where embeddings are weak (typos, exact substrings) and weaker where embeddings
-shine (synonyms, paraphrases). Combining both scores covers more cases than either alone,
-especially for `Habit`/`Tag` rows. Skip this unless you see real misses once the search box is
-in daily use — see the README's decision on this.
+### `MinWordSimilarity` (text leg)
+
+Substring matches (`ILIKE`) always pass; this cutoff only decides which *fuzzy* matches count.
+Unlike `MinSimilarity` it doesn't depend on the embedding model — it's a property of trigram
+math — so it needs tuning once, not after every model change.
+
+1. With the same seed data, type deliberate typos and fragments of your habit and tag names
+   (`runing`, `meditaton`, `strech`, `jurnal`) and log `word_similarity(q, text)` for the top
+   rows.
+2. `0.3` is a reasonable start; Postgres's own default for the `<%` operator (`0.6`) is too
+   strict for a search box and misses one-letter typos in short words. Raise it if unrelated
+   rows with a few shared letters creep in; lower it if obvious typos miss.
+3. Put it in config too (`Ai:Search:MinWordSimilarity`), next to `MinSimilarity`.
+
+**Why both legs, not just one.** Semantic search is weak on exact tokens such as numbers, short
+exact habit/tag names, and partial words, because the embedding model is optimized for
+*meaning*, not *spelling* — "5k" and "5000m" are semantically close but character-wise
+unrelated, while a typo'd habit name ("Runing") or a fragment ("morn") stays character-wise
+close but drifts in embedding space. Trigrams work the opposite way: strong exactly where
+embeddings are weak (typos, substrings) and blind where embeddings shine (synonyms,
+paraphrases). Running both and fusing by rank covers more than either alone — see the README's
+decision on this.
 
 ---
 
 ## ✅ Verify
 
 1. `GET /search?q=exhausted` finds a note that says "completely drained after work", which a
-   keyword search wouldn't.
-2. `GET /search?q=running&types=habit,tag` only returns habit/tag matches, never notes.
-3. Signed in as a **second user**, the same query returns none of the first user's data. Test
-   this explicitly; it's the most important check in this phase.
-4. An empty or whitespace `q` returns 400, and `take=1000` is capped at 25.
-5. With Ollama stopped, the endpoint returns a clean error ("Search is temporarily
-   unavailable"), not a stack trace. Map the exception in the query handler to `Result.Failure`.
+   keyword search wouldn't (`match: ["semantic"]`).
+2. With a habit named "Morning run": `q=runn`, `q=morn`, and `q=Runing` all return it
+   (`match` includes `text`). `q=ru` returns it too, and the logs show no embedding call.
+3. `q=100%` doesn't match every row — the `%` is escaped.
+4. A row found by both legs (e.g. `q=running` against a "Running club" tag) ranks above rows
+   found by only one, and shows `match: ["text", "semantic"]`.
+5. `GET /search?q=running&types=habit,tag` only returns habit/tag matches, never notes.
+6. Signed in as a **second user**, the same queries return none of the first user's data. Test
+   this explicitly for **both** legs; it's the most important check in this phase.
+7. An empty or whitespace `q` returns 400, and `take=1000` is capped at 25.
+8. With Ollama stopped, `q=runn` still returns "Morning run" (text-only), a warning is logged,
+   and nothing returns a stack trace. Only a database failure should surface as an error — map
+   that in the query handler to `Result.Failure` ("Search is temporarily unavailable").
 
-Commit: `feat(search): unified search endpoint over habits, tags, and entry notes`.
+Commit: `feat(search): hybrid search endpoint over habits, tags, and entry notes`.

@@ -3,10 +3,10 @@
     <ProjectReference Include="..\..\..\shared\SharedInfrastructure\SharedInfrastructure.csproj" />
     <ProjectReference Include="..\..\..\shared\SharedKernel\SharedKernel.csproj" />
     <ProjectReference Include="..\Search.Application\Search.Application.csproj" />
+    <ProjectReference Include="..\Search.Domain\Search.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Database\Configurations\" />
     <Folder Include="Database\Migrations\" />
   </ItemGroup>
 

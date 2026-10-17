@@ -262,6 +262,10 @@ same text, different model, so re-embed.
   - `EntryNote`: the note text. Optionally prefix it with the date
     (`"2026-09-20: felt tired, skipped stretching"`), which helps when the note is later shown
     as context.
+- **`Text` is also what partial/fuzzy matching runs on** (phase 3's text leg). Keep
+  `SearchText.Normalize` to whitespace and length only — don't lowercase, strip punctuation, or
+  remove stop words. `pg_trgm` and `ILIKE` handle case themselves, and anything removed here is
+  text the user can no longer find by typing it.
 - **Habit name on entry notes:** don't denormalize it into `Text`. A rename would then have to
   re-embed every note of that habit. Consumers add the habit name when they display results,
   using `HabitId` and `Habit.DataTransfer`.
@@ -312,9 +316,10 @@ because nothing tells you it's wrong. That's why every row stores `EmbeddingMode
 query filters on it: it's a guard against comparing vectors that were never meant to be compared.
 
 After changing `Ai:Embedding:Model`, re-run the three backfills. The writer sees a different
-`EmbeddingModel` on every row and re-embeds it. Until that finishes, search (which filters on
+`EmbeddingModel` on every row and re-embeds it. Until that finishes, search's semantic leg (which filters on
 `embedding_model = configuredModel`, phase 3) only returns rows already re-embedded — fewer
-results for a while, never wrong ones.
+meaning-based results for a while, never wrong ones. The text leg doesn't depend on the model,
+so partial and fuzzy matches keep finding every row throughout.
 
 ---
 
