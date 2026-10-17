@@ -41,6 +41,9 @@
     <File Path="docs/adr/009_production_vpn.md" />
   </Folder>
   <Folder Name="/src/modules/" />
+  <Folder Name="/src/modules/ai-coach/">
+    <Project Path="src/modules/ai-coach/AiCoach.Domain/AiCoach.Domain.csproj" />
+  </Folder>
   <Folder Name="/src/modules/habit-entry/">
     <Project Path="src/modules/habit-entry/HabitEntry.Api/HabitEntry.Api.csproj" />
     <Project Path="src/modules/habit-entry/HabitEntry.Application/HabitEntry.Application.csproj" />
@@ -77,6 +80,13 @@
     <Project Path="src/modules/identity/Identity.DataTransfer/Identity.DataTransfer.csproj" />
     <Project Path="src/modules/identity/Identity.Domain/Identity.Domain.csproj" />
     <Project Path="src/modules/identity/Identity.Infrastructure/Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/modules/search/">
+    <Project Path="src/modules/search/Search.Application/Search.Application.csproj" />
+    <Project Path="src/modules/search/Search.ArchitectureTests/Search.ArchitectureTests.csproj" />
+    <Project Path="src/modules/search/Search.DataTransfer/Search.DataTransfer.csproj" />
+    <Project Path="src/modules/search/Search.Domain/Search.Domain.csproj" />
+    <Project Path="src/modules/search/Search.Infrastructure/Search.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/modules/tag/">
     <Project Path="src/modules/tag/Tag.Api/Tag.Api.csproj" />

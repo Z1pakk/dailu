@@ -1,6 +1,6 @@
 services:
   dailo.postgres:
-    image: postgres:18.3
+    image: pgvector/pgvector:pg18
     environment:
       POSTGRES_DB: dailo
       POSTGRES_USER: dailo

@@ -1,4 +1,4 @@
-# Phase 5: voice (talk to the coach, hear the answer)
+# Phase 3: voice (talk to the coach, hear the answer)
 
 Goal: a mic button that turns speech into the chat input, and an optional "read replies aloud"
 mode. Everything runs **in the browser** through the Web Speech API, so there's no backend work,
@@ -16,7 +16,7 @@ at the end if you need it later.
 
 ---
 
-## Step 5.1: Types
+## Step 3.1: Types
 
 The speech recognition types aren't in every TypeScript `lib.dom` version. Add:
 
@@ -29,7 +29,7 @@ project restricts `types`.
 
 ---
 
-## Step 5.2: `SpeechInputService` (speech → text)
+## Step 3.2: `SpeechInputService` (speech → text)
 
 `modules/ai-coach/lib/speech-input.service.ts`: a signal-based service, in the same style as the
 rest of the app.
@@ -95,15 +95,27 @@ Error mapping for the UI:
 - `no-speech`: "I didn't hear anything, try again."
 - `network`: "Voice input needs an internet connection in this browser."
 
-The microphone needs a **secure context**: `https://` or `localhost`. Your Aspire HTTPS endpoint
-already meets that.
+**What a "secure context" is, and why the browser cares.** Browsers gate access to sensitive
+hardware APIs — microphone, camera, geolocation — behind a check that the page was loaded over a
+connection that can't be tampered with in transit: `https://`, or `http://localhost` (treated as
+a special case because a MITM on your own loopback interface would require the attacker to
+already be running code on your machine, at which point the browser's protection is moot
+anyway). A plain `http://192.168.x.x:5000` on your LAN fails this check even though it "feels"
+local, because the browser has no way to distinguish that from any other unencrypted connection
+an attacker could intercept. The microphone needs this secure context; `https://` or
+`localhost`. Whether you run the API directly (`dotnet run`) or through Aspire, both serve over
+`https://localhost:...` already, which meets that.
 
 ---
 
-## Step 5.3: `SpeechOutputService` (text → speech, while streaming)
+## Step 3.3: `SpeechOutputService` (text → speech, while streaming)
 
-Waiting for the whole answer before speaking feels slow. Instead, **speak each sentence as soon
-as it's complete** in the stream. This also avoids Chrome's tendency to cut off long
+**Why sentence-chunking matters for perceived latency.** The coach's answer streams in token by
+token over several seconds (phase 2), but `speechSynthesis` can only speak complete text you
+hand it — there's no "speak as it's typed" mode. Waiting for the `done` event before calling
+`speak()` means the user sees the full answer appear, then waits again in silence for speech to
+start — the stream bought nothing for voice output. Instead, **speak each sentence as soon as
+it's complete** in the stream. This also avoids Chrome's tendency to cut off long
 utterances.
 
 ```ts
@@ -158,9 +170,9 @@ export class SpeechOutputService {
 
 ---
 
-## Step 5.4: Wire it into the chat input
+## Step 3.4: Wire it into the chat input
 
-In `ui/chat-input` (phase 4):
+In `ui/chat-input` (phase 2):
 
 - Show a **mic button** only if `speechInput.isSupported`. Otherwise hide it, or show it disabled
   with the tooltip "Voice input isn't supported in this browser".
@@ -170,7 +182,7 @@ In `ui/chat-input` (phase 4):
   a chance to fix "run" vs "ran". Offer an "auto-send voice messages" setting later if users
   want hands-free use.
 - A **speaker toggle** in the chat header controls `speechOutput.$enabled`.
-- In the stream handling from phase 4, call `speechOutput.push(event.text)` on `delta`,
+- In the stream handling from phase 2, call `speechOutput.push(event.text)` on `delta`,
   `flush()` on `done`, and `cancel()` on Stop or `error`.
 - Accessibility: `aria-pressed` on both toggles, `aria-live="polite"` on the interim transcript,
   and a visible "listening" state (a pulsing icon), not only color.

@@ -1,9 +1,9 @@
-# Phase 4: the coach chat (tools + RAG + streaming)
+# Phase 2: the coach chat (tools + RAG + streaming)
 
 Goal: a chat page where the user asks things like *"How consistent was I with running this
 month?"* or *"Why do I keep skipping workouts?"*. The model answers by **calling tools** that
-read the user's own habits, entries and notes, and the answer streams in word by word.
-Conversations are saved.
+read the user's own habits, entries, and notes (the last one via the `search` module), and the
+answer streams in word by word. Conversations are saved.
 
 ```
 POST /ai-coach/conversations/{id}/messages  { "content": "How did my running go this month?" }
@@ -13,7 +13,7 @@ POST /ai-coach/conversations/{id}/messages  { "content": "How did my running go 
   ├─ IChatClient.GetStreamingResponseAsync(messages, options { Tools = [...] })
   │     model ──► get_habits()                    ──► Habit.DataTransfer
   │     model ──► get_habit_stats("…", "2026-09-01", "2026-09-27") ──► HabitEntry.DataTransfer
-  │     model ──► search_notes("tired", …)        ──► INoteSearchService (phase 3)
+  │     model ──► search_notes("tired", …)        ──► INoteSearchService ──► Search.DataTransfer
   │     model ──► final answer (streamed)
   ├─ stream SSE events to the browser: tool → delta → delta → … → done
   └─ save assistant message
@@ -21,7 +21,7 @@ POST /ai-coach/conversations/{id}/messages  { "content": "How did my running go 
 
 ---
 
-## Step 4.1: Data the tools need from other modules
+## Step 2.1: Data the tools need from other modules
 
 The coach reads data only through `*.DataTransfer` services, and **every one of those is scoped
 to `ICurrentUserService.UserId`**, like the existing `HabitDataTransferService`. That's what
@@ -66,13 +66,68 @@ public sealed record HabitEntryStatsModel(Guid HabitId, int EntryCount, int Days
 
 Filter out archived entries, and **always** filter with `x.UserId == currentUserService.UserId`.
 
-In ai-coach, wrap both in your own interfaces (`IHabitLookupService` from phase 3, plus
-`IHabitEntryLookupService`), implemented in `AiCoach.Integrations`. That's the same pattern as
-`HabitEntry.Integrations`. The architecture tests from phase 1 catch any shortcut.
+In ai-coach, wrap both in your own interfaces (`IHabitLookupService`, `IHabitEntryLookupService`),
+implemented in `AiCoach.Integrations`. That's the same pattern as `HabitEntry.Integrations`. The
+architecture tests from phase 1 catch any shortcut.
+
+### `INoteSearchService`: reusing the `search` module instead of owning embeddings
+
+`ai-coach` doesn't embed anything itself — the `search` module does, and exposes it through
+`Search.DataTransfer`. Keep the tool's interface narrow and shaped for this coach, and adapt it
+in `AiCoach.Integrations`:
+
+`AiCoach.Application/IntegratedServices/INoteSearchService.cs`:
+
+```csharp
+public sealed record NoteSearchHit(
+    Guid HabitEntryId,
+    Guid HabitId,
+    string? HabitName,
+    DateTime OccurredAtUtc,
+    string Text,
+    double Similarity
+);
+
+public interface INoteSearchService
+{
+    Task<IReadOnlyList<NoteSearchHit>> SearchAsync(
+        string query, int take, DateTime? fromUtc, DateTime? toUtc, CancellationToken ct);
+}
+```
+
+`AiCoach.Integrations/Search/NoteSearchService.cs` implements it by calling
+`ISearchDataTransferService.SearchAsync`, restricted to entry notes:
+
+```csharp
+public sealed class NoteSearchService(ISearchDataTransferService search) : INoteSearchService
+{
+    public async Task<IReadOnlyList<NoteSearchHit>> SearchAsync(
+        string query, int take, DateTime? fromUtc, DateTime? toUtc, CancellationToken ct)
+    {
+        var hits = await search.SearchAsync(
+            query, types: new HashSet<SearchEntityType> { SearchEntityType.EntryNote },
+            take, fromUtc, toUtc, ct);
+
+        return hits
+            .Select(h => new NoteSearchHit(
+                h.EntityId, h.HabitId!.Value, h.HabitName, h.OccurredAtUtc!.Value, h.DisplayText, h.Similarity))
+            .ToList();
+    }
+}
+```
+
+Register it in `AiCoach.Integrations/Setup.cs`, and reference `Search.DataTransfer` from
+`AiCoach.Integrations.csproj`. The `CoachTools` class below never knows `search` exists — it
+only sees `INoteSearchService`, exactly as if `ai-coach` owned the embeddings itself. That's the
+point of the adapter: swapping what's behind `Search.DataTransfer` later (reranking, a hybrid
+query, a different embedding model) never touches this module.
+
+**The user filter is still the security boundary**, enforced inside `search`'s own
+`SearchService` (`UserId == currentUser.UserId`), never passed through from here.
 
 ---
 
-## Step 4.2: Conversation storage
+## Step 2.2: Conversation storage
 
 `AiCoach.Domain/Entities`:
 
@@ -110,11 +165,11 @@ when it doesn't match, so they don't leak which IDs exist):
 | `GET` | `/ai-coach/conversations` | list (id, title, lastMessageAtUtc), newest first |
 | `GET` | `/ai-coach/conversations/{id}/messages` | full history for the page |
 | `DELETE` | `/ai-coach/conversations/{id}` | delete |
-| `POST` | `/ai-coach/conversations/{id}/messages` | **send + stream the reply** (Step 4.5) |
+| `POST` | `/ai-coach/conversations/{id}/messages` | **send + stream the reply** (Step 2.5) |
 
 ---
 
-## Step 4.3: The tools
+## Step 2.3: The tools
 
 `AiCoach.Application/Coach/CoachTools.cs`. This is a **scoped** class, so each request gets tools
 bound to that request's user:
@@ -153,7 +208,7 @@ public sealed class CoachTools(
         return await entries.GetStatsAsync(from, to, id, ct);
     }
 
-    // GetEntriesAsync / SearchNotesAsync: same validation style
+    // GetEntriesAsync / SearchNotesAsync: same validation style, SearchNotesAsync delegates to `notes`
 
     private bool TryRange(string fromDate, string toDate, out DateTime from, out DateTime to, out string? error)
     {
@@ -163,11 +218,17 @@ public sealed class CoachTools(
 }
 ```
 
-Rules for tools that work reliably with small local models:
+Rules for tools that work reliably with small local models. The common thread: **the model only
+ever sees what comes back as the tool's return value** — it has no stack trace, no debugger, no
+way to introspect *why* something failed beyond what that value says. Every rule below follows
+from treating the tool's output as the model's entire view into your code.
 
-- **Return errors as data** (`new { error = "fromDate must be yyyy-MM-dd" }`). Don't throw. The
-  model reads the error and retries with corrected arguments. An exception becomes a generic
-  failure the model can't fix.
+- **Return errors as data** (`new { error = "fromDate must be yyyy-MM-dd" }`). Don't throw. When
+  `GetHabitStatsAsync` throws, `UseFunctionInvocation()`'s loop catches it and feeds the model a
+  generic "the tool failed" message with no detail — there's nothing for the model to act on, so
+  it either gives up or repeats the exact same bad call. Returning `{ error: "..." }` as a normal
+  result puts the specific problem in the model's context, so it can genuinely self-correct
+  ("oh, I need to reformat the date") on the next tool call within the same turn.
 - **Keep results small.** Cap lists (50 entries, 10 search hits), round numbers, and leave out
   fields the model doesn't need (no audit columns, no internal ids other than habit ids).
   Small context windows fill up quickly.
@@ -180,7 +241,7 @@ Rules for tools that work reliably with small local models:
 
 ---
 
-## Step 4.4: System prompt and chat options
+## Step 2.4: System prompt and chat options
 
 `AiCoach.Application/Coach/CoachPrompt.cs`:
 
@@ -222,18 +283,8 @@ var options = new ChatOptions
 };
 ```
 
-Cap the tool loop when registering the client in phase 1:
-
-```csharp
-.UseFunctionInvocation(configure: f =>
-{
-    f.MaximumIterationsPerRequest = 6;      // stops runaway tool loops
-    f.IncludeDetailedErrors = false;        // never send exception details to the model
-})
-```
-
-(Check the property names against your `Microsoft.Extensions.AI` version. They exist on
-`FunctionInvokingChatClient`.)
+The tool loop is already capped in this module's own `AiSetup.cs` (phase 1,
+`f.MaximumIterationsPerRequest = 6`) — nothing more to configure here.
 
 **Thinking models:** `qwen3` can "think" before answering. `ChatResponseUpdate.Text` returns only
 the normal text, so reasoning shouldn't leak into the reply. If you ever see `<think>` blocks in
@@ -241,7 +292,22 @@ the output, turn thinking off for that model or strip the block before streaming
 
 ---
 
-## Step 4.5: The streaming endpoint (SSE)
+## Step 2.5: The streaming endpoint (SSE)
+
+**What SSE actually is, and why it fits here.** Server-Sent Events is a plain HTTP response that
+never ends (until the server decides to close it), where the body is a simple text format —
+lines like `event: delta` and `data: {"text":"..."}`, separated by blank lines — that the client
+parses incrementally as bytes arrive, instead of waiting for the response to finish. It's one
+request, one response, over regular HTTP: no special handshake, no new protocol, and it works
+through the same auth middleware, reverse proxies, and load balancers as any other endpoint. The
+two alternatives solve the same "show partial progress" problem differently and worse for this
+case: **polling** (repeatedly calling `GET /messages` every second) adds latency up to the poll
+interval and load proportional to how often you poll, for no benefit when you could just be told
+the instant more text exists; **WebSockets** give you a full bidirectional channel, which this
+doesn't need — the coach only ever pushes data one direction, from server to client, so a
+one-way stream is the simplest tool that fits the job exactly. The event *types* (`tool`,
+`delta`, `done`, `error`) are this application's own design, layered on top of plain SSE, not
+something the protocol defines for you.
 
 ### The event contract
 
@@ -306,8 +372,16 @@ public async IAsyncEnumerable<SseItem<CoachStreamEvent>> StreamReplyAsync(
 }
 ```
 
-C# doesn't allow `yield return` inside a `try` block that has a `catch`, which is why
-`MoveNextAsync` is wrapped manually above.
+**Why the loop looks this convoluted.** `StreamReplyAsync` is an `async IAsyncEnumerable` — an
+iterator method, which the compiler turns into a state machine so each `yield return` can
+suspend and later resume exactly where it left off. That compiler transformation is why `yield
+return` is disallowed inside a `try` block that has a `catch`: the compiler can't generate code
+that both resumes execution mid-try *and* correctly routes an exception to the matching `catch`.
+So the stream is drained one step at a time by hand (`await e.MoveNextAsync()` inside its own
+`try`/`catch`, with no `yield` in that block), and the `yield return`s for `tool`/`delta` events
+happen afterward, outside any `try`. It's more code than a plain `foreach` over the stream would
+be, but a plain `foreach` is exactly the case the compiler rejects here, since the loop body
+needs to `yield return` on each iteration.
 
 ### Endpoint
 
@@ -347,7 +421,7 @@ app.MapPost("/conversations/{id:guid}/messages",
 
 ---
 
-## Step 4.6: The chat page (Angular)
+## Step 2.6: The chat page (Angular)
 
 Files in `modules/ai-coach/`:
 
@@ -355,10 +429,13 @@ Files in `modules/ai-coach/`:
 pages/coach-page/                 layout: conversation list (left) + chat (right)
 ui/conversation-list/
 ui/chat-thread/                   messages + streaming bubble + tool status line
-ui/chat-input/                    textarea, send, stop (and the mic button in phase 5)
+ui/chat-input/                    textarea, send, stop (and the mic button in phase 3)
 lib/parse-sse.ts                  incremental SSE parser
 api/ai-coach.api.ts               conversations CRUD + streamMessage()
 ```
+
+- Add `...aiCoachRoutes` to the `app` children in `main/app.routes.ts`, and a menu item
+  ("Coach") in `core/layout/main-layout/main-menu/main-menu.ts`.
 
 ### Streaming through `HttpClient` (keeps your JWT interceptor)
 
@@ -411,7 +488,7 @@ from each block. `JSON.parse` the data, then emit `{ type: eventName, ...payload
 
 ---
 
-## Step 4.7: Test the coach
+## Step 2.7: Test the coach
 
 Unit tests are still worth having, but the model is the unpredictable part.
 
@@ -435,7 +512,8 @@ Unit tests are still worth having, but the model is the unpredictable part.
    your real habits.
 2. "How consistent was I with <habit> this month?" → `get_habits` + `get_habit_stats` → correct
    counts, compared with the entries page.
-3. "When did I feel tired?" → `search_notes` → quotes real notes with dates.
+3. "When did I feel tired?" → `search_notes` → quotes real notes with dates, round-tripping
+   through `Search.DataTransfer` into the search module's index.
 4. Reload the page, and the conversation and messages are still there.
 5. Close the tab mid-answer. The Ollama/API logs show generation stopping, and the message is saved
    with `is_partial = true`.

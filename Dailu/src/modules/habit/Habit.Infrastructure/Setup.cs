@@ -20,6 +20,28 @@ public static class Setup
 {
     public const string HabitDbConnectionString = "HabitPostgresConnectionString";
 
+    public static IServiceCollection AddHabitModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddHabitPersistence(configuration);
+
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(HabitEventDispatchingBehavior<,>));
+
+        services.AddValidatorsFromAssemblyContaining<IHabitApplicationRoot>();
+
+        services.AddEndpoints(assemblies: HabitApiRoot.Assembly);
+
+        services.AddHandlerAssembly<IHabitApplicationRoot>();
+
+        services.AddHabitTransferServices();
+
+        services.AddHabitIntegrations();
+
+        return services;
+    }
+
     public static IServiceCollection AddHabitPersistence(
         this IServiceCollection services,
         IConfiguration configuration
@@ -50,31 +72,6 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
-
-        return services;
-    }
-
-    public static IServiceCollection AddHabitModule(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.AddHabitPersistence(configuration);
-
-        services.AddScoped(
-            typeof(IPipelineBehavior<,>),
-            typeof(HabitEventDispatchingBehavior<,>)
-        );
-
-        services.AddValidatorsFromAssemblyContaining<IHabitApplicationRoot>();
-
-        services.AddEndpoints(assemblies: HabitApiRoot.Assembly);
-
-        services.AddHandlerAssembly<IHabitApplicationRoot>();
-
-        services.AddHabitTransferServices();
-
-        services.AddHabitIntegrations();
 
         return services;
     }

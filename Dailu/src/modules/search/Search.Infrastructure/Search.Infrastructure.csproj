@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\SharedInfrastructure\SharedInfrastructure.csproj" />
+    <ProjectReference Include="..\..\..\shared\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\Search.Application\Search.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Database\Configurations\" />
+    <Folder Include="Database\Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="OllamaSharp" />
+    <PackageReference Include="Pgvector.EntityFrameworkCore" />
+    <PackageReference Include="StrictId.EFCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+</Project>

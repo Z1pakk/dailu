@@ -49,7 +49,8 @@ module actually gets cut loose.
   Acceptable inside a monolith; if a real broker gets swapped in underneath
   before a transactional outbox exists, "rare in-process loss" becomes
   "at-least-once delivery over a network with a broker that assumes durability
-  the app doesn't actually provide."
+  the app doesn't actually provide." Implementation guide:
+  [outbox-inbox/](outbox-inbox/README.md).
 - [ ] **Audit integrated-service call sites for hidden cross-module
   transactional assumptions.** Spot-checked
   `Habit.Application/Features/CreateHabit/CreateHabitCommand.cs`: it calls
