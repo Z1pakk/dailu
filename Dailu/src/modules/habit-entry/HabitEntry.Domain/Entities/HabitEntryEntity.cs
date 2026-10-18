@@ -18,5 +18,10 @@ public class HabitEntryEntity : BaseEntity<Id<HabitEntryEntity>>
 
     public required DateTime CompletedAtUtc { get; set; }
 
+    /// <summary>
+    /// User-facing state: the entry is hidden from active views but kept and still readable by
+    /// its owner. Not filtered automatically; queries decide whether to include it. Unlike
+    /// <c>IsDeleted</c>, which hides the row from every query.
+    /// </summary>
     public bool IsArchived { get; set; }
 }

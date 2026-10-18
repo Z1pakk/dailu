@@ -18,6 +18,11 @@ handlers. Come here when one of these is true:
 - you're about to swap `InMemoryIntegrationEventBus` for a real broker (see
   [module-isolation-improvements.md](../module-isolation-improvements.md)).
 
+If you've done the [RabbitMQ guide](../rabbitmq/README.md), the dispatcher below still publishes
+through `IIntegrationEventBus` — subscribed events then go from the outbox table to RabbitMQ, and
+the "publish after commit" gap that guide accepts is closed. The transport decision below then
+reads "outbox table → dispatcher → RabbitMQ" instead of "no broker".
+
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step.
 
 | Phase | File | What you end up with |

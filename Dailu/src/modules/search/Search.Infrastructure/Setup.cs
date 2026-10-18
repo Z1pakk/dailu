@@ -1,15 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FluentValidation;
+using Mediator;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OllamaSharp;
 using OpenAI;
+using Search.Application;
 using Search.Application.Ai;
 using Search.Application.Persistence;
 using Search.Infrastructure.Ai;
 using Search.Infrastructure.Database;
 using Search.Infrastructure.Options;
+using Search.Infrastructure.Pipeline;
+using SharedInfrastructure.CQRS;
+using SharedInfrastructure.Endpoint;
 using SharedInfrastructure.Options;
 
 namespace Search.Infrastructure;
@@ -24,9 +30,21 @@ public static class Setup
     )
     {
         services.AddSearchPersistence(configuration);
+
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(SearchEventDispatchingBehavior<,>));
+
+        services.AddValidatorsFromAssemblyContaining<ISearchApplicationRoot>();
+
+        // services.AddEndpoints(assemblies: HabitUserApiRoot.Assembly);
+
+        services.AddHandlerAssembly<ISearchApplicationRoot>();
+
         services.AddAiClients();
 
+        services.AddSearchServices();
+
         services.AddSingleton<IEmbeddingTextFormatter, NomicEmbeddingTextFormatter>();
+        services.AddSingleton<IAiModelOptions, AiModelOptions>();
 
         return services;
     }

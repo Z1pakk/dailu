@@ -2,7 +2,6 @@ using Dailu.Events;
 using HabitEntry.Application.Persistence;
 using HabitEntry.Domain.Aggregates;
 using HabitEntry.Domain.Enums;
-using Mediator;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Event;
 using StrictId;
@@ -12,7 +11,7 @@ namespace HabitEntry.Application.EventHandlers.HabitAutomationEntriesDetected;
 public sealed class HabitAutomationEntriesDetectedIntegrationEventHandler(
     IHabitEntryDbContext dbContext,
     IEventDispatcher eventDispatcher
-) : INotificationHandler<HabitAutomationEntriesDetectedIntegrationEvent>
+) : IEventHandler<HabitAutomationEntriesDetectedIntegrationEvent>
 {
     public async ValueTask Handle(
         HabitAutomationEntriesDetectedIntegrationEvent notification,

@@ -158,7 +158,7 @@ public sealed class SearchIndexWriter(
         var existing = await db.SearchIndex.FirstOrDefaultAsync(
             x => x.EntityType == doc.EntityType && x.EntityId == doc.EntityId, ct);
 
-        var text = SearchText.Normalize(doc.Text);       // trim, collapse whitespace, cap length
+        var text = SearchText.Normalize(doc.Text, SearchText.MaxLength);   // trim, collapse whitespace, cap length
 
         if (text is null || doc.IsArchived)
         {
@@ -209,8 +209,47 @@ public sealed class SearchIndexWriter(
 }
 ```
 
-Put `SearchText` (normalize + SHA-256 hash) in `Search.Application` too, and register
-`ISearchIndexWriter` as scoped in `Search.Infrastructure/Setup.cs`.
+The writer relies on a small static helper, `SearchText`, for the two pure text steps.
+`Search.Application/Indexing/SearchText.cs`:
+
+```csharp
+public static partial class SearchText
+{
+    public const int MaxLength = 4000;                 // the text column's HasMaxLength
+
+    public static string? Normalize(string? text, int maxLength)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxLength);
+
+        if (string.IsNullOrWhiteSpace(text))
+            return null;                               // null => the writer removes the row
+
+        var normalized = Whitespace().Replace(text.Trim(), " ");
+        if (normalized.Length <= maxLength)
+            return normalized;
+
+        // don't cut a surrogate pair (e.g. an emoji) in half
+        var length = char.IsHighSurrogate(normalized[maxLength - 1]) ? maxLength - 1 : maxLength;
+        return length == 0 ? null : normalized[..length];
+    }
+
+    public static string Hash(string normalizedText) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(normalizedText)));   // 64 chars
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Whitespace();
+}
+```
+
+- **Hash the normalized text, not the raw text.** `"Morning run "` and `"Morning  run"` normalize
+  to the same string, so they get the same hash and don't trigger a pointless re-embed.
+- **The cap is a parameter**, so callers can choose it, but the writer always passes
+  `SearchText.MaxLength`. The EF configuration references the same constant
+  (`HasMaxLength(SearchText.MaxLength)`), so the column and the cap can't drift apart.
+- **Normalize stops at whitespace and length** — see the "`Text` is also what partial/fuzzy
+  matching runs on" note below for why it must not lowercase or strip anything.
+
+Register `ISearchIndexWriter` as scoped in `Search.Infrastructure/Setup.cs`.
 
 Then one handler per event, for example
 `Search.Application/EventHandlers/HabitEntryNoteChanged/HabitEntryNoteChangedIntegrationEventHandler.cs`:
@@ -219,7 +258,7 @@ Then one handler per event, for example
 public sealed class HabitEntryNoteChangedIntegrationEventHandler(
     ISearchIndexWriter writer,
     ILogger<HabitEntryNoteChangedIntegrationEventHandler> logger
-) : INotificationHandler<HabitEntryNoteChangedIntegrationEvent>
+) : IEventHandler<HabitEntryNoteChangedIntegrationEvent>
 {
     public async ValueTask Handle(HabitEntryNoteChangedIntegrationEvent e, CancellationToken ct)
     {

@@ -1,6 +1,7 @@
-using Tag.Domain.Entities;
+using Dailu.Events;
 using SharedKernel.ResultPattern;
 using StrictId;
+using Tag.Domain.Entities;
 
 namespace Tag.Domain.Aggregates;
 
@@ -23,15 +24,23 @@ public sealed class TagAggregate : Aggregate
             return Result<TagAggregate>.BadRequest("Tag name must not be empty.");
         }
 
-        return Result<TagAggregate>.Success(
-            new TagAggregate
-            {
-                Id = Id<TagAggregate>.NewId(),
-                UserId = userId,
-                Name = name.Trim(),
-                Description = description?.Trim(),
-            }
+        var aggregate = new TagAggregate
+        {
+            Id = Id<TagAggregate>.NewId(),
+            UserId = userId,
+            Name = name.Trim(),
+            Description = description?.Trim(),
+        };
+
+        aggregate.RaiseDomainEvent(
+            new TagNameChangedIntegrationEvent(
+                aggregate.Id.ToId(),
+                aggregate.UserId,
+                aggregate.Name
+            )
         );
+
+        return Result<TagAggregate>.Success(aggregate);
     }
 
     internal static TagAggregate Restore(TagEntity entity) =>
@@ -43,12 +52,18 @@ public sealed class TagAggregate : Aggregate
             Description = entity.Description,
         };
 
-    public TagEntity ToEntity() =>
-        new()
+    public TagEntity ToEntity()
+    {
+        var entity = new TagEntity()
         {
             Id = Id.ToId(),
             UserId = UserId,
             Name = Name,
             Description = Description,
         };
+
+        entity.AddDomainEvent(ConsumeDomainEvents());
+
+        return entity;
+    }
 }

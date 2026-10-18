@@ -1,12 +1,12 @@
 using Dailu.Events;
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Aggregates;
-using Mediator;
+using SharedKernel.Event;
 
 namespace HabitUser.Application.EventHandlers.IdentityUserCreated;
 
 public sealed class IdentityUserCreatedIntegrationEventHandler(IHabitUserDbContext dbContext)
-    : INotificationHandler<IdentityUserCreatedIntegrationEvent>
+    : IEventHandler<IdentityUserCreatedIntegrationEvent>
 {
     public async ValueTask Handle(
         IdentityUserCreatedIntegrationEvent notification,

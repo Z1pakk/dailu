@@ -101,7 +101,7 @@ the module forgot step 2.4.
 public abstract class IdempotentIntegrationEventHandler<TEvent, TDbContext>(
     TDbContext db,
     IIntegrationMessageContext messageContext
-) : INotificationHandler<TEvent>
+) : IEventHandler<TEvent>
     where TEvent : IIntegrationEvent
     where TDbContext : IAppDbContextBase, IInbox
 {

@@ -21,6 +21,11 @@ public sealed class HabitEntity : BaseEntity<Id<HabitEntity>>
 
     public required HabitStatus Status { get; set; }
 
+    /// <summary>
+    /// User-facing state: the habit is retired but kept, still visible to its owner, with its
+    /// history intact. Not filtered automatically; queries decide whether to include it. Unlike
+    /// <c>IsDeleted</c>, which hides the row from every query.
+    /// </summary>
     public bool IsArchived { get; set; }
 
     public DateOnly? EndDate { get; set; }

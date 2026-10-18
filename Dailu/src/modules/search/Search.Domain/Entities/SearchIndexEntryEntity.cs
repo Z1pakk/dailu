@@ -19,7 +19,7 @@ public class SearchIndexEntryEntity : BaseEntity<Id<SearchIndexEntryEntity>>
     /// Specific entity id which search index is applied to
     /// habit id, tag id, or habit entry id
     /// </summary>
-    public required Guid EntityId { get; set; }
+    public required Id EntityId { get; set; }
 
     /// <summary>
     /// Text that exactly what was embedded (before the prefix); also the trigram-matched column
@@ -34,7 +34,7 @@ public class SearchIndexEntryEntity : BaseEntity<Id<SearchIndexEntryEntity>>
     /// <summary>
     /// Associated habit id for habit, habit entry types
     /// </summary>
-    public Guid? HabitId { get; set; }
+    public Id? HabitId { get; set; }
 
     /// <summary>
     /// The entry's date, for date filters

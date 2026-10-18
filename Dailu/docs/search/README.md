@@ -24,6 +24,7 @@ commit, then move on, because later phases assume the earlier ones work.
 | Phase | File | What you end up with |
 |---|---|---|
 | 4 | [04-reranking.md](04-reranking.md) | Search results reordered by an LLM, not just cosine distance — shared by the search box and the coach's tool |
+| — | [RabbitMQ guide](../rabbitmq/README.md) | Indexing handlers consumed from a RabbitMQ queue in the background, with retries and a dead-letter queue — saves no longer wait for the embedding call |
 | — | [Outbox/inbox guide](../outbox-inbox/README.md) | Index updates that survive crashes and provider outages, with embedding moved off the request path |
 
 ### Where this leaves `ai-coach`

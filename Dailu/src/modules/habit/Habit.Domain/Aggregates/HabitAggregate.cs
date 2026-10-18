@@ -1,3 +1,4 @@
+using Dailu.Events;
 using Habit.Domain.Entities;
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects;
@@ -154,34 +155,44 @@ public sealed class HabitAggregate : Aggregate
 
         var habitId = request.Id;
 
-        return Result<HabitAggregate>.Success(
-            new HabitAggregate
-            {
-                Id = habitId,
-                UserId = request.UserId,
-                Name = request.Name,
-                Description = request.Description,
-                Type = request.Type,
-                Frequency = frequencyResult.Value,
-                Target = targetResult.Value,
-                Status = HabitStatus.Ongoing,
-                IsArchived = false,
-                EndDate = request.EndDate,
-                Milestone = milestone,
-                AutomationSource = request.AutomationSource,
-                LastCompletedAtUtc = request.LastCompletedAtUtc,
-                Tags = tagIdList
-                    .Select(tagId => new HabitTagEntity
-                    {
-                        Id = Id<HabitTagEntity>.NewId(),
-                        HabitId = habitId.ToGuid(),
-                        TagId = tagId,
-                        UserId = request.UserId,
-                    })
-                    .ToList(),
-                AutomationFilter = request.AutomationFilter,
-            }
+        var aggregate = new HabitAggregate
+        {
+            Id = habitId,
+            UserId = request.UserId,
+            Name = request.Name,
+            Description = request.Description,
+            Type = request.Type,
+            Frequency = frequencyResult.Value,
+            Target = targetResult.Value,
+            Status = HabitStatus.Ongoing,
+            IsArchived = false,
+            EndDate = request.EndDate,
+            Milestone = milestone,
+            AutomationSource = request.AutomationSource,
+            LastCompletedAtUtc = request.LastCompletedAtUtc,
+            Tags = tagIdList
+                .Select(tagId => new HabitTagEntity
+                {
+                    Id = Id<HabitTagEntity>.NewId(),
+                    HabitId = habitId.ToGuid(),
+                    TagId = tagId,
+                    UserId = request.UserId,
+                })
+                .ToList(),
+            AutomationFilter = request.AutomationFilter,
+        };
+
+        aggregate.RaiseDomainEvent(
+            new HabitNameDescriptionChangedIntegrationEvent(
+                habitId.ToGuid(),
+                aggregate.UserId,
+                aggregate.Name,
+                aggregate.Description,
+                aggregate.IsArchived
+            )
         );
+
+        return Result<HabitAggregate>.Success(aggregate);
     }
 
     public static HabitAggregate Restore(HabitAggregateRestoreRequest request) =>
@@ -258,6 +269,20 @@ public sealed class HabitAggregate : Aggregate
             milestone = milestoneResult.Value;
         }
 
+        var nameDescriptionChanged = Name != request.Name || Description != request.Description;
+        if (nameDescriptionChanged)
+        {
+            RaiseDomainEvent(
+                new HabitNameDescriptionChangedIntegrationEvent(
+                    Id.ToId(),
+                    UserId,
+                    Name,
+                    Description,
+                    IsArchived
+                )
+            );
+        }
+
         Name = request.Name;
         Description = request.Description;
         Type = request.Type;
@@ -325,8 +350,9 @@ public sealed class HabitAggregate : Aggregate
         return Result.Success();
     }
 
-    public HabitEntity ToEntity() =>
-        new()
+    public HabitEntity ToEntity()
+    {
+        var entity = new HabitEntity()
         {
             Id = Id.ToId(),
             UserId = UserId,
@@ -345,4 +371,9 @@ public sealed class HabitAggregate : Aggregate
             Version = Version,
             AutomationFilter = AutomationFilter,
         };
+
+        entity.AddDomainEvent(ConsumeDomainEvents());
+
+        return entity;
+    }
 }

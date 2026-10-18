@@ -2,8 +2,10 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Pgvector;
+using Search.Application.Features.Indexing;
 using Search.Domain.Entities;
 using SharedInfrastructure.Persistence;
+using StrictId.EFCore.ValueConverters;
 
 namespace Search.Infrastructure.Database.Configurations;
 
@@ -19,9 +21,11 @@ internal sealed class SearchIndexEntryEntityConfiguration
 
         builder.Property(x => x.UserId).IsRequired();
         builder.Property(x => x.EntityType).IsRequired();
-        builder.Property(x => x.EntityId).IsRequired();
-        builder.Property(x => x.Text).IsRequired().HasMaxLength(4000);
+        builder.Property(x => x.EntityId).IsRequired().HasConversion(new IdToGuidConverter());
+        builder.Property(x => x.Text).IsRequired().HasMaxLength(SearchTextHelper.MaxLength);
         builder.Property(x => x.ContentHash).IsRequired().HasMaxLength(64);
+
+        builder.Property(h => h.HabitId).HasConversion(new IdToGuidConverter());
 
         builder
             .Property(x => x.Embedding)

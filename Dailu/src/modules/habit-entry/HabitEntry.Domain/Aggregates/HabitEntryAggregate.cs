@@ -72,6 +72,17 @@ public sealed class HabitEntryAggregate : Aggregate
             new HabitEntryCompletedIntegrationEvent(habitId, completedAtUtc)
         );
 
+        aggregate.RaiseDomainEvent(
+            new HabitEntryNoteChangedIntegrationEvent(
+                aggregate.Id.ToId(),
+                aggregate.UserId,
+                aggregate.HabitId,
+                aggregate.Notes,
+                aggregate.CompletedAtUtc,
+                aggregate.IsArchived
+            )
+        );
+
         return Result<HabitEntryAggregate>.Success(aggregate);
     }
 
@@ -113,6 +124,20 @@ public sealed class HabitEntryAggregate : Aggregate
         if (completedAt > DateTime.UtcNow)
         {
             return Result.BadRequest("Date cannot be in the future.");
+        }
+
+        if (Notes != notes)
+        {
+            RaiseDomainEvent(
+                new HabitEntryNoteChangedIntegrationEvent(
+                    Id.ToId(),
+                    UserId,
+                    HabitId,
+                    notes,
+                    completedAt,
+                    IsArchived
+                )
+            );
         }
 
         Value = value;

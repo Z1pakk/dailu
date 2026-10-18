@@ -4,6 +4,7 @@ using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects.AutomationFilters;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using SharedKernel.Event;
 using StrictId;
 
 namespace Habit.Application.EventHandlers.IntegrationActivitiesDetected;
@@ -11,7 +12,7 @@ namespace Habit.Application.EventHandlers.IntegrationActivitiesDetected;
 public sealed class GoogleHealthActivitiesDetectedEventHandler(
     IHabitDbContext dbContext,
     IPublisher publisher
-) : INotificationHandler<IntegrationActivitiesDetectedIntegrationEvent>
+) : IEventHandler<IntegrationActivitiesDetectedIntegrationEvent>
 {
     public async ValueTask Handle(
         IntegrationActivitiesDetectedIntegrationEvent notification,
