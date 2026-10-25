@@ -1,4 +1,5 @@
 ﻿using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Microsoft.Extensions.Logging;
 using Search.Application.Features.Indexing;
 using Search.Domain.Enums;

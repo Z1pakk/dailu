@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Habit.Application.Persistence;
 using Habit.Domain.Aggregates;
 using Habit.Domain.Entities;

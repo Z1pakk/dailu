@@ -1,14 +1,16 @@
 # RabbitMQ integration guide
 
-A step-by-step guide for moving **slow integration event handlers off the request path** by
-publishing those events to RabbitMQ and consuming them in a background worker inside the API
-process. The first users are the three `search` indexing handlers — each one calls the embedding
-model, so today every habit / tag / entry-note save waits for Ollama.
+A step-by-step guide for moving **every integration event onto RabbitMQ**. Commands publish
+their integration events to a broker, and each module that handles events consumes its own queue
+in a background worker inside the API process. Handlers no longer run inside the HTTP request: a
+habit / tag / entry-note save stops waiting for Ollama, and a failing handler is retried instead
+of being lost.
 
-It's shared infrastructure (`SharedInfrastructure/Messaging`), not a feature of one module. Any
-module can subscribe its handlers the same way. Plain `RabbitMQ.Client` is used on purpose — the
-point is to learn RabbitMQ itself (exchanges, queues, bindings, acks, confirms, dead-lettering),
-not a framework that hides it.
+The broker plumbing lives in `Dailu.Infrastructure/Messaging`, which only the API host
+references, so no module depends on RabbitMQ. Modules keep publishing through
+`IIntegrationEventBus` and keep writing ordinary `IEventHandler<T>` classes. Plain
+`RabbitMQ.Client` is used on purpose — the point is to learn RabbitMQ itself (exchanges, queues,
+bindings, acks, confirms, dead-lettering), not a framework that hides it.
 
 No Aspire in this guide: RabbitMQ runs from `docker-compose.yml` like Postgres, and the API reads
 its connection settings from `appsettings`.
@@ -17,9 +19,15 @@ You implement it yourself, phase by phase. Each phase ends with a **Verify** ste
 
 | Phase | File | What you end up with |
 |---|---|---|
-| 1 | [01-broker.md](01-broker.md) | RabbitMQ running in Docker with the management UI, a `RabbitMq` options section, and a single shared connection in the API |
-| 2 | [02-publishing.md](02-publishing.md) | Opted-in integration events serialized to JSON and published to a topic exchange with publisher confirms; all other events still in-memory |
-| 3 | [03-consuming.md](03-consuming.md) | A reusable consumer worker per module, `search` handlers running in the background, retries with a delay and a dead-letter queue |
+| 1 | [01-broker.md](01-broker.md) | RabbitMQ running in Docker with the management UI, a `RabbitMq` options section with an `IsEnabled` switch, and a single shared connection in the API |
+| 2 | [02-publishing.md](02-publishing.md) | Every integration event serialized to JSON and published to a topic exchange with publisher confirms; module subscriptions discovered from their handlers; a fake bus for tests |
+| 3 | [03-consuming.md](03-consuming.md) | A consumer worker per module (`habit`, `habit-entry`, `habit-user`, `search`), retries with a delay and a dead-letter queue, and handlers made safe to run twice |
+
+**Do phases 2 and 3 back to back.** Once phase 2 is switched on, every integration event goes to
+the broker, and nothing consumes it until phase 3. Registering stops creating a `HabitUser`,
+completing an entry stops updating the habit, and search stops indexing. Keep
+`RabbitMq:IsEnabled` set to `false` in between (see phase 1) except while running phase 2's
+Verify steps.
 
 Before starting, work through the official tutorials listed in [Learning
 RabbitMQ](#learning-rabbitmq) — at least 1, 2, 4, 5 and 7. Each phase links back to the
@@ -31,43 +39,47 @@ tutorial it builds on.
 
 ```
 today   command ──► SaveChanges ──► EventDispatchingBehavior ──► InMemoryIntegrationEventBus
-                                                                  └─► search handler ──► Ollama (100s of ms)
-                                                                                         ▲ the HTTP request waits here
+                                                                  └─► every handler, in the request
+                                                                      (search ──► Ollama, 100s of ms;
+                                                                       one throws ──► the rest never run,
+                                                                       nothing retries)
 ```
 
 ```
-target  command ──► SaveChanges ──► EventDispatchingBehavior ──► RoutingIntegrationEventBus
-                                                                  ├─ not opted in ──► in-memory, as today
-                                                                  └─ opted in ──► RabbitMQ publish (~1 ms) ──► request returns
-                                                                                     │
+target  command ──► SaveChanges ──► EventDispatchingBehavior ──► RabbitMqIntegrationEventBus
+                                                                  └─► publish + confirm (~1 ms) ──► request returns
+                                                                         │
                                          exchange "dailu.integration" (topic, routing key = event name)
-                                                                                     │
-                                                       queue "search" ◄──────────────┘
-                                                             │
-                                        RabbitMqConsumerWorker<ISearchApplicationRoot>
-                                          scope per message ──► search handlers only
-                                            ├─ ok      ──► ack
-                                            └─ throws  ──► nack ──► "search.retry" (TTL 10 s) ──► back to "search"
-                                                           after 5 attempts ──► "search.dlq" (parked, inspect by hand)
+                                              │             │                │              │
+                                           "habit"    "habit-entry"    "habit-user"     "search"
+                                              │             │                │              │
+                                      RabbitMqConsumerWorker<TModuleRoot>, one per module
+                                        scope per message ──► that module's handlers only
+                                          ├─ ok      ──► ack
+                                          └─ throws  ──► nack ──► "<queue>.retry" (TTL 10 s) ──► back to "<queue>"
+                                                         after 5 attempts ──► "<queue>.dlq" (parked, inspect by hand)
 ```
+
+With `RabbitMq:IsEnabled = false` the API registers `InMemoryIntegrationEventBus` instead and
+starts no consumers — today's behaviour, for running without Docker.
 
 ## Concepts in one paragraph each
 
 - **Exchange, queue, binding.** Publishers never write to a queue directly; they publish to an
   *exchange* with a *routing key*. *Bindings* tell the exchange which queues get a copy. A
-  **topic** exchange matches routing keys against binding patterns, so `search` binds the three
-  event names it cares about, and a future `ai-coach` queue can bind different ones — the
-  publisher doesn't know or care who listens.
-- **One queue per consuming module.** Each module gets its own copy of every event it subscribes
-  to and processes it at its own pace. The worker for a queue only calls handlers from *that*
-  module's assembly, so modules can't trigger each other's handlers twice.
+  **topic** exchange matches routing keys against binding patterns, so each module's queue binds
+  the event names it handles — the publisher doesn't know or care who listens.
+- **One queue per consuming module.** Each module gets its own copy of every event it handles and
+  processes it at its own pace. The worker for a queue only calls handlers from *that* module's
+  assembly, so modules can't trigger each other's handlers twice.
 - **Publisher confirms.** `BasicPublishAsync` returning doesn't mean the broker has the message.
   With confirms enabled, the broker acks once the message is safely in the queue (persisted for
   durable queues); the client awaits that ack and throws if it's nacked.
 - **Consumer acknowledgements.** With `autoAck: false` the broker keeps a delivered message until
   the consumer acks it. Crash mid-handler and the message is redelivered. That makes delivery
-  **at-least-once** — handlers must be safe to run twice. `SearchIndexService` already is
-  (upsert by entity, content hash skips unchanged text).
+  **at-least-once** — every handler must be safe to run twice. `SearchIndexService` already is
+  (upsert by entity, content hash skips unchanged text); the other modules' handlers need
+  checking (phase 3, 3.6).
 - **Prefetch (QoS).** How many unacked messages the broker pushes to one consumer at once.
   `prefetch = 1` processes one message at a time, in order — slow, but simple and predictable.
 - **Dead-letter exchange (DLX) + TTL for retries.** A message rejected with `requeue: false` is
@@ -84,24 +96,43 @@ target  command ──► SaveChanges ──► EventDispatchingBehavior ──�
 | Decision | Choice | Why |
 |---|---|---|
 | Client library | **`RabbitMQ.Client` 7.x** (async API) | Learning goal; MassTransit/Wolverine hide the topology. MassTransit v9 is also commercially licensed |
+| Which events | **All integration events** go through the broker | One delivery model for every handler; no per-event routing to keep in sync |
+| Where the code lives | **`Dailu.Infrastructure/Messaging`**; bus selection in `Dailu.Infrastructure/Event/Setup.cs` | Only `Dailu.Api` and `Dailu.MigrationsRunner` reference `Dailu.Infrastructure`, so no module can depend on RabbitMQ |
+| Who registers consumers | **`Dailu.Api/Program.cs`**, one `AddRabbitMqConsumer<TModuleRoot>("queue")` per module | The module marker types live in `*.Application`, which `Dailu.Infrastructure` can't see; the API host sees every module |
+| Subscriptions | **Discovered from the module's handlers** (`IEventHandler<T>` where `T : IIntegrationEvent`) | Adding a handler can't silently miss its binding |
+| Switch | **`RabbitMq:IsEnabled`**: `true` → RabbitMQ bus and consumers, `false` → `InMemoryIntegrationEventBus`, nothing RabbitMQ registered | Run the API without Docker; base `appsettings.json` stays off until production has a broker |
 | Hosting | **Consumers run in the API process** as `BackgroundService`s | Modular monolith: one deployable. Moving a worker to its own host later only changes where `AddRabbitMqConsumer` is called |
-| Which events | **Opt-in per event**, by a module subscribing to it | Events not subscribed by any queue keep the in-memory path. Other handlers (automation entries, user creation) currently rely on running inside the request; move them deliberately, one at a time |
 | Topology | **One topic exchange `dailu.integration`; one quorum queue per module**; routing key = event type name | Standard fan-out-per-consumer layout; adding a consumer never touches the publisher |
 | Who declares what | **Publisher declares the exchange, each consumer declares its own queues and bindings** | Declarations are idempotent; no separate "provisioning" step to forget |
 | Serialization | **`System.Text.Json`**, event type name in the AMQP `type` property, a fresh `message_id` per publish | Readable in the management UI; same type registry as the outbox guide |
 | Ordering | **prefetch 1, one consumer per queue** | Events carry full state; parallel consumers could apply an older edit after a newer one |
 | Retries | **nack → retry queue (TTL 10 s) → main queue; 5 attempts, then `<queue>.dlq`** | An Ollama restart doesn't lose events; a poison message doesn't loop forever |
+| Publish failures | **The bus throws `IntegrationEventPublishException`; the caller decides** — `EventDispatchingBehavior` logs it (the command already committed), a consumer lets it propagate and retries | The bus can't tell a request from a consumer; swallowing inside a consumer would ack a message whose follow-up event was never sent |
 | Handler contract | **Throw = retry, return = done** | A transient failure (Ollama down) must throw; a permanent one (wrong vector size) is logged and returned, retrying won't fix it |
-| Durability gap | **Accepted for now** — see below | Fixed by the [outbox guide](../outbox-inbox/README.md), whose dispatcher can publish through this bus |
+| Tests | **`FakeIntegrationEventBus`** in `Test.SharedKernel` records events; cross-module tests use `InMemoryIntegrationEventBus` | No broker in tests; asserting "this command published X" stays one line |
+| Durability gap | **Accepted for now** — see below | Fixed by the [outbox guide](../outbox-inbox/README.md), whose dispatcher publishes through this bus |
+
+### What changes for users of the app
+
+Handlers now run a moment *after* the request returns. Most of the time nobody notices, but three
+flows become eventually consistent:
+
+- **Registration.** `IdentityUserCreatedIntegrationEventHandler` creates the `HabitUser` row. A
+  request the frontend sends right after signup can arrive before that row exists. Decide in
+  phase 3 whether those reads create the user on first use or the client retries.
+- **Completing an entry.** `HabitEntryCompletedIntegrationEvent` updates the habit's
+  `LastCompletedAtUtc` and milestone. The UI can briefly show the old values.
+- **Search.** A renamed habit shows up in search results a moment later.
 
 ### What this does *not* fix
 
-The broker makes the slow part asynchronous and retryable, but the event is still published
-*after* the command commits. If the process dies between commit and publish, or RabbitMQ is down
-at that moment, the event is lost — exactly the gap described in
-[outbox-inbox/README.md](../outbox-inbox/README.md#why-the-current-flow-isnt-enough). Doing the
-outbox afterwards is straightforward: its `OutboxDispatcherWorker` already publishes through
-`IIntegrationEventBus`, which after this guide sends opted-in events to RabbitMQ.
+The broker makes handlers asynchronous and retryable, but the event is still published *after*
+the command commits. If the process dies between commit and publish, or RabbitMQ is down at that
+moment, the event is lost — exactly the gap described in
+[outbox-inbox/README.md](../outbox-inbox/README.md#why-the-current-flow-isnt-enough). With every
+event on the broker, a lost event can now mean a user without a `HabitUser` row, not just a stale
+search entry, so **do the outbox next**. Its `OutboxDispatcherWorker` publishes through
+`IIntegrationEventBus`, which after this guide sends events to RabbitMQ.
 
 ## Prerequisites
 
@@ -110,6 +141,8 @@ outbox afterwards is straightforward: its `OutboxDispatcherWorker` already publi
   through `ISearchIndexService` when you save a habit, tag or entry note.
 - The event plumbing: `EventDispatchingBehavior`, `EventDispatcher`, `IIntegrationEventBus`,
   `InMemoryIntegrationEventBus`, and the contracts in `src/shared/Dailu.Events`.
+- `Dailu.Infrastructure/Event/Setup.cs` → `AddEvents()`, called from `AddInfrastructure()`, owns
+  the `IEventDispatcher` and `IIntegrationEventBus` registrations.
 
 ## Conventions used in this guide
 
@@ -118,6 +151,8 @@ outbox afterwards is straightforward: its `OutboxDispatcherWorker` already publi
   `RabbitMQ.Client` 7.x — older tutorials and courses use the 6.x synchronous API (`IModel`,
   `BasicPublish`, `EventingBasicConsumer`); the 7.x names are `IChannel`, `BasicPublishAsync`,
   `AsyncEventingBasicConsumer`.
+- Namespace for everything under `src/Dailu.Infrastructure/Messaging` is
+  `Dailu.Infrastructure.Messaging`.
 - Lines marked **Decision** are choices you can change without breaking later phases.
 
 ---
@@ -182,4 +217,4 @@ async client, so do the official tutorials either way.
 3. Phase 1 of this guide.
 4. Read the confirms page, then phase 2.
 5. Read the DLX and TTL pages, then phase 3.
-6. Optionally a course or *RabbitMQ in Depth* for depth; then the outbox guide.
+6. Then the outbox guide — with every event on the broker, it's the next thing to build.

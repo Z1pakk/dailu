@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Habit.Domain.Entities;
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects;

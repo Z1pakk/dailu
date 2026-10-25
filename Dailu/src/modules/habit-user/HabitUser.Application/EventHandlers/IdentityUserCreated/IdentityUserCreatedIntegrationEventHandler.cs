@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitUser.Application.Persistence;
 using HabitUser.Domain.Aggregates;
 using SharedKernel.Event;

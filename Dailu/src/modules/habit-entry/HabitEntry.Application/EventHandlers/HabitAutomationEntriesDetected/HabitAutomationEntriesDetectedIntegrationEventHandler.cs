@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitEntry.Application.Persistence;
 using HabitEntry.Domain.Aggregates;
 using HabitEntry.Domain.Enums;

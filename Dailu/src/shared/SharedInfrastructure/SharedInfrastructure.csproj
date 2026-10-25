@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="RabbitMQ.Client" />
     <PackageReference Include="Scrutor" />
     <PackageReference Include="StrictId" />
     <PackageReference Include="StrictId.EFCore" />

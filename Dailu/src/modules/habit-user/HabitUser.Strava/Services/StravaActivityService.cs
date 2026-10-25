@@ -1,5 +1,6 @@
 using System.Globalization;
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Strava.Models;
 using Mediator;

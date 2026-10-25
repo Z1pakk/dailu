@@ -4,6 +4,7 @@ using Dailu.Infrastructure.Cookie;
 using Dailu.Infrastructure.Cors;
 using Dailu.Infrastructure.CQRS;
 using Dailu.Infrastructure.DataProtection;
+using Dailu.Infrastructure.Event;
 using Dailu.Infrastructure.Observability;
 using Dailu.Infrastructure.ProblemDetails;
 using Dailu.Infrastructure.User;
@@ -21,6 +22,7 @@ public static class Setup
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddPipelines();
+        services.AddEvents();
 
         services.AddHttpContextAccessor();
         services.AddCorsServices();

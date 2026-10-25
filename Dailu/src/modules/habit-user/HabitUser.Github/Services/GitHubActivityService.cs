@@ -1,5 +1,6 @@
 using System.Globalization;
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using HabitUser.Github.Models;
 using Mediator;
@@ -71,9 +72,7 @@ public sealed class GitHubActivityService(
                 eventsResult?.Error
             );
 
-            return new GitHubActivityPollResult(
-                Result.Failure("Failed to fetch GitHub events.")
-            );
+            return new GitHubActivityPollResult(Result.Failure("Failed to fetch GitHub events."));
         }
 
         var todayDay = timeProvider.GetUtcNow().UtcDateTime.Date.AddDays(-7);

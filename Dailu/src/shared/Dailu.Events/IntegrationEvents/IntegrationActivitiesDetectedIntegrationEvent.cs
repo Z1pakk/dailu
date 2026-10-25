@@ -1,6 +1,6 @@
 using SharedKernel.Event;
 
-namespace Dailu.Events;
+namespace Dailu.Events.IntegrationEvents;
 
 public enum IntegrationActivitySource
 {

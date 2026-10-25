@@ -59,6 +59,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
     <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
+    <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
     <!-- The following package is used for SonarAnalyzer -->
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.30.0.144632" />

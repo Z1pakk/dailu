@@ -1,8 +1,6 @@
 using Dailu.Infrastructure.CQRS.Pipelines;
 using Mediator;
 using Microsoft.Extensions.DependencyInjection;
-using SharedInfrastructure.Event;
-using SharedKernel.Event;
 
 namespace Dailu.Infrastructure.CQRS;
 
@@ -13,9 +11,6 @@ public static class Setup
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-
-        services.AddScoped<IEventDispatcher, EventDispatcher>();
-        services.AddScoped<IIntegrationEventBus, InMemoryIntegrationEventBus>();
 
         return services;
     }

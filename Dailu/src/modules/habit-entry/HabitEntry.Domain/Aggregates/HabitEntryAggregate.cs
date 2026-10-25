@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitEntry.Domain.Entities;
 using HabitEntry.Domain.Enums;
 using SharedKernel.ResultPattern;

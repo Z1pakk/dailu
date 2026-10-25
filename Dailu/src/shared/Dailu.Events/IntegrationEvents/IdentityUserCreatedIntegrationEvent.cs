@@ -1,5 +1,5 @@
 using SharedKernel.Event;
 
-namespace Dailu.Events;
+namespace Dailu.Events.IntegrationEvents;
 
 public record IdentityUserCreatedIntegrationEvent(Guid IdentityUserId) : IIntegrationEvent;

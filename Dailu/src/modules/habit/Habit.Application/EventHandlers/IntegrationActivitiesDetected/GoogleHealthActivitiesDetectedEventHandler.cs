@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Habit.Application.Persistence;
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects.AutomationFilters;
@@ -11,7 +12,7 @@ namespace Habit.Application.EventHandlers.IntegrationActivitiesDetected;
 
 public sealed class GoogleHealthActivitiesDetectedEventHandler(
     IHabitDbContext dbContext,
-    IPublisher publisher
+    IEventDispatcher eventDispatcher
 ) : IEventHandler<IntegrationActivitiesDetectedIntegrationEvent>
 {
     public async ValueTask Handle(
@@ -73,7 +74,7 @@ public sealed class GoogleHealthActivitiesDetectedEventHandler(
             return;
         }
 
-        await publisher.Publish(
+        await eventDispatcher.SendAsync(
             new HabitAutomationEntriesDetectedIntegrationEvent(notification.UserId, entries),
             cancellationToken
         );

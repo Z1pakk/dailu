@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using Mediator;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,10 @@ public sealed class GoogleHealthActivityService(
 
         if (activities.Count == 0)
         {
-            return new GoogleHealthPollResult(Result.Success(), activitiesResult.Value.RefreshedConfig);
+            return new GoogleHealthPollResult(
+                Result.Success(),
+                activitiesResult.Value.RefreshedConfig
+            );
         }
 
         await eventDispatcher.SendAsync(

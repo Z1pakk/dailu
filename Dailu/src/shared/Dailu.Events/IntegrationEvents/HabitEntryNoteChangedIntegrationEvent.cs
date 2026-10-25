@@ -1,7 +1,7 @@
 ﻿using SharedKernel.Event;
 using StrictId;
 
-namespace Dailu.Events;
+namespace Dailu.Events.IntegrationEvents;
 
 public record HabitEntryNoteChangedIntegrationEvent(
     Id EntryId,

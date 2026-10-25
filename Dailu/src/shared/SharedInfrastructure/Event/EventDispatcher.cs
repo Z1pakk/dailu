@@ -1,9 +1,9 @@
-using Mediator;
+using SharedKernel.CQRS;
 using SharedKernel.Event;
 
 namespace SharedInfrastructure.Event;
 
-public sealed class EventDispatcher(IPublisher publisher, IIntegrationEventBus bus)
+public sealed class EventDispatcher(IEventPublisher publisher, IIntegrationEventBus bus)
     : IEventDispatcher
 {
     public async Task SendAsync<T>(T @event, CancellationToken cancellationToken = default)

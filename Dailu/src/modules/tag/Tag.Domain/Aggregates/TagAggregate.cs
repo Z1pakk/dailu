@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using SharedKernel.ResultPattern;
 using StrictId;
 using Tag.Domain.Entities;

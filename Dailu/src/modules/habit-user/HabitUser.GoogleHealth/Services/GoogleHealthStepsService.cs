@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using HabitUser.Domain.ValueObjects.IntegrationConfigs;
 using Mediator;
 using Microsoft.Extensions.Logging;

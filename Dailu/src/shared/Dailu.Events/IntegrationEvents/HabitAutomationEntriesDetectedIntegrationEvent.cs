@@ -1,7 +1,7 @@
 using SharedKernel.Event;
 using StrictId;
 
-namespace Dailu.Events;
+namespace Dailu.Events.IntegrationEvents;
 
 /// <param name="AllowUpdate">
 /// When true and an entry with the same HabitId+ExternalId already exists, its value/notes/date
