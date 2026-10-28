@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 using Tag.Api;
 using Tag.Application;
 using Tag.Application.Persistence;
@@ -33,6 +34,8 @@ public static class Setup
         services.AddEndpoints(assemblies: TagApiRoot.Assembly);
 
         services.AddHandlerAssembly<ITagApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<ITagApplicationRoot>("tag");
 
         services.AddTagDataTransferServices();
 

@@ -16,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 using SharedInfrastructure.Options;
 using SharedKernel.Persistence;
 
@@ -46,6 +47,8 @@ public static class Setup
         services.AddEndpoints(assemblies: IdentityApiRoot.Assembly);
 
         services.AddHandlerAssembly<IIdentityApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<IIdentityApplicationRoot>("identity");
 
         services.AddIdentityDataTransferServices();
 

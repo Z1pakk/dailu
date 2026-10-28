@@ -7,7 +7,8 @@ exactly as today. Tests get a `FakeIntegrationEventBus`.
 
 **Builds on:** tutorials [3](https://www.rabbitmq.com/tutorials/tutorial-three-dotnet) and
 [5](https://www.rabbitmq.com/tutorials/tutorial-five-dotnet) (exchanges, topic routing),
-[7](https://www.rabbitmq.com/tutorials/tutorial-seven-dotnet) (publisher confirms), and the
+[7](https://www.rabbitmq.com/tutorials/tutorial-seven-dotnet) (publisher confirms, especially
+the "handling publisher confirms asynchronously" strategy), and the
 [confirms docs](https://www.rabbitmq.com/docs/confirms).
 
 ```
@@ -20,16 +21,18 @@ src/shared/SharedKernel/Event/
 src/shared/SharedInfrastructure/Pipeline/
 └── EventDispatchingBehavior.cs       ← catches publish failures on the request path
 
+src/shared/SharedInfrastructure/Event/
+├── IntegrationEventSubscription.cs            ← "queue X in module Y handles events A, B, C"
+└── IntegrationEventSubscriptionExtensions.cs  ← AddIntegrationEventSubscription<TModuleRoot>(queue)
+
 src/Dailu.Infrastructure/Messaging/
 ├── IntegrationEventJson.cs           ← one JsonSerializerOptions for both sides
 ├── RabbitMqTopology.cs               ← exchange name; queue declarations come in phase 3
 ├── RabbitMqPublisher.cs              ← one confirm-enabled channel, publishes one event
-├── RabbitMqSubscription.cs           ← "queue X in module Y handles events A, B, C"
-├── RabbitMqIntegrationEventBus.cs    ← IIntegrationEventBus → RabbitMqPublisher
-└── Setup.cs                          ← + AddRabbitMqConsumer<TModuleRoot>(queue)
+└── RabbitMqIntegrationEventBus.cs    ← IIntegrationEventBus → RabbitMqPublisher
 
 src/Dailu.Infrastructure/Event/Setup.cs   ← IsEnabled ? RabbitMqIntegrationEventBus : InMemoryIntegrationEventBus
-src/api/Dailu.Api/Program.cs              ← one AddRabbitMqConsumer per consuming module
+src/modules/*/*.Infrastructure/Setup.cs   ← each module declares its own subscription
 
 src/tests/Test.SharedKernel/Event/
 └── FakeIntegrationEventBus.cs        ← records published events for assertions
@@ -220,49 +223,103 @@ public static class RabbitMqTopology
 }
 ```
 
+**Decision:** the publisher tracks confirms itself — tutorial 7's *"handling publisher confirms
+asynchronously"* strategy. The lock only covers *sending*; waiting for the broker's ack happens
+outside it, so many messages can be in flight at once. The 7.x client can do this bookkeeping for
+you (`publisherConfirmationTrackingEnabled: true`), but writing it once is the best way to learn
+what a confirm actually is. The rest of the guide only sees `PublishAsync`, so swapping to the
+built-in tracking later changes nothing outside this class.
+
+Check every API name below against `RabbitMQ.Client` 7.2.2 as you write it —
+`GetNextPublishSequenceNumberAsync`, the `BasicAcksAsync` / `BasicNacksAsync` /
+`BasicReturnAsync` / `ChannelShutdownAsync` events and their argument types.
+
+```
+PublishAsync ── lock ── seq = next sequence number ── pending[seq] = TCS ── send (header x-publish-seq) ── unlock
+             └─ await TCS (timeout, cancellation)
+                         ▲
+broker ── basic.return (x-publish-seq) ── mark pending[seq] as returned
+       ── basic.ack  (tag, multiple)   ── for each seq ≤ tag: returned ? fail "unroutable" : succeed
+       ── basic.nack (tag, multiple)   ── for each seq ≤ tag: fail "nacked"
+       ── channel shutdown             ── fail every pending, clear
+```
+
 `src/Dailu.Infrastructure/Messaging/RabbitMqPublisher.cs`:
 
 ```csharp
 public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDisposable
 {
+    private const string SequenceHeader = "x-publish-seq";
+    private static readonly TimeSpan ConfirmTimeout = TimeSpan.FromSeconds(10);
+
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly ConcurrentDictionary<ulong, PendingConfirm> _pending = new();
     private IChannel? _channel;
 
     public async Task PublishAsync(IIntegrationEvent integrationEvent, CancellationToken ct)
     {
         var type = integrationEvent.GetType();
         var name = IntegrationEventTypes.NameOf(type);
-
-        var properties = new BasicProperties
-        {
-            MessageId = Guid.CreateVersion7().ToString(),     // once per publish, see 2.2
-            Type = name,
-            AppId = "dailu-api",                              // CloudEvents "source", see 2.2
-            ContentType = "application/json",
-            DeliveryMode = DeliveryModes.Persistent,          // survive a broker restart
-            Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
-        };
         var body = JsonSerializer.SerializeToUtf8Bytes(integrationEvent, type, IntegrationEventJson.Options);
+        var pending = new PendingConfirm(name);
+        ulong sequence;
 
         await _lock.WaitAsync(ct);
         try
         {
             var channel = await GetChannelAsync(ct);
 
-            // with confirmation tracking on, this completes only after the broker acked the
-            // message, and throws if it was nacked or (mandatory) couldn't be routed
-            await channel.BasicPublishAsync(
-                RabbitMqTopology.Exchange,
-                routingKey: name,
-                mandatory: true,
-                basicProperties: properties,
-                body: body,
-                cancellationToken: ct
-            );
+            // take the number and send under the same lock, so the broker's numbering
+            // (one per publish on this channel) matches ours
+            sequence = await channel.GetNextPublishSequenceNumberAsync(ct);
+
+            var properties = new BasicProperties
+            {
+                MessageId = Guid.CreateVersion7().ToString(),     // once per publish, see 2.2
+                Type = name,
+                AppId = "dailu-api",                              // CloudEvents "source", see 2.2
+                ContentType = "application/json",
+                DeliveryMode = DeliveryModes.Persistent,          // survive a broker restart
+                Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
+                // a returned message has no delivery tag; this is how OnReturnAsync finds it
+                Headers = new Dictionary<string, object?> { [SequenceHeader] = (long)sequence },
+            };
+
+            _pending[sequence] = pending;
+            try
+            {
+                // returns once the frames are written, *not* when the broker confirms
+                await channel.BasicPublishAsync(
+                    RabbitMqTopology.Exchange,
+                    routingKey: name,
+                    mandatory: true,
+                    basicProperties: properties,
+                    body: body,
+                    cancellationToken: ct
+                );
+            }
+            catch
+            {
+                _pending.TryRemove(sequence, out _);
+                throw;
+            }
         }
         finally
         {
             _lock.Release();
+        }
+
+        // outside the lock: other publishes go out while we wait for our ack
+        try
+        {
+            await pending.Confirmed.Task.WaitAsync(ConfirmTimeout, ct);
+        }
+        catch (Exception ex) when (ex is TimeoutException or OperationCanceledException)
+        {
+            // we've stopped waiting; don't leave the entry behind. A late ack finds nothing,
+            // which is harmless
+            _pending.TryRemove(sequence, out _);
+            throw;
         }
     }
 
@@ -282,11 +339,17 @@ public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDis
         var amqpConnection = await connection.GetAsync(ct);
         _channel = await amqpConnection.CreateChannelAsync(
             new CreateChannelOptions(
-                publisherConfirmationsEnabled: true,
-                publisherConfirmationTrackingEnabled: true
+                publisherConfirmationsEnabled: true,          // broker sends acks/nacks
+                publisherConfirmationTrackingEnabled: false   // ...and we match them ourselves
             ),
             ct
         );
+
+        // once per channel; an auto-recovered channel keeps its handlers
+        _channel.BasicAcksAsync += OnAckAsync;
+        _channel.BasicNacksAsync += OnNackAsync;
+        _channel.BasicReturnAsync += OnReturnAsync;
+        _channel.ChannelShutdownAsync += OnShutdownAsync;
 
         await _channel.ExchangeDeclareAsync(
             RabbitMqTopology.Exchange,
@@ -299,6 +362,83 @@ public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDis
         return _channel;
     }
 
+    private Task OnAckAsync(object sender, BasicAckEventArgs e)
+    {
+        foreach (var pending in Take(e.DeliveryTag, e.Multiple))
+        {
+            if (pending.Returned)
+            {
+                pending.Confirmed.TrySetException(new InvalidOperationException(
+                    $"{pending.EventType} is unroutable: no queue is bound for it."));
+            }
+            else
+            {
+                pending.Confirmed.TrySetResult();
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnNackAsync(object sender, BasicNackEventArgs e)
+    {
+        foreach (var pending in Take(e.DeliveryTag, e.Multiple))
+        {
+            pending.Confirmed.TrySetException(new InvalidOperationException(
+                $"The broker nacked {pending.EventType}."));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnReturnAsync(object sender, BasicReturnEventArgs e)
+    {
+        // the broker sends basic.return *before* the basic.ack for the same message
+        if (e.BasicProperties.Headers?.TryGetValue(SequenceHeader, out var raw) == true
+            && raw is long sequence
+            && _pending.TryGetValue((ulong)sequence, out var pending))
+        {
+            pending.Returned = true;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnShutdownAsync(object sender, ShutdownEventArgs e)
+    {
+        // no acks will come for these; sequence numbers restart on a recovered channel
+        FailAll(new InvalidOperationException($"Channel closed before the broker confirmed: {e.ReplyText}"));
+        return Task.CompletedTask;
+    }
+
+    // multiple = true confirms every sequence number up to and including tag
+    private List<PendingConfirm> Take(ulong tag, bool multiple)
+    {
+        var sequences = multiple ? _pending.Keys.Where(s => s <= tag).ToList() : [tag];
+        var taken = new List<PendingConfirm>(sequences.Count);
+
+        foreach (var sequence in sequences)
+        {
+            if (_pending.TryRemove(sequence, out var pending))
+            {
+                taken.Add(pending);
+            }
+        }
+
+        return taken;
+    }
+
+    private void FailAll(Exception error)
+    {
+        foreach (var sequence in _pending.Keys)
+        {
+            if (_pending.TryRemove(sequence, out var pending))
+            {
+                pending.Confirmed.TrySetException(error);
+            }
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_channel is not null)
@@ -307,7 +447,20 @@ public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDis
             await _channel.DisposeAsync();
         }
 
+        FailAll(new ObjectDisposedException(nameof(RabbitMqPublisher)));
         _lock.Dispose();
+    }
+
+    private sealed class PendingConfirm(string eventType)
+    {
+        public string EventType { get; } = eventType;
+
+        // continuations must not run on the client's dispatch thread, or one slow caller
+        // would hold up every other ack
+        public TaskCompletionSource Confirmed { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public volatile bool Returned;
     }
 }
 ```
@@ -316,19 +469,54 @@ public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDis
   for a message to survive a broker restart. Phase 3 declares the queues.
 - **Publisher confirms.** Without them, `BasicPublishAsync` returns as soon as the bytes are on
   the socket; a broker that's out of disk or restarting can still lose the message. With
-  `publisherConfirmationTrackingEnabled`, the 7.x client awaits the broker's ack for you and
-  throws a `PublishException` on a nack. That's the 7.x replacement for tutorial 7's manual
-  `WaitForConfirmsOrDie` / outstanding-confirms bookkeeping.
-- **`mandatory: true`.** If no queue is bound for the routing key — the consumer's worker hasn't
-  declared its queue yet, or a binding is missing — the broker returns the message instead of
-  silently dropping it, and the publish throws. Check which exception type your client version
-  uses for a return (`PublishReturnException` in recent 7.x) when you test it in the Verify step.
-  Events that *no* module handles never get this far — the bus skips them (2.6).
-- **One channel behind a lock.** A channel must not be used for concurrent publishes from several
-  threads. Requests publish concurrently, so access is serialized; at ~1–2 ms per confirmed
-  publish that's fine for this app. A channel pool is the next step if it ever isn't.
+  confirms on, the broker numbers every publish on the channel (1, 2, 3, …) and later sends
+  `basic.ack` or `basic.nack` with that number. `publisherConfirmationTrackingEnabled: false`
+  means the client hands those to the events above instead of completing the publish task
+  itself.
+- **What the lock protects now.** Creating the channel (no two channels from a race), and the
+  pair "take the next sequence number, send". If two publishes interleaved between those steps,
+  our numbers wouldn't match the broker's. Sending is microseconds; the ack wait — the slow
+  part — is outside the lock.
+- **`multiple: true`.** The broker may confirm many messages with one frame: "everything up to
+  and including 57". `Take` completes all of them.
+- **`mandatory: true` and returns.** If no queue is bound for the routing key — the consumer's
+  worker hasn't declared its queue yet, or a binding is missing — the broker sends
+  `basic.return` and *then* `basic.ack`. The ack only means "I processed it", not "I routed
+  it", so a returned message must fail even though it was acked. A return carries no sequence
+  number, which is why every message carries `x-publish-seq`. Events that *no* module handles
+  never get this far — the bus skips them (2.6).
+- **Return before ack is an ordering assumption.** The broker guarantees it on the wire;
+  confirm in Verify step 3 that the client also raises the events in that order. If the ack
+  ever wins, an unroutable publish would *succeed* — the test catches it.
+- **Channel shutdown fails everything pending.** After a connection drop no acks arrive for
+  messages sent on the old channel, and automatic recovery restarts the numbering at 1. Failing
+  and clearing `_pending` prevents callers from hanging and old numbers from colliding with new
+  ones.
+- **Timeout and cancellation.** `WaitAsync(ConfirmTimeout, ct)` stops waiting after 10 s or when
+  the request is cancelled; the `TimeoutException` becomes `IntegrationEventPublishException` in
+  the bus. The `catch` removes the pending entry — otherwise an ack that never comes would leave
+  it in `_pending` until the channel shuts down, a slow leak in a long-running process. A
+  cancelled request's message may still be confirmed by the broker; nobody is waiting for it
+  any more, and `OperationCanceledException` passes through the bus unwrapped.
+- **The first connect happens under the lock.** On the first publish, `GetChannelAsync` may
+  open the connection. If the broker is down, `CreateConnectionAsync` blocks until its
+  connection timeout, and every other publish queues behind the lock for that long.
+  `RequestedConnectionTimeout` in `RabbitMqConnection` (phase 1, 1.4) keeps that to 5 s. Once
+  the connection exists, automatic recovery takes over and this doesn't happen again.
+- **No limit on messages in flight.** Requests publish one or a few events each, so that's fine
+  here. An outbox dispatcher draining a large backlog could put thousands in flight at once —
+  when you build it, cap its batch size, or acquire a `SemaphoreSlim(maxInFlight)` before each
+  publish and release it when that message's task completes.
+- **`RunContinuationsAsynchronously`.** Without it, `TrySetResult` inside `OnAckAsync` would run
+  the caller's code — the rest of the HTTP request — on the client's event-dispatch thread,
+  delaying every ack behind it.
+- **Order.** Messages still leave in the order the lock is taken, so a single request's events
+  stay in order. Events from *different* concurrent requests have no meaningful order anyway.
 - **Exchange declared by the publisher.** `ExchangeDeclareAsync` is idempotent — re-declaring
   with the same arguments is a no-op — so it's safe on every new channel.
+- **Switching to built-in tracking later** means `publisherConfirmationTrackingEnabled: true`,
+  dropping the events, `_pending` and `PendingConfirm`, and awaiting `BasicPublishAsync` itself.
+  Nothing outside this class changes.
 
 ## 2.5 Subscriptions, discovered from handlers
 
@@ -336,79 +524,89 @@ Each consuming module gets one queue, bound to every integration event the modul
 for. Instead of listing the events by hand, read them from the handler types, so a new handler
 can't be forgotten in the binding list.
 
-`src/Dailu.Infrastructure/Messaging/RabbitMqSubscription.cs`:
+The work is split in two:
+
+| Part | Lives in | Knows about RabbitMQ? |
+|---|---|---|
+| **Declaring** a subscription: "module Y, queue X, handles events A, B, C" | `SharedInfrastructure/Event`, called from each module's own `Setup.cs` | no — it's a record in DI |
+| **Running** it: queues, bindings, the consumer | `Dailu.Infrastructure/Messaging` (publisher here, the worker in phase 3) | yes |
+
+Every module's `*.Infrastructure` references `SharedInfrastructure`, so the declaration side has
+to stay transport-free — no `RabbitMqOptions`, no `RabbitMQ.Client` types, no reference to
+`Dailu.Events`. The host side reads the declarations through `IEnumerable<IntegrationEventSubscription>`.
+
+`src/shared/SharedInfrastructure/Event/IntegrationEventSubscription.cs`:
 
 ```csharp
 /// <summary>A module's queue and the integration events bound to it.</summary>
-public sealed record RabbitMqSubscription(
+public sealed record IntegrationEventSubscription(
     string Queue,
     Assembly Module,                    // handlers are only invoked from this assembly
     FrozenSet<Type> EventTypes
-)
-{
-    public string RetryQueue => $"{Queue}.retry";
-    public string DeadLetterQueue => $"{Queue}.dlq";
-}
+);
 ```
 
-Add the registration helper to `Messaging/Setup.cs`:
+`src/shared/SharedInfrastructure/Event/IntegrationEventSubscriptionExtensions.cs`:
 
 ```csharp
-public static IServiceCollection AddRabbitMqConsumer<TModuleRoot>(
-    this IServiceCollection services,
-    string queue
-)
+public static class IntegrationEventSubscriptionExtensions
 {
-    if (!services.GetOptions<RabbitMqOptions>().IsEnabled)
+    public static IServiceCollection AddIntegrationEventSubscription<TModuleRoot>(
+        this IServiceCollection services,
+        string queue
+    )
     {
-        return services;                // in-memory bus runs every handler already
+        var module = typeof(TModuleRoot).Assembly;
+
+        var eventTypes = module
+            .GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false })
+            .SelectMany(t => t.GetInterfaces())
+            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>))
+            .Select(i => i.GetGenericArguments()[0])
+            .Where(e => typeof(IIntegrationEvent).IsAssignableFrom(e))
+            .ToFrozenSet();
+
+        if (eventTypes.Count == 0)
+        {
+            return services;            // nothing to consume; the line can stay for when a handler arrives
+        }
+
+        services.AddSingleton(new IntegrationEventSubscription(queue, module, eventTypes));
+
+        return services;
     }
-
-    var module = typeof(TModuleRoot).Assembly;
-
-    var eventTypes = module
-        .GetTypes()
-        .Where(t => t is { IsClass: true, IsAbstract: false })
-        .SelectMany(t => t.GetInterfaces())
-        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>))
-        .Select(i => i.GetGenericArguments()[0])
-        .Where(e => typeof(IIntegrationEvent).IsAssignableFrom(e))
-        .ToFrozenSet();
-
-    if (eventTypes.Count == 0)
-    {
-        throw new InvalidOperationException(
-            $"{module.GetName().Name} has no integration event handlers; don't give it a queue."
-        );
-    }
-
-    foreach (var eventType in eventTypes)
-    {
-        IntegrationEventTypes.NameOf(eventType);        // fail at startup, not on first message
-    }
-
-    services.AddSingleton(new RabbitMqSubscription(queue, module, eventTypes));
-
-    // phase 3: services.AddHostedService<RabbitMqConsumerWorker<TModuleRoot>>();
-
-    return services;
 }
 ```
 
-and to `AddRabbitMq()`:
+and to `AddRabbitMq()` in `Dailu.Infrastructure/Messaging/Setup.cs`:
 
 ```csharp
 services.AddSingleton<RabbitMqPublisher>();
 ```
 
+- **Why not `AddRabbitMqConsumer`.** The method no longer adds a consumer — it states what the
+  module handles. Whether that's consumed from RabbitMQ, or ignored because the in-memory bus
+  runs handlers directly, is the host's business.
 - `TModuleRoot` is the module's application-root marker (`ISearchApplicationRoot`), the same
   type already passed to `AddHandlerAssembly<ISearchApplicationRoot>()` — handlers live in that
   assembly.
 - **`IEventHandler<T>`** is what Dailu's handlers implement, so that's what the scan looks for.
   Phase 3 *invokes* them through `INotificationHandler<T>`, the interface Mediator registers.
-- **Disabled means no subscriptions.** `GetOptions` binds the section without validating it, the
-  same check `AddEvents` makes. When RabbitMQ is off, nothing is registered and the in-memory bus
-  runs every handler as before.
+- **No `IsEnabled` check.** Subscriptions are registered whether RabbitMQ is on or off. They're a
+  few records in DI; with the switch off nothing reads them — `InMemoryIntegrationEventBus`
+  doesn't, and the phase 3 worker isn't registered. That's what lets the declaration live in a
+  project that can't see `RabbitMqOptions`.
+- **No handlers → no subscription, not an error.** Every module calls this, including `identity`
+  and `tag`, which have no integration event handlers today. The day one of them gets a handler,
+  it gets a queue without touching any other file.
+- **Event names are checked on the host side.** `IntegrationEventTypes` lives in `Dailu.Events`,
+  which `SharedInfrastructure` doesn't reference. The phase 3 worker calls
+  `IntegrationEventTypes.NameOf` for every subscribed event in its constructor, which runs when
+  the host starts — still a startup failure, not one on the first message.
+- **Queue names stay unique by hand.** Two modules passing the same name would share one queue
+  and steal each other's messages. The worker's constructor is a good place to check that too
+  (`GroupBy(s => s.Queue)`).
 
 ## 2.6 The bus
 
@@ -450,7 +648,7 @@ it, and `EventDispatchingBehavior` in `SharedInfrastructure` catches it.
 ```csharp
 public sealed class RabbitMqIntegrationEventBus(
     RabbitMqPublisher publisher,
-    IEnumerable<RabbitMqSubscription> subscriptions,
+    IEnumerable<IntegrationEventSubscription> subscriptions,
     ILogger<RabbitMqIntegrationEventBus> logger
 ) : IIntegrationEventBus
 {
@@ -576,15 +774,24 @@ public static IServiceCollection AddEvents(this IServiceCollection services)
 
 ## 2.7 Subscribe the modules
 
-`src/api/Dailu.Api/Program.cs`, after the `Add*Module(...)` calls:
+Each module declares its own subscription in its `*.Infrastructure/Setup.cs`, right next to the
+`AddHandlerAssembly` call it already has. For `search`, in `AddSearchModule`:
 
 ```csharp
-builder
-    .Services.AddRabbitMqConsumer<IHabitApplicationRoot>("habit")
-    .AddRabbitMqConsumer<IHabitEntryApplicationRoot>("habit-entry")
-    .AddRabbitMqConsumer<IHabitUserApplicationRoot>("habit-user")
-    .AddRabbitMqConsumer<ISearchApplicationRoot>("search");
+services.AddHandlerAssembly<ISearchApplicationRoot>();
+services.AddIntegrationEventSubscription<ISearchApplicationRoot>("search");
 ```
+
+The same line, with the module's own marker and queue name, goes into:
+
+| `Setup.cs` | Call |
+|---|---|
+| `Habit.Infrastructure` | `AddIntegrationEventSubscription<IHabitApplicationRoot>("habit")` |
+| `HabitEntry.Infrastructure` | `AddIntegrationEventSubscription<IHabitEntryApplicationRoot>("habit-entry")` |
+| `HabitUser.Infrastructure` | `AddIntegrationEventSubscription<IHabitUserApplicationRoot>("habit-user")` |
+| `Search.Infrastructure` | `AddIntegrationEventSubscription<ISearchApplicationRoot>("search")` |
+| `Identity.Infrastructure` | `AddIntegrationEventSubscription<IIdentityApplicationRoot>("identity")` — registers nothing today |
+| `Tag.Infrastructure` | `AddIntegrationEventSubscription<ITagApplicationRoot>("tag")` — registers nothing today |
 
 The handlers these pick up today:
 
@@ -595,15 +802,17 @@ The handlers these pick up today:
 | `habit-user` | `IdentityUserCreatedIntegrationEvent` |
 | `search` | `HabitNameDescriptionChangedIntegrationEvent`, `HabitEntryNoteChangedIntegrationEvent`, `TagNameChangedIntegrationEvent` |
 
-- **Why `Program.cs` and not `Event/Setup.cs`.** The marker types live in each module's
-  `*.Application` project. `Dailu.Api` already sees them through the module `*.Infrastructure`
-  references; `Dailu.Infrastructure` doesn't, and shouldn't.
-- **`identity` and `tag` have no integration event handlers**, so they get no queue —
-  `AddRabbitMqConsumer` would throw for them.
-- **When a module gets its first integration event handler**, add its line here. Until you do,
-  its handler never runs. A good exercise: at startup, compare the assemblies of all registered
-  `INotificationHandler<T>` (with `T : IIntegrationEvent`) against the subscriptions and log an
-  error for any module that's missing.
+- **Why in the module and not in `Program.cs`.** The module already owns its handler
+  registration (`AddHandlerAssembly`); its subscription is the same fact seen from the broker's
+  side. Keeping both lines together means a module can't be wired for handlers but forgotten for
+  its queue, and the host doesn't need a list of every module's marker type.
+- **`identity` and `tag` have no integration event handlers**, so their call registers nothing
+  and they get no queue. When one of them gets its first handler, the queue appears on the next
+  start.
+- **Handlers outside the marker's assembly.** The scan only looks at `TModuleRoot`'s assembly.
+  `HabitUser.Github`, `.Strava` and `.GoogleHealth` have their own markers but no integration
+  event handlers today; if one ever gets one, give that assembly its own call and queue (one
+  queue per handler assembly, since the worker invokes handlers from exactly one assembly).
 
 From now on every handled integration event goes to RabbitMQ, and there's no consumer until
 phase 3. **All cross-module reactions pause** — registration doesn't create a `HabitUser`,
@@ -674,12 +883,16 @@ builder.ConfigureTestServices(services =>
    check from 2.3. Records with collections compare by reference, so compare those properties
    with `SequenceEqual`.
 2. **Subscriptions.** With `IsEnabled: true`, start the API with a breakpoint after `Build()` and
-   resolve `IEnumerable<RabbitMqSubscription>`: four entries, with exactly the events from the
-   table in 2.7.
+   resolve `IEnumerable<IntegrationEventSubscription>`: four entries (none for `identity` and
+   `tag`), with exactly the events from the table in 2.7. It's the same with `IsEnabled: false` —
+   subscriptions don't depend on the switch.
 3. **Unroutable.** Rename a tag. The request succeeds and the log shows "Failed to publish
-   TagNameChangedIntegrationEvent" with a return/unroutable error: the exchange exists
-   (**Exchanges** tab → `dailu.integration`) but no queue is bound yet. This is `mandatory` at
-   work.
+   TagNameChangedIntegrationEvent" with the inner error "…is unroutable: no queue is bound for
+   it": the exchange exists (**Exchanges** tab → `dailu.integration`) but no queue is bound yet.
+   This is `mandatory` at work, and it proves `OnReturnAsync` ran *before* `OnAckAsync` — if the
+   rename logged nothing, the ack won and the return-then-ack assumption from 2.4 doesn't hold
+   for your client version. Put breakpoints in both handlers once and watch the order and the
+   `x-publish-seq` header.
 4. **A temporary queue.** In the UI: **Queues → Add a new queue**, name `all-temp`, type
    *Classic*. Open `dailu.integration` → **Bindings** → bind `all-temp` with routing key `#`
    (matches everything).
@@ -692,12 +905,18 @@ builder.ConfigureTestServices(services =>
    requests are noticeably faster than before (no embedding call).
 7. **Unhandled event.** If you can trigger `IdentityUserProfileUpdatedIntegrationEvent`, it
    doesn't appear in `all-temp` and the debug log says "No module handles".
-8. `docker compose stop dailo.rabbitmq`, rename a tag: the request still succeeds, the error is
-   logged. Start the broker again; the next publish works without restarting the API
-   (automatic recovery on the existing connection, new channel in `GetChannelAsync`).
-9. Set `RabbitMq:IsEnabled` to `false`, restart: renaming a tag indexes it synchronously again,
-   and registering creates the `HabitUser` row immediately. **Leave it `false`** until phase 3.
-10. **Delete `all-temp`** (and its binding) before phase 3. Phase 3 declares its own queues with
+8. **Concurrency.** Fire about 50 tag renames in parallel (a loop in a script, or several
+   requests in a `.http` file run together). Every request succeeds, `all-temp` gains 50
+   messages, and nothing logs "event is lost". Set a breakpoint in `OnAckAsync` once: you'll see
+   `Multiple = true` acks covering several sequence numbers at a time.
+9. **Channel loss.** Start the same burst and `docker compose stop dailo.rabbitmq` while it
+   runs. Every in-flight publish fails within a moment ("Channel closed before the broker
+   confirmed") — nothing waits for the 10 s timeout, no request hangs. Start the broker again; the
+   next publish works without restarting the API (automatic recovery on the existing connection,
+   or a new channel in `GetChannelAsync`), and the sequence numbers start from 1 again.
+10. Set `RabbitMq:IsEnabled` to `false`, restart: renaming a tag indexes it synchronously again,
+    and registering creates the `HabitUser` row immediately. **Leave it `false`** until phase 3.
+11. **Delete `all-temp`** (and its binding) before phase 3. Phase 3 declares its own queues with
     specific arguments; leftover queues are confusing in the UI and a queue with the same name
     but different arguments makes the declare fail with `PRECONDITION_FAILED`.
 

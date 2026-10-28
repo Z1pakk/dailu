@@ -5,4 +5,7 @@
   <ItemGroup>
     <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\SharedKernel\SharedKernel.csproj" />
+  </ItemGroup>
 </Project>

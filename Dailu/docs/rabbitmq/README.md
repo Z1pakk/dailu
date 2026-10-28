@@ -8,7 +8,8 @@ of being lost.
 
 The broker plumbing lives in `Dailu.Infrastructure/Messaging`, which only the API host
 references, so no module depends on RabbitMQ. Modules keep publishing through
-`IIntegrationEventBus` and keep writing ordinary `IEventHandler<T>` classes. Plain
+`IIntegrationEventBus`, keep writing ordinary `IEventHandler<T>` classes, and declare which
+queue their handlers consume with one transport-free line in their own `Setup.cs`. Plain
 `RabbitMQ.Client` is used on purpose — the point is to learn RabbitMQ itself (exchanges, queues,
 bindings, acks, confirms, dead-lettering), not a framework that hides it.
 
@@ -53,7 +54,7 @@ target  command ──► SaveChanges ──► EventDispatchingBehavior ──�
                                               │             │                │              │
                                            "habit"    "habit-entry"    "habit-user"     "search"
                                               │             │                │              │
-                                      RabbitMqConsumerWorker<TModuleRoot>, one per module
+                                      RabbitMqConsumerWorker ──► a RabbitMqQueueConsumer per module queue
                                         scope per message ──► that module's handlers only
                                           ├─ ok      ──► ack
                                           └─ throws  ──► nack ──► "<queue>.retry" (TTL 10 s) ──► back to "<queue>"
@@ -73,8 +74,9 @@ starts no consumers — today's behaviour, for running without Docker.
   processes it at its own pace. The worker for a queue only calls handlers from *that* module's
   assembly, so modules can't trigger each other's handlers twice.
 - **Publisher confirms.** `BasicPublishAsync` returning doesn't mean the broker has the message.
-  With confirms enabled, the broker acks once the message is safely in the queue (persisted for
-  durable queues); the client awaits that ack and throws if it's nacked.
+  With confirms enabled, the broker numbers every publish on the channel and later acks (or
+  nacks) it by that number, once the message is safely in the queue (persisted for durable
+  queues). Dailu's publisher matches those acks to waiting callers itself (phase 2, 2.4).
 - **Consumer acknowledgements.** With `autoAck: false` the broker keeps a delivered message until
   the consumer acks it. Crash mid-handler and the message is redelivered. That makes delivery
   **at-least-once** — every handler must be safe to run twice. `SearchIndexService` already is
@@ -98,15 +100,16 @@ starts no consumers — today's behaviour, for running without Docker.
 | Client library | **`RabbitMQ.Client` 7.x** (async API) | Learning goal; MassTransit/Wolverine hide the topology. MassTransit v9 is also commercially licensed |
 | Which events | **All integration events** go through the broker | One delivery model for every handler; no per-event routing to keep in sync |
 | Where the code lives | **`Dailu.Infrastructure/Messaging`**; bus selection in `Dailu.Infrastructure/Event/Setup.cs` | Only `Dailu.Api` and `Dailu.MigrationsRunner` reference `Dailu.Infrastructure`, so no module can depend on RabbitMQ |
-| Who registers consumers | **`Dailu.Api/Program.cs`**, one `AddRabbitMqConsumer<TModuleRoot>("queue")` per module | The module marker types live in `*.Application`, which `Dailu.Infrastructure` can't see; the API host sees every module |
+| Who registers consumers | **Split.** Each module declares `AddIntegrationEventSubscription<TModuleRoot>("queue")` (in `SharedInfrastructure/Event`) in its own `Setup.cs`, next to `AddHandlerAssembly`; one `RabbitMqConsumerWorker` in `Dailu.Infrastructure` consumes every declared subscription | The module owns the fact "these are my handlers, this is my queue", so it can't be forgotten in a host-side list; the declaration is a plain record, so modules still don't depend on RabbitMQ |
 | Subscriptions | **Discovered from the module's handlers** (`IEventHandler<T>` where `T : IIntegrationEvent`) | Adding a handler can't silently miss its binding |
 | Switch | **`RabbitMq:IsEnabled`**: `true` → RabbitMQ bus and consumers, `false` → `InMemoryIntegrationEventBus`, nothing RabbitMQ registered | Run the API without Docker; base `appsettings.json` stays off until production has a broker |
-| Hosting | **Consumers run in the API process** as `BackgroundService`s | Modular monolith: one deployable. Moving a worker to its own host later only changes where `AddRabbitMqConsumer` is called |
+| Hosting | **Consumers run in the API process** as `BackgroundService`s | Modular monolith: one deployable. Moving consumers to their own host later means registering `RabbitMqConsumerWorker` there and the module's `Setup.cs` along with it |
 | Topology | **One topic exchange `dailu.integration`; one quorum queue per module**; routing key = event type name | Standard fan-out-per-consumer layout; adding a consumer never touches the publisher |
 | Who declares what | **Publisher declares the exchange, each consumer declares its own queues and bindings** | Declarations are idempotent; no separate "provisioning" step to forget |
 | Serialization | **`System.Text.Json`**, event type name in the AMQP `type` property, a fresh `message_id` per publish | Readable in the management UI; same type registry as the outbox guide |
 | Ordering | **prefetch 1, one consumer per queue** | Events carry full state; parallel consumers could apply an older edit after a newer one |
 | Retries | **nack → retry queue (TTL 10 s) → main queue; 5 attempts, then `<queue>.dlq`** | An Ollama restart doesn't lose events; a poison message doesn't loop forever |
+| Publisher confirms | **Tracked by hand** (tutorial 7's asynchronous strategy): a sequence number per publish, a pending task per number, ack/nack/return/shutdown events complete them; the lock covers sending only | Learning goal — it shows what a confirm is. Many messages can wait for acks at once. The client's built-in tracking is a drop-in replacement inside `RabbitMqPublisher` |
 | Publish failures | **The bus throws `IntegrationEventPublishException`; the caller decides** — `EventDispatchingBehavior` logs it (the command already committed), a consumer lets it propagate and retries | The bus can't tell a request from a consumer; swallowing inside a consumer would ack a message whose follow-up event was never sent |
 | Handler contract | **Throw = retry, return = done** | A transient failure (Ollama down) must throw; a permanent one (wrong vector size) is logged and returned, retrying won't fix it |
 | Tests | **`FakeIntegrationEventBus`** in `Test.SharedKernel` records events; cross-module tests use `InMemoryIntegrationEventBus` | No broker in tests; asserting "this command published X" stays one line |

@@ -1,4 +1,5 @@
 using Mediator;
+using Microsoft.Extensions.Logging;
 using SharedKernel.Event;
 using SharedKernel.Persistence;
 
@@ -6,7 +7,8 @@ namespace SharedInfrastructure.Pipeline;
 
 public abstract class EventDispatchingBehavior<TMessage, TResponse, TDbContext>(
     IEventDispatcher eventDispatcher,
-    TDbContext dbContext
+    TDbContext dbContext,
+    ILogger<EventDispatchingBehavior<TMessage, TResponse, TDbContext>> logger
 ) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : notnull, IMessage
     where TDbContext : IAppDbContextBase
@@ -25,7 +27,15 @@ public abstract class EventDispatchingBehavior<TMessage, TResponse, TDbContext>(
             return response;
         }
 
-        await eventDispatcher.SendAsync(events, cancellationToken);
+        try
+        {
+            await eventDispatcher.SendAsync(events, cancellationToken);
+        }
+        catch (IntegrationEventPublishException ex)
+        {
+            // the command has already committed; failing the request now wouldn't undo it
+            logger.LogError(ex, "Failed to publish {EventType}; the event is lost", ex.EventType);
+        }
 
         return response;
     }

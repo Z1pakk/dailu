@@ -186,6 +186,7 @@ public sealed class RabbitMqConnection(RabbitMqOptions options) : IAsyncDisposab
                 ClientProvidedName = "dailu-api",          // shown in the UI's Connections tab
                 AutomaticRecoveryEnabled = true,           // default, spelled out on purpose
                 TopologyRecoveryEnabled = true,
+                RequestedConnectionTimeout = TimeSpan.FromSeconds(5),   // fail fast if the broker is down
             };
 
             _connection = await factory.CreateConnectionAsync(ct);
@@ -217,6 +218,10 @@ public sealed class RabbitMqConnection(RabbitMqOptions options) : IAsyncDisposab
   broker isn't up yet (common right after `docker compose up`). Creating it on first use lets the
   callers decide what to do: a publish fails with an exception (phase 2 decides who catches it),
   and the consumer worker retries connecting.
+- **Short connection timeout.** The default is much longer. The publisher (phase 2) opens the
+  connection while holding its lock, so a long timeout with the broker down would make every
+  request wait that long before its publish fails. 5 s is plenty for a broker on the same
+  network.
 - **Automatic recovery** reconnects after a network blip or broker restart, re-declares queues,
   exchanges and bindings, and restarts consumers. It does *not* cover the very first connect —
   hence the retry loop in phase 3.

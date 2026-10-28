@@ -16,6 +16,7 @@ using Search.Infrastructure.Options;
 using Search.Infrastructure.Pipeline;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 using SharedInfrastructure.Options;
 
 namespace Search.Infrastructure;
@@ -38,6 +39,8 @@ public static class Setup
         // services.AddEndpoints(assemblies: HabitUserApiRoot.Assembly);
 
         services.AddHandlerAssembly<ISearchApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<ISearchApplicationRoot>("search");
 
         services.AddAiClients();
 

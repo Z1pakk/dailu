@@ -12,12 +12,36 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 
 namespace HabitEntry.Infrastructure;
 
 public static class Setup
 {
     public const string HabitEntryDbConnectionString = "HabitEntryPostgresConnectionString";
+
+    public static IServiceCollection AddHabitEntryModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddHabitEntryPersistence(configuration);
+
+        services.AddScoped(
+            typeof(IPipelineBehavior<,>),
+            typeof(HabitEntryEventDispatchingBehavior<,>)
+        );
+
+        services.AddValidatorsFromAssemblyContaining<IHabitEntryApplicationRoot>();
+
+        services.AddEndpoints(assemblies: HabitEntryApiRoot.Assembly);
+
+        services.AddHandlerAssembly<IHabitEntryApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<IHabitEntryApplicationRoot>("habit-entry");
+
+        return services;
+    }
 
     public static IServiceCollection AddHabitEntryPersistence(
         this IServiceCollection services,
@@ -49,29 +73,6 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
-
-        return services;
-    }
-
-    public static IServiceCollection AddHabitEntryModule(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.AddHabitEntryPersistence(configuration);
-
-        services.AddScoped(
-            typeof(IPipelineBehavior<,>),
-            typeof(HabitEntryEventDispatchingBehavior<,>)
-        );
-
-        services.AddValidatorsFromAssemblyContaining<IHabitEntryApplicationRoot>();
-
-        services.AddEndpoints(assemblies: HabitEntryApiRoot.Assembly);
-
-        services.AddHandlerAssembly<IHabitEntryApplicationRoot>();
-
-        services.AddHabitEntryIntegrations();
 
         return services;
     }

@@ -1,7 +1,7 @@
 # Phase 3 — Consuming, retries, dead-lettering
 
-**Goal:** a reusable background worker per consuming module — `habit`, `habit-entry`,
-`habit-user`, `search` — that consumes its queue, calls only that module's handlers in a fresh
+**Goal:** one background worker that starts a consumer for every subscribed module — `habit`,
+`habit-entry`, `habit-user`, `search`. Each consumer reads its queue, calls only that module's handlers in a fresh
 DI scope, acks on success, retries failures after a delay, and parks messages that keep failing.
 Every cross-module reaction runs again, off the request path, and every handler is safe to run
 twice.
@@ -16,8 +16,9 @@ src/Dailu.Infrastructure/Messaging/
 ├── RabbitMqTopology.cs               ← + DeclareConsumerAsync: main, retry and dead-letter queues
 ├── DeathHeader.cs                    ← reads the attempt count from x-death
 ├── ModuleHandlers.cs                 ← invokes INotificationHandler<T> from one assembly only
-├── RabbitMqConsumerWorker.cs         ← BackgroundService per module
-└── Setup.cs                          ← AddRabbitMqConsumer registers the worker
+├── RabbitMqQueueConsumer.cs          ← one queue: channel, deliveries, ack / retry / park
+├── RabbitMqConsumerWorker.cs         ← one BackgroundService, a RabbitMqQueueConsumer per subscription
+└── Setup.cs                          ← AddRabbitMq registers the worker
 ```
 
 The same topology repeats for each of the four queues. Here it is for `search`:
@@ -50,12 +51,17 @@ Each consumer declares its own three queues. Add to `RabbitMqTopology.cs`:
 ```csharp
 public const int RetryDelayMs = 10_000;
 
+public static string RetryQueueOf(string queue) => $"{queue}.retry";
+public static string DeadLetterQueueOf(string queue) => $"{queue}.dlq";
+
 public static async Task DeclareConsumerAsync(
     IChannel channel,
-    RabbitMqSubscription subscription,
+    IntegrationEventSubscription subscription,
     CancellationToken ct
 )
 {
+    var retryQueue = RetryQueueOf(subscription.Queue);
+
     await channel.ExchangeDeclareAsync(Exchange, ExchangeType.Topic, durable: true, autoDelete: false, cancellationToken: ct);
 
     await channel.QueueDeclareAsync(
@@ -67,13 +73,13 @@ public static async Task DeclareConsumerAsync(
         {
             ["x-queue-type"] = "quorum",
             ["x-dead-letter-exchange"] = "",                       // default exchange: routes by queue name
-            ["x-dead-letter-routing-key"] = subscription.RetryQueue,
+            ["x-dead-letter-routing-key"] = retryQueue,
         },
         cancellationToken: ct
     );
 
     await channel.QueueDeclareAsync(
-        subscription.RetryQueue,
+        retryQueue,
         durable: true,
         exclusive: false,
         autoDelete: false,
@@ -88,7 +94,7 @@ public static async Task DeclareConsumerAsync(
     );
 
     await channel.QueueDeclareAsync(
-        subscription.DeadLetterQueue,
+        DeadLetterQueueOf(subscription.Queue),
         durable: true,
         exclusive: false,
         autoDelete: false,
@@ -108,6 +114,9 @@ public static async Task DeclareConsumerAsync(
 }
 ```
 
+- **Retry and dead-letter names live here, not on the subscription.** `.retry` / `.dlq` are a
+  RabbitMQ topology detail; `IntegrationEventSubscription` in `SharedInfrastructure` only knows
+  the main queue's name.
 - **The default exchange (`""`)** routes a message to the queue whose name equals the routing
   key. Using it as the dead-letter exchange means no extra exchanges for retries: dead-lettering
   from `search` with routing key `search.retry` lands in `search.retry`, and vice versa.
@@ -233,24 +242,29 @@ internal static class ModuleHandlers
 
 ## 3.4 The worker
 
-`src/Dailu.Infrastructure/Messaging/RabbitMqConsumerWorker.cs`:
+Two classes: a plain `RabbitMqQueueConsumer` that handles one queue, and one hosted
+`RabbitMqConsumerWorker` that creates a consumer per subscription the modules declared (phase 2,
+2.5).
+
+`src/Dailu.Infrastructure/Messaging/RabbitMqQueueConsumer.cs`:
 
 ```csharp
-public sealed class RabbitMqConsumerWorker<TModuleRoot>(
-    IEnumerable<RabbitMqSubscription> subscriptions,
+/// <summary>Consumes one module's queue. Created by <see cref="RabbitMqConsumerWorker"/>, not by DI.</summary>
+public sealed class RabbitMqQueueConsumer(
+    IntegrationEventSubscription subscription,
     RabbitMqConnection connection,
     IServiceScopeFactory scopeFactory,
-    ILogger<RabbitMqConsumerWorker<TModuleRoot>> logger
-) : BackgroundService
+    ILogger<RabbitMqQueueConsumer> logger
+)
 {
     private const int MaxAttempts = 5;
 
-    private readonly RabbitMqSubscription _subscription =
-        subscriptions.Single(s => s.Module == typeof(TModuleRoot).Assembly);
+    private readonly IntegrationEventSubscription _subscription = subscription;
+    private readonly string _deadLetterQueue = RabbitMqTopology.DeadLetterQueueOf(subscription.Queue);
 
     private IChannel? _channel;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task RunAsync(CancellationToken stoppingToken)
     {
         // automatic recovery only covers connections that were established once,
         // so the first connect (broker still starting) is retried here
@@ -348,7 +362,7 @@ public sealed class RabbitMqConsumerWorker<TModuleRoot>(
             "Parking {EventType} {MessageId} in {DeadLetterQueue}",
             delivery.BasicProperties.Type,
             delivery.BasicProperties.MessageId,
-            _subscription.DeadLetterQueue
+            _deadLetterQueue
         );
 
         var properties = new BasicProperties(delivery.BasicProperties)
@@ -362,11 +376,11 @@ public sealed class RabbitMqConsumerWorker<TModuleRoot>(
         };
 
         // body is only valid until this handler returns, so publish before acking
-        await channel.BasicPublishAsync("", _subscription.DeadLetterQueue, mandatory: false, properties, delivery.Body);
+        await channel.BasicPublishAsync("", _deadLetterQueue, mandatory: false, properties, delivery.Body);
         await channel.BasicAckAsync(delivery.DeliveryTag, multiple: false);
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         if (_channel is not null)
         {
@@ -374,23 +388,81 @@ public sealed class RabbitMqConsumerWorker<TModuleRoot>(
             await _channel.CloseAsync(cancellationToken);
             await _channel.DisposeAsync();
         }
+    }
+}
+```
+
+`src/Dailu.Infrastructure/Messaging/RabbitMqConsumerWorker.cs`:
+
+```csharp
+public sealed class RabbitMqConsumerWorker : BackgroundService
+{
+    private readonly RabbitMqQueueConsumer[] _consumers;
+
+    public RabbitMqConsumerWorker(
+        IEnumerable<IntegrationEventSubscription> subscriptions,
+        RabbitMqConnection connection,
+        IServiceScopeFactory scopeFactory,
+        ILogger<RabbitMqQueueConsumer> consumerLogger
+    )
+    {
+        var all = subscriptions.ToArray();
+
+        // runs when the host starts: a bad subscription fails startup, not the first message
+        var duplicate = all.GroupBy(s => s.Queue).FirstOrDefault(g => g.Count() > 1);
+        if (duplicate is not null)
+        {
+            throw new InvalidOperationException($"Queue '{duplicate.Key}' is subscribed by more than one module.");
+        }
+
+        foreach (var eventType in all.SelectMany(s => s.EventTypes))
+        {
+            IntegrationEventTypes.NameOf(eventType);
+        }
+
+        _consumers = all
+            .Select(s => new RabbitMqQueueConsumer(s, connection, scopeFactory, consumerLogger))
+            .ToArray();
+    }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+        Task.WhenAll(_consumers.Select(c => c.RunAsync(stoppingToken)));
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        foreach (var consumer in _consumers)
+        {
+            await consumer.StopAsync(cancellationToken);
+        }
 
         await base.StopAsync(cancellationToken);
     }
 }
 ```
 
-Then enable it in `AddRabbitMqConsumer` (phase 2, 2.5):
+Register it in `AddRabbitMq()` (`Messaging/Setup.cs`), next to the publisher:
 
 ```csharp
-services.AddHostedService<RabbitMqConsumerWorker<TModuleRoot>>();
+services.AddHostedService<RabbitMqConsumerWorker>();
 ```
 
-The generic parameter makes each module's worker a distinct type, so `AddHostedService`
-registers one per module instead of deduplicating them.
-
-- **No `IsEnabled` check in the worker.** `AddRabbitMqConsumer` returns before registering
-  anything when RabbitMQ is off, so the worker only exists when it should run.
+- **One worker, one consumer per queue.** The worker isn't tied to any module. It reads whatever
+  subscriptions the modules declared, so there's no generic `TModuleRoot` and no per-module
+  registration in the host. Each `RabbitMqQueueConsumer` has its own channel, prefetch and
+  start-up retry loop, so one queue failing to start (e.g. `PRECONDITION_FAILED` on a changed
+  argument) doesn't stop the others.
+- **No `IsEnabled` check in the worker.** `AddRabbitMq()` is only called when RabbitMQ is on
+  (phase 1, 1.5), so the worker only exists when it should run. With the switch off, the
+  subscriptions are still in DI, but nothing reads them.
+- **Consumers aren't in DI.** The worker creates them with `new`, because there's one per
+  subscription and their only varying input is that subscription. They share one logger
+  category; the queue name is in every log line.
+- **Startup checks in the constructor.** Hosted services are constructed when the host starts,
+  so an event type missing from `IntegrationEventTypes`, or two modules claiming the same queue,
+  stops the API before it serves a request — the check `AddRabbitMqConsumer` used to make.
+- **`ExecuteAsync` returns only once every queue is consuming.** If the broker is down, the
+  `Task.WhenAll` simply waits while each consumer retries. It doesn't block the rest of the
+  host: `BackgroundService` starts `ExecuteAsync` without waiting for it to finish.
 - **Manual acks.** `autoAck: false` means the broker keeps the message until you ack it. If the
   API crashes while a handler is running, the message is redelivered on the next start.
 - **New scope per message.** Handlers get a fresh `DbContext` and scoped services, like the
@@ -401,8 +473,8 @@ registers one per module instead of deduplicating them.
   the next module receives it from its own queue. If that publish fails, the bus throws
   `IntegrationEventPublishException` (phase 2, 2.6), nothing catches it — handlers aren't called
   through `EventDispatchingBehavior` here — and the incoming message is retried.
-- **`ExecuteAsync` returns after subscribing.** The consumer keeps running on the client's
-  dispatcher; the hosted service doesn't need to loop. Automatic recovery re-registers the
+- **`RunAsync` returns after subscribing.** The consumer keeps running on the client's
+  dispatcher; nothing needs to loop. Automatic recovery re-registers the
   consumer after a broker restart.
 - **Parking without confirms.** The consumer channel has no publisher confirms, so a broker crash
   in the instant between the DLQ publish and the ack could lose a parked message. Acceptable for
@@ -507,7 +579,7 @@ handlers skip messages older than what's stored.
 10. **Broker restart.** `docker compose restart dailo.rabbitmq` while the API runs. The log shows
     recovery; editing a habit afterwards still indexes it, and the queues kept their messages.
 11. **Broker not running at startup.** Stop RabbitMQ, start the API: each worker logs "Can't
-    start consuming <queue>; retrying in 10 s" and the API serves requests. Start RabbitMQ:
+    start consuming <queue>; retrying in 10 s" for each queue, and the API serves requests. Start RabbitMQ:
     consumption starts on its own.
 12. `RabbitMq:IsEnabled = false`: no consumers, no queues touched, every handler runs
     synchronously in the request again.
@@ -523,8 +595,10 @@ Commit: `Consume integration events from RabbitMQ`.
   closes that gap; its dispatcher publishes through `IIntegrationEventBus`, so events reach
   RabbitMQ from the outbox table instead of directly from the request. Its inbox phase replaces
   the hand-written existence checks from 3.6 with one generic mechanism.
-- **New modules with handlers.** Give them a queue in `Program.cs` (phase 2, 2.7) — or build the
-  startup check suggested there, so a missing line fails loudly.
+- **New modules with handlers.** Add `AddIntegrationEventSubscription<TModuleRoot>("queue")` to
+  the module's `Setup.cs`, next to `AddHandlerAssembly` (phase 2, 2.7). A good exercise: at
+  startup, compare the assemblies of all registered `INotificationHandler<T>` (with
+  `T : IIntegrationEvent`) against the subscriptions and fail for any assembly that's missing.
 - **Exponential backoff** with several retry queues (3.1).
 - **Observability.** Add the message id and event type to the log scope in `OnReceivedAsync`;
   later, propagate the trace context in message headers so a request and the background work it

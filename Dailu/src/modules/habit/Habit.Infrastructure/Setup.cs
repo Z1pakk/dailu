@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 
 namespace Habit.Infrastructure;
 
@@ -34,6 +35,8 @@ public static class Setup
         services.AddEndpoints(assemblies: HabitApiRoot.Assembly);
 
         services.AddHandlerAssembly<IHabitApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<IHabitApplicationRoot>("habit");
 
         services.AddHabitTransferServices();
 

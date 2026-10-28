@@ -36,6 +36,7 @@ public class RabbitMqConnection(RabbitMqOptions options) : IAsyncDisposable
                 ClientProvidedName = "dailu-api", // shown in the UI's Connections tab
                 AutomaticRecoveryEnabled = true, // default, spelled out on purpose
                 TopologyRecoveryEnabled = true,
+                RequestedConnectionTimeout = TimeSpan.FromSeconds(20),
             };
 
             _connection = await factory.CreateConnectionAsync(cancellationToken);
