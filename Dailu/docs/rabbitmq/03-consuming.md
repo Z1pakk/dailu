@@ -19,6 +19,9 @@ src/Dailu.Infrastructure/Messaging/
 ├── RabbitMqQueueConsumer.cs          ← one queue: channel, deliveries, ack / retry / park
 ├── RabbitMqConsumerWorker.cs         ← one BackgroundService, a RabbitMqQueueConsumer per subscription
 └── Setup.cs                          ← AddRabbitMq registers the worker
+
+src/shared/SharedKernel/Persistence/IAppDbContextBase.cs         ← + ExecuteLockedAsync (3.6)
+src/shared/SharedInfrastructure/Persistence/AppDbContextBase.cs  ← advisory-lock implementation (3.6)
 ```
 
 The same topology repeats for each of the four queues. Here it is for `search`:
@@ -238,7 +241,7 @@ internal static class ModuleHandlers
 - **Several handlers, one message.** `habit` has four handlers for
   `IntegrationActivitiesDetectedIntegrationEvent`. If one throws, the retry runs all four again.
   Every handler must be safe to repeat — that's at-least-once delivery, not a quirk of this code.
-  3.6 goes through the current handlers.
+  3.7 goes through the current handlers.
 
 ## 3.4 The worker
 
@@ -403,7 +406,7 @@ public sealed class RabbitMqConsumerWorker : BackgroundService
         IEnumerable<IntegrationEventSubscription> subscriptions,
         RabbitMqConnection connection,
         IServiceScopeFactory scopeFactory,
-        ILogger<RabbitMqQueueConsumer> consumerLogger
+        ILoggerFactory loggerFactory
     )
     {
         var all = subscriptions.ToArray();
@@ -419,6 +422,8 @@ public sealed class RabbitMqConsumerWorker : BackgroundService
         {
             IntegrationEventTypes.NameOf(eventType);
         }
+
+        var consumerLogger = loggerFactory.CreateLogger<RabbitMqQueueConsumer>();
 
         _consumers = all
             .Select(s => new RabbitMqQueueConsumer(s, connection, scopeFactory, consumerLogger))
@@ -457,6 +462,9 @@ services.AddHostedService<RabbitMqConsumerWorker>();
 - **Consumers aren't in DI.** The worker creates them with `new`, because there's one per
   subscription and their only varying input is that subscription. They share one logger
   category; the queue name is in every log line.
+- **`ILoggerFactory`, not `ILogger<RabbitMqQueueConsumer>`.** Injecting another type's logger
+  into the worker trips SonarAnalyzer S6672 ("use its enclosing type"), which fails the build.
+  Creating it from the factory is the intended way for objects you construct yourself.
 - **Startup checks in the constructor.** Hosted services are constructed when the host starts,
   so an event type missing from `IntegrationEventTypes`, or two modules claiming the same queue,
   stops the API before it serves a request — the check `AddRabbitMqConsumer` used to make.
@@ -495,45 +503,276 @@ The worker's contract is **throw = retry, return = done**. Look at the three han
   `HttpClient` timeout stalls the whole `search` queue. Give the embedding client a timeout of a
   few seconds, as `02-indexing.md` already recommends.
 
-## 3.6 Making the other handlers safe to repeat
+## 3.6 A database lock: `ExecuteLockedAsync`
+
+At-least-once delivery means a handler and a request (or two deliveries of the same message) can
+run the same "check, then insert" at the same moment. Both see "missing", both insert. 3.7 needs
+exactly this for the `HabitUser`, and it won't be the last place.
+
+Check-then-insert is only safe if two callers can't run it for the same key at the same time.
+An in-process `SemaphoreSlim` can't promise that (a second API instance, or consumers moved to
+their own host, has its own), and `SELECT … FOR UPDATE` can't lock a row that doesn't exist yet.
+A **Postgres advisory lock** can: a lock on an arbitrary number, held by the transaction,
+respected by every connection to the database.
+
+This section only adds the tool. Nothing uses it until 3.7.
+
+Put it next to `ExecuteTransactionalAsync`, so every module's DbContext gets it.
+
+`src/shared/SharedKernel/Persistence/IAppDbContextBase.cs`, add:
+
+```csharp
+/// <summary>
+/// Runs <paramref name="action"/> in a transaction that first takes a database-wide lock on
+/// <paramref name="lockKey"/>. Concurrent calls with the same key — from any process — run one
+/// after another. Pending changes are saved and committed at the end, like ExecuteTransactionalAsync.
+/// </summary>
+Task<T> ExecuteLockedAsync<T>(
+    string lockKey,
+    Func<Task<T>> action,
+    CancellationToken cancellationToken = default
+);
+```
+
+`src/shared/SharedInfrastructure/Persistence/AppDbContextBase.cs`, add:
+
+```csharp
+public Task<T> ExecuteLockedAsync<T>(
+    string lockKey,
+    Func<Task<T>> action,
+    CancellationToken cancellationToken = default
+) =>
+    ExecuteTransactionalAsync(
+        async () =>
+        {
+            // give up instead of waiting forever if the holder is stuck
+            await Database.ExecuteSqlRawAsync("SET LOCAL lock_timeout = '5s'", cancellationToken);
+
+            // released automatically at commit or rollback
+            await Database.ExecuteSqlAsync(
+                $"SELECT pg_advisory_xact_lock(hashtextextended({lockKey}, 0))",
+                cancellationToken
+            );
+
+            return await action();
+        },
+        cancellationToken
+    );
+```
+
+- **`pg_advisory_xact_lock`, never `pg_advisory_lock`.** The `_xact_` variant belongs to the
+  transaction and is released at commit or rollback. The session variant belongs to the
+  *connection*, and with connection pooling a lock you forget to release stays on a pooled
+  connection that some unrelated request picks up later.
+- **The key is text, the lock is a number.** `hashtextextended(key, 0)` turns the string into the
+  64-bit number Postgres locks on. Two different keys could hash to the same number; then they
+  just wait for each other once. That's harmless.
+- **The key is a parameter.** `ExecuteSqlAsync` with an interpolated string sends `{lockKey}` as
+  a SQL parameter, not as text in the query, so a key can't inject SQL. `SET LOCAL` can't take
+  parameters, which is why its value is a constant.
+- **`lock_timeout` bounds the wait.** If a holder hangs, the waiter fails after 5 s with a
+  "lock not available" error instead of hanging the request. In a consumer, that's a normal
+  retry.
+- **Namespace your keys.** Advisory locks are database-wide, so use keys like
+  `habit-user:{id}`, not just `{id}`.
+- **No Npgsql types.** It's Postgres-specific SQL, but plain EF APIs, so `SharedInfrastructure`
+  needs no new reference. The whole app runs on Postgres anyway.
+- **Don't nest it.** It starts its own transaction, so calling it inside another
+  `ExecuteTransactionalAsync` fails ("a transaction is already in progress").
+- **It saves everything pending.** Like `ExecuteTransactionalAsync`, it calls `SaveChangesAsync`
+  at the end, so call it *before* making other changes on the same context, or they're committed
+  with it.
+- **A lock doesn't replace a unique constraint.** It only protects code that takes it. Anything
+  that writes without it (a script, a migration, a future command) isn't stopped. Wherever you
+  use it to prevent duplicates, keep a unique index as the guarantee.
+
+**Verify.** Write a small test or a scratch endpoint: two tasks call `ExecuteLockedAsync` with the
+same key, each `await Task.Delay(2000)` inside. The second one finishes about 2 s after the first.
+With different keys, both finish together. In `psql`, `SELECT * FROM pg_locks WHERE locktype =
+'advisory';` shows the lock while the first one holds it.
+
+## 3.7 Making the other handlers safe to repeat
 
 Same contract, plus at-least-once: any message can arrive twice. Go through each handler and ask
 "what happens on the second run?"
 
 | Handler | Second run today | What to do |
 |---|---|---|
-| `IdentityUserCreatedIntegrationEventHandler` (`habit-user`) | Inserts **another** `HabitUser` row — there's no unique index on `IdentityUserId` | Return early if a `HabitUser` for that `IdentityUserId` exists, **and** add a unique index on it (a migration) so a race between two deliveries fails with a constraint error instead of a duplicate |
+| `IdentityUserCreatedIntegrationEventHandler` (`habit-user`) | Inserts **another** `HabitUser` row — there's no unique index on `IdentityUserId` | Add a unique index on `IdentityUserId` and create the user through `GetOrCreateHabitUserAsync` — both in "The registration race" below |
 | `HabitEntryCreatedIntegrationEventHandler` (`habit`) | Safe: `HabitAggregate.Complete` returns early when `completedAtUtc <= LastCompletedAtUtc` | Nothing. A concurrency conflict on `Version` (the user edited the habit at the same moment) throws and is retried, which is what you want |
 | `HabitAutomationEntriesDetectedIntegrationEventHandler` (`habit-entry`) | Safe for its own rows: existing entries are matched by `(HabitId, ExternalId)` and updated or skipped. But it **saves, then publishes** the entries' events: if the publish fails, the retry finds the entries already there and doesn't raise their events again, so e.g. `HabitEntryCompletedIntegrationEvent` is lost | A unique index on `(HabitId, ExternalId)` protects against two deliveries racing. The save-then-publish gap is what the outbox fixes — accept it until then |
-| The four `IntegrationActivitiesDetected` handlers (`habit`) | Each filters by `Source`, so only one does work; a rerun publishes the same entries again, which `habit-entry` deduplicates | **Change how they publish** — see below |
+| The four `IntegrationActivitiesDetected` handlers (`habit`) | Each filters by `Source`, so only one does work; a rerun publishes the same entries again, which `habit-entry` deduplicates | Nothing. They publish through `IEventDispatcher.SendAsync`, so the event goes through the bus to `habit-entry`'s own queue |
 
-### The `habit` activity handlers bypass the bus
-
-`GithubActivitiesDetectedEventHandler`, `GoogleHealthActivitiesDetectedEventHandler`,
-`GoogleHealthStepsDetectedEventHandler` and `StravaActivitiesDetectedEventHandler` publish
-`HabitAutomationEntriesDetectedIntegrationEvent` with **`IPublisher.Publish`** directly, not
-through `IEventDispatcher` / `IIntegrationEventBus`. With RabbitMQ on, that means:
-
-- the event never reaches the broker — `habit-entry`'s handler runs **in-process, inside the
-  `habit` consumer's message**;
-- if `habit-entry`'s handler throws, the `habit` message is retried and parked in `habit.dlq`,
-  even though `habit`'s own work succeeded;
-- `habit-entry`'s queue never sees these events, so its retries and dead-letter queue don't apply.
-
-Switch those four handlers to `IEventDispatcher.SendAsync(...)` (as
-`HabitAutomationEntriesDetectedIntegrationEventHandler` already does) so the event goes through
-the bus. That's a module change, but a one-line one per handler, and it keeps "each module
-consumes its own queue" true.
+**Rule: publish integration events only through `IEventDispatcher` / `IIntegrationEventBus`,
+never with `IPublisher.Publish` directly.** A direct `Publish` skips the broker: the other
+module's handler would run in-process inside *this* module's message, its failures would retry
+and park this module's message, and its own queue's retries wouldn't apply.
 
 ### The registration race
 
 `IdentityUserCreatedIntegrationEvent` now creates the `HabitUser` a moment after
-`RegisterUserCommand` returns. Find the requests the frontend makes right after signup that need
-a `HabitUser`, and pick one:
+`RegisterUserCommand` returns: usually milliseconds later, but up to minutes if the `habit-user`
+queue is retrying or RabbitMQ is down. Every request that needs the `HabitUser` before then
+fails.
 
-- **Create on first use** — the read path creates the `HabitUser` if it's missing (and the event
-  handler's existence check from the table above makes the later delivery a no-op);
-- **Let the client retry** a not-found response for a short time after signup.
+**Who needs it.** Four places look a `HabitUser` up by `IdentityUserId` and give up when it's
+missing:
+
+| Where | Today when missing |
+|---|---|
+| `SaveIntegrationConfigCommand` | `Result.Failure("Habit user not found.")` |
+| `HandleGithubCallbackCommand` | `Result.Failure("User not found.")` → redirect with `github_error` |
+| `HandleGoogleHealthCallbackCommand` | same, `google_health_error` |
+| `HandleStravaCallbackCommand` | same, `strava_error` |
+
+Nothing else in `habit`, `habit-entry` or `tag` reads `HabitUser`. Those modules key their data
+by the identity user id directly. So the race only hits a user who connects an integration
+right after signing up. That's rare, but when it happens it's confusing: a fresh account whose
+"Connect Strava" fails once and works a minute later. And if the event is ever *lost* (the gap
+the outbox closes), those four commands fail for that user **forever**.
+
+**Fix: create on first use.** Whoever needs the `HabitUser` first creates it — the event handler
+or one of the four commands, whichever runs first. The others find it.
+
+```
+signup ──► RegisterUserCommand ──► IdentityUserCreatedIntegrationEvent ──► (later) handler ──┐
+                                                                                             ├─► GetOrCreateHabitUserAsync(identityUserId)
+user clicks "Connect Strava" ──► HandleStravaCallbackCommand ────────────────────────────────┘     one row, whoever is first
+```
+
+### 1. A unique index on `IdentityUserId`
+
+In `HabitUserEntityConfiguration`:
+
+```csharp
+builder.HasIndex(h => h.IdentityUserId).IsUnique();
+```
+
+and a migration. This is what makes "whoever is first" safe: if the handler and a command insert
+at the same moment, the database rejects the second row. Before adding it, check that the table
+has no duplicates already — the handler inserted unconditionally until now:
+
+```sql
+SELECT identity_user_id, count(*) FROM habit_users GROUP BY identity_user_id HAVING count(*) > 1;
+```
+
+Merge or delete any duplicates first (repoint their `integration_configs` to the row you keep),
+or the migration fails.
+
+### 2. `GetOrCreateHabitUserAsync`
+
+An extension method on the module's own `IHabitUserDbContext`, using `ExecuteLockedAsync` from
+3.6.
+`src/modules/habit-user/HabitUser.Application/Persistence/HabitUserDbContextExtensions.cs`:
+
+```csharp
+public static class HabitUserDbContextExtensions
+{
+    /// <summary>
+    /// The HabitUser for this identity user, created if it doesn't exist yet. Only pass an id
+    /// that's already authenticated — this creates rows for whatever id it's given.
+    /// </summary>
+    public static async Task<HabitUserEntity> GetOrCreateHabitUserAsync(
+        this IHabitUserDbContext dbContext,
+        Guid identityUserId,
+        CancellationToken ct
+    )
+    {
+        // fast path, no transaction: almost always the user exists already
+        var existing = await dbContext.FindHabitUserAsync(identityUserId, ct);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        return await dbContext.ExecuteLockedAsync(
+            $"habit-user:{identityUserId}",
+            async () =>
+            {
+                // check again under the lock: whoever held it before us may have created it
+                var createdMeanwhile = await dbContext.FindHabitUserAsync(identityUserId, ct);
+                if (createdMeanwhile is not null)
+                {
+                    return createdMeanwhile;
+                }
+
+                var created = HabitUserAggregate.Create(identityUserId).ToEntity();
+                dbContext.HabitUsers.Add(created);
+
+                return created;             // ExecuteLockedAsync saves and commits
+            },
+            ct
+        );
+    }
+
+    private static Task<HabitUserEntity?> FindHabitUserAsync(
+        this IHabitUserDbContext dbContext,
+        Guid identityUserId,
+        CancellationToken ct
+    ) =>
+        dbContext.HabitUsers.AsNoTracking().FirstOrDefaultAsync(h => h.IdentityUserId == identityUserId, ct);
+}
+```
+
+```
+A: find → missing ── lock ── find → missing ── insert ── commit (unlock)
+B: find → missing ── lock (waits for A) ─────────────────────────────── find → A's row ── commit (unlock)
+```
+
+- **Check, lock, check again.** The first check skips the transaction and the lock for every
+  call after the first. That's almost all of them. The second check, under the lock, is the one
+  that counts: it sees what the previous lock holder committed.
+- **No Npgsql and no `catch`.** Two callers can't both reach the insert, so there's no unique
+  violation to recognise in the normal case.
+- **The unique index from step 1 stays.** The lock only protects code that takes it. A script, a
+  migration, or a future command that inserts `HabitUser` directly bypasses it; the index still
+  stops the duplicate. If that ever happens, the loser gets a plain error, and in a consumer a
+  retry that then finds the row.
+- **It commits on its own.** The new `HabitUser` is committed before the caller continues, so a
+  command that fails afterwards still leaves the user created. That's fine: the row is correct
+  either way, and creating it is the point.
+- **Retries.** `ExecuteTransactionalAsync` runs inside EF's execution strategy, so a transient
+  failure reruns the whole block: a new transaction, the lock again, the check again. A failure
+  *during commit* is the one awkward case for any EF retry (the entity may already be marked as
+  saved); the unique index is the backstop there too.
+- **Alternative without a lock:** insert, catch `DbUpdateException`, and re-read. It's shorter and
+  needs nothing shared, but the losing caller does a failed insert first. Either is correct with
+  the unique index.
+
+### 3. Use it everywhere
+
+The event handler becomes:
+
+```csharp
+public sealed class IdentityUserCreatedIntegrationEventHandler(IHabitUserDbContext dbContext)
+    : IEventHandler<IdentityUserCreatedIntegrationEvent>
+{
+    public async ValueTask Handle(IdentityUserCreatedIntegrationEvent notification, CancellationToken cancellationToken) =>
+        await dbContext.GetOrCreateHabitUserAsync(notification.IdentityUserId, cancellationToken);
+}
+```
+
+and in each of the four commands, the lookup plus `if (habitUser is null) return Result.Failure(...)`
+becomes:
+
+```csharp
+var habitUser = await dbContext.GetOrCreateHabitUserAsync(userId, cancellationToken);
+```
+
+- **The handler is now safe to repeat**, which is what the 3.7 table asked for. A second delivery
+  finds the row and does nothing.
+- **The ids are trusted in all four places.** `SaveIntegrationConfigCommand` takes the id from
+  `ICurrentUserService` (the JWT). The callbacks take it from the OAuth `state`, which the
+  endpoint unprotects with `IDataProtector`, so it was issued to an authenticated user. Don't call
+  `GetOrCreateHabitUserAsync` with an id from an unprotected query string or request body; it would create
+  rows for any `Guid` someone sends.
+- **The event still matters.** It creates the `HabitUser` for users who never touch the four
+  commands, so that anything added later that reads `HabitUser` finds it. Create-on-first-use is
+  the safety net, not a replacement.
+
+**Alternative: let the client retry.** The frontend retries a "user not found" for a few seconds
+after signup. It's simpler on the backend, but it only covers the milliseconds-to-seconds case:
+a retrying queue or a lost event still leaves the user stuck. Prefer the fix above.
 
 ### Ordering caveat
 
@@ -541,8 +780,8 @@ prefetch 1 keeps messages in order *until one fails*. A message waiting 10 s in 
 can be overtaken by a newer event for the same entity; when it comes back it applies older data.
 For `search` that re-indexes older text; for `habit`, `Complete` ignores an older completion, so
 it's harmless. While a dependency is down every message fails, so this is rare in practice, and
-the next event fixes it. If it ever matters: put a timestamp or version in the events and have
-handlers skip messages older than what's stored.
+the next event fixes it. [Phase 5](05-ordering.md) fixes it properly: the events carry a change
+time, and handlers skip messages older than what's stored.
 
 ---
 
@@ -561,6 +800,10 @@ handlers skip messages older than what's stored.
 4. **Registration.** Register a new user: the `HabitUser` row appears within a second. Simulate a
    redelivery: in the UI, publish the same payload to `dailu.integration` with routing key and
    `type` = `IdentityUserCreatedIntegrationEvent`. Still one row.
+   **The race.** Stop the API's consumers from reaching `habit-user` (simplest: set a breakpoint
+   in `IdentityUserCreatedIntegrationEventHandler`), register a new user, then connect Strava or
+   save an integration config as that user. It succeeds and creates the `HabitUser`. Continue
+   past the breakpoint: the handler finds the row, and there's still one row.
 5. **Completion.** Complete an entry: the habit's `LastCompletedAtUtc` updates shortly after.
 6. **Automation.** Trigger an activity sync (e.g. Strava): entries are created via the
    `habit-entry` queue — its message rate graph shows the delivery, which proves the four `habit`
@@ -578,9 +821,9 @@ handlers skip messages older than what's stored.
    start the API and it's processed.
 10. **Broker restart.** `docker compose restart dailo.rabbitmq` while the API runs. The log shows
     recovery; editing a habit afterwards still indexes it, and the queues kept their messages.
-11. **Broker not running at startup.** Stop RabbitMQ, start the API: each worker logs "Can't
-    start consuming <queue>; retrying in 10 s" for each queue, and the API serves requests. Start RabbitMQ:
-    consumption starts on its own.
+11. **Broker not running at startup.** Stop RabbitMQ, start the API: the log shows "Can't
+    start consuming <queue>; retrying in 10 s" once per queue, and the API serves requests.
+    Start RabbitMQ: consumption starts on its own.
 12. `RabbitMq:IsEnabled = false`: no consumers, no queues touched, every handler runs
     synchronously in the request again.
 
@@ -594,11 +837,16 @@ Commit: `Consume integration events from RabbitMQ`.
   commit can leave a user without a `HabitUser` row. The [outbox guide](../outbox-inbox/README.md)
   closes that gap; its dispatcher publishes through `IIntegrationEventBus`, so events reach
   RabbitMQ from the outbox table instead of directly from the request. Its inbox phase replaces
-  the hand-written existence checks from 3.6 with one generic mechanism.
+  the hand-written existence checks from 3.7 with one generic mechanism.
 - **New modules with handlers.** Add `AddIntegrationEventSubscription<TModuleRoot>("queue")` to
   the module's `Setup.cs`, next to `AddHandlerAssembly` (phase 2, 2.7). A good exercise: at
   startup, compare the assemblies of all registered `INotificationHandler<T>` (with
   `T : IIntegrationEvent`) against the subscriptions and fail for any assembly that's missing.
+- **Retry settings in config.** [Phase 4](04-policies.md) moves `MaxAttempts` and the retry
+  delay into `appsettings`, and the delay into a policy, so changing it doesn't mean deleting
+  queues.
+- **Stale messages after a retry.** [Phase 5](05-ordering.md) fixes the ordering caveat from
+  3.7.
 - **Exponential backoff** with several retry queues (3.1).
 - **Observability.** Add the message id and event type to the log scope in `OnReceivedAsync`;
   later, propagate the trace context in message headers so a request and the background work it

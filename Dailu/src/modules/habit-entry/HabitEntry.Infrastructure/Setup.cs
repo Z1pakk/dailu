@@ -40,6 +40,8 @@ public static class Setup
 
         services.AddIntegrationEventSubscription<IHabitEntryApplicationRoot>("habit-entry");
 
+        services.AddHabitEntryIntegrations();
+
         return services;
     }
 

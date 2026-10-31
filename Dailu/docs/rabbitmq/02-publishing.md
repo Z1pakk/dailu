@@ -157,9 +157,9 @@ Nothing in the codebase reads `EventId`, `OccurredOn` or `EventType`, and nothin
    - `HabitEntryCompletedIntegrationEvent` (`CompletedAtUtc`) and
      `IntegrationActivitiesDetectedIntegrationEvent` (`OccurredAtUtc` per item) already carry
      theirs.
-   - The three search events don't need one yet. They will if you fix the ordering caveat in
-     phase 3: add an `UpdatedAtUtc` or the entity's `Version` and have the handler skip older
-     messages.
+   - The three search events don't need one yet. [Phase 5](05-ordering.md) adds `ChangedAtUtc`
+     to them to fix the ordering caveat from phase 3. The entity's `Version` can't serve: it's a
+     random `Guid`, not an increasing number.
 
    Add a time when a handler uses it, not "just in case".
 
@@ -250,13 +250,33 @@ broker ── basic.return (x-publish-seq) ── mark pending[seq] as returned
 public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDisposable
 {
     private const string SequenceHeader = "x-publish-seq";
-    private static readonly TimeSpan ConfirmTimeout = TimeSpan.FromSeconds(10);
+
+    // one deadline for the whole publish: waiting for the lock, connecting, sending, confirming
+    private static readonly TimeSpan PublishTimeout = TimeSpan.FromSeconds(10);
 
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly ConcurrentDictionary<ulong, PendingConfirm> _pending = new();
     private IChannel? _channel;
 
-    public async Task PublishAsync(IIntegrationEvent integrationEvent, CancellationToken ct)
+    public async Task PublishAsync(IIntegrationEvent integrationEvent, CancellationToken cancellationToken)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(PublishTimeout);
+
+        try
+        {
+            await PublishCoreAsync(integrationEvent, deadline.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // our deadline fired, not the caller's cancellation
+            throw new TimeoutException(
+                $"Publishing {integrationEvent.GetType().Name} took longer than {PublishTimeout.TotalSeconds} s."
+            );
+        }
+    }
+
+    private async Task PublishCoreAsync(IIntegrationEvent integrationEvent, CancellationToken ct)
     {
         var type = integrationEvent.GetType();
         var name = IntegrationEventTypes.NameOf(type);
@@ -312,9 +332,9 @@ public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDis
         // outside the lock: other publishes go out while we wait for our ack
         try
         {
-            await pending.Confirmed.Task.WaitAsync(ConfirmTimeout, ct);
+            await pending.Confirmed.Task.WaitAsync(ct);         // ct carries the deadline
         }
-        catch (Exception ex) when (ex is TimeoutException or OperationCanceledException)
+        catch (OperationCanceledException)
         {
             // we've stopped waiting; don't leave the entry behind. A late ack finds nothing,
             // which is harmless
@@ -492,17 +512,41 @@ public sealed class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDis
   messages sent on the old channel, and automatic recovery restarts the numbering at 1. Failing
   and clearing `_pending` prevents callers from hanging and old numbers from colliding with new
   ones.
-- **Timeout and cancellation.** `WaitAsync(ConfirmTimeout, ct)` stops waiting after 10 s or when
-  the request is cancelled; the `TimeoutException` becomes `IntegrationEventPublishException` in
-  the bus. The `catch` removes the pending entry — otherwise an ack that never comes would leave
-  it in `_pending` until the channel shuts down, a slow leak in a long-running process. A
-  cancelled request's message may still be confirmed by the broker; nobody is waiting for it
-  any more, and `OperationCanceledException` passes through the bus unwrapped.
+- **One deadline for the whole publish, not just the confirm.** A publish can get stuck in four
+  places, and a timeout only on the confirm would cover one of them:
+
+  | Stuck in | When | Without the deadline |
+  |---|---|---|
+  | `_lock.WaitAsync` | another publish holds the lock and is stuck in one of the next two rows | waits as long as that one |
+  | `GetChannelAsync` → connect | broker down, no connection yet | up to `RequestedConnectionTimeout` |
+  | `BasicPublishAsync` | the broker raised a **memory or disk alarm** and blocks publishing connections (`connection.blocked`): it stops reading, the socket fills up, the write never completes | **forever**, while holding the lock, so every other publish hangs too |
+  | waiting for the confirm | broker connected but slow, or the ack got lost | forever |
+
+  The linked `CancellationTokenSource` covers all four with one 10 s limit. The worst case for a
+  request is fixed, whatever the broker is doing.
+- **Timeout vs. cancellation.** When the deadline fires, `PublishAsync` throws
+  `TimeoutException`, which the bus wraps as `IntegrationEventPublishException`. When the
+  *caller* cancelled (the HTTP request was aborted), the `when` filter lets
+  `OperationCanceledException` through unwrapped, as before.
+- **The `catch` around the confirm wait removes the pending entry.** Otherwise an ack that never
+  comes would leave it in `_pending` until the channel shuts down, a slow leak in a long-running
+  process. A message whose wait was abandoned may still be confirmed by the broker; nobody is
+  waiting for it any more, and the late ack finds nothing.
+- **A send cancelled halfway can break the channel.** If the deadline fires inside
+  `BasicPublishAsync`, part of a message may have been written. The client then closes the
+  channel; `OnShutdownAsync` fails whatever was pending, and the next publish gets a fresh
+  channel from `GetChannelAsync`. Nothing to handle by hand.
 - **The first connect happens under the lock.** On the first publish, `GetChannelAsync` may
-  open the connection. If the broker is down, `CreateConnectionAsync` blocks until its
-  connection timeout, and every other publish queues behind the lock for that long.
-  `RequestedConnectionTimeout` in `RabbitMqConnection` (phase 1, 1.4) keeps that to 5 s. Once
-  the connection exists, automatic recovery takes over and this doesn't happen again.
+  open the connection. If the broker is down, every publish queues behind the lock until the
+  connect gives up. Keep `RequestedConnectionTimeout` in `RabbitMqConnection` (phase 1, 1.4) at
+  5 s, below `PublishTimeout`, so a failed connect surfaces as its real error
+  (`BrokerUnreachableException`) rather than as a generic timeout. Once the connection exists,
+  automatic recovery takes over and this doesn't happen again.
+- **During an outage, every request pays the connect timeout.** While the broker is down,
+  `RabbitMqConnection` has no connection, so each publish tries again and waits up to 5 s. If
+  that's too slow, remember when the last connect failed and fail immediately for a few seconds
+  after it: a small circuit breaker. The outbox makes this moot, since publishing then leaves the
+  request path entirely.
 - **No limit on messages in flight.** Requests publish one or a few events each, so that's fine
   here. An outbox dispatcher draining a large backlog could put thousands in flight at once —
   when you build it, cap its batch size, or acquire a `SemaphoreSlim(maxInFlight)` before each

@@ -10,8 +10,4 @@ public sealed record IntegrationEventSubscription(
     string Queue,
     Assembly Module, // handlers are only invoked from this assembly
     FrozenSet<Type> EventTypes
-)
-{
-    public string RetryQueue => $"{Queue}.retry";
-    public string DeadLetterQueue => $"{Queue}.dlq";
-}
+);

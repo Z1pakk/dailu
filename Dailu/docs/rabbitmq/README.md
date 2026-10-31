@@ -22,7 +22,9 @@ You implement it yourself, phase by phase. Each phase ends with a **Verify** ste
 |---|---|---|
 | 1 | [01-broker.md](01-broker.md) | RabbitMQ running in Docker with the management UI, a `RabbitMq` options section with an `IsEnabled` switch, and a single shared connection in the API |
 | 2 | [02-publishing.md](02-publishing.md) | Every integration event serialized to JSON and published to a topic exchange with publisher confirms; module subscriptions discovered from their handlers; a fake bus for tests |
-| 3 | [03-consuming.md](03-consuming.md) | A consumer worker per module (`habit`, `habit-entry`, `habit-user`, `search`), retries with a delay and a dead-letter queue, and handlers made safe to run twice |
+| 3 | [03-consuming.md](03-consuming.md) | One consumer worker with a queue consumer per module (`habit`, `habit-entry`, `habit-user`, `search`), retries with a delay and a dead-letter queue, and handlers made safe to run twice |
+| 4 | [04-policies.md](04-policies.md) | Max attempts and retry delay in `appsettings`; the delay applied as a RabbitMQ policy the API creates through the management API, so changing it needs only a restart |
+| 5 | [05-ordering.md](05-ordering.md) | Events carry a change time; `search` skips messages older than what it stored and keeps tombstones for removed entries; accumulating step totals never go down |
 
 **Do phases 2 and 3 back to back.** Once phase 2 is switched on, every integration event goes to
 the broker, and nothing consumes it until phase 3. Registering stops creating a `HabitUser`,
@@ -81,7 +83,7 @@ starts no consumers — today's behaviour, for running without Docker.
   the consumer acks it. Crash mid-handler and the message is redelivered. That makes delivery
   **at-least-once** — every handler must be safe to run twice. `SearchIndexService` already is
   (upsert by entity, content hash skips unchanged text); the other modules' handlers need
-  checking (phase 3, 3.6).
+  checking (phase 3, 3.7).
 - **Prefetch (QoS).** How many unacked messages the broker pushes to one consumer at once.
   `prefetch = 1` processes one message at a time, in order — slow, but simple and predictable.
 - **Dead-letter exchange (DLX) + TTL for retries.** A message rejected with `requeue: false` is
@@ -121,8 +123,8 @@ Handlers now run a moment *after* the request returns. Most of the time nobody n
 flows become eventually consistent:
 
 - **Registration.** `IdentityUserCreatedIntegrationEventHandler` creates the `HabitUser` row. A
-  request the frontend sends right after signup can arrive before that row exists. Decide in
-  phase 3 whether those reads create the user on first use or the client retries.
+  request the frontend sends right after signup can arrive before that row exists. Phase 3
+  (3.7, "The registration race") fixes it: whoever needs the `HabitUser` first creates it.
 - **Completing an entry.** `HabitEntryCompletedIntegrationEvent` updates the habit's
   `LastCompletedAtUtc` and milestone. The UI can briefly show the old values.
 - **Search.** A renamed habit shows up in search results a moment later.
@@ -154,9 +156,76 @@ search entry, so **do the outbox next**. Its `OutboxDispatcherWorker` publishes 
   `RabbitMQ.Client` 7.x — older tutorials and courses use the 6.x synchronous API (`IModel`,
   `BasicPublish`, `EventingBasicConsumer`); the 7.x names are `IChannel`, `BasicPublishAsync`,
   `AsyncEventingBasicConsumer`.
-- Namespace for everything under `src/Dailu.Infrastructure/Messaging` is
-  `Dailu.Infrastructure.Messaging`.
+- **File paths in the phases are written flat** (`Messaging/RabbitMqPublisher.cs`) so each phase
+  reads on its own. Put each file in its subfolder from [Folder layout](#folder-layout) below;
+  the namespace follows the folder.
 - Lines marked **Decision** are choices you can change without breaking later phases.
+
+## Folder layout
+
+By the end of phase 4, `Messaging` holds a dozen files with four different jobs. Group them by
+job, so "where does publishing live?" has a one-folder answer:
+
+```
+src/Dailu.Infrastructure/Messaging/
+├── Setup.cs                          ← AddRabbitMq(): the only entry point the host calls
+├── RabbitMqOptions.cs                ← config, used by every folder below
+│
+├── Connection/
+│   └── RabbitMqConnection.cs         ← the one IConnection per process (phase 1)
+│
+├── Topology/
+│   ├── RabbitMqTopology.cs           ← exchange, queue names, DeclareConsumerAsync (phases 2–3)
+│   └── RabbitMqPolicyClient.cs       ← management API, policies (phase 4)
+│
+├── Serialization/
+│   └── IntegrationEventJson.cs       ← JsonSerializerOptions shared by both sides (phase 2)
+│
+├── Publishing/
+│   ├── RabbitMqPublisher.cs          ← confirm-tracking channel (phase 2)
+│   └── RabbitMqIntegrationEventBus.cs  ← IIntegrationEventBus → publisher (phase 2)
+│
+└── Consuming/
+    ├── RabbitMqConsumerWorker.cs     ← the BackgroundService (phase 3)
+    ├── RabbitMqQueueConsumer.cs      ← one queue: deliver, ack, retry, park (phase 3)
+    ├── RabbitMqDeathHeader.cs        ← attempt count from x-death (phase 3)
+    └── ModuleHandlers.cs             ← invoke one module's handlers (phase 3)
+```
+
+| Namespace | Contains | Used from |
+|---|---|---|
+| `Dailu.Infrastructure.Messaging` | `Setup`, `RabbitMqOptions` | `Event/Setup.cs` |
+| `….Messaging.Connection` | `RabbitMqConnection` | `Publishing`, `Consuming` |
+| `….Messaging.Topology` | `RabbitMqTopology`, `RabbitMqPolicyClient` | `Publishing`, `Consuming` |
+| `….Messaging.Serialization` | `IntegrationEventJson` | `Publishing`, `Consuming` |
+| `….Messaging.Publishing` | `RabbitMqPublisher`, `RabbitMqIntegrationEventBus` | `Event/Setup.cs` (bus registration) |
+| `….Messaging.Consuming` | worker, queue consumer, death header, module handlers | `Setup.cs` only |
+
+- **Namespaces follow folders.** `.editorconfig` sets `dotnet_style_namespace_match_folder`, so
+  a file in `Consuming/` gets `namespace Dailu.Infrastructure.Messaging.Consuming;`. The rule is
+  only a suggestion, so the build won't catch a mismatch; the IDE will.
+- **Dependencies point one way.** `Publishing` and `Consuming` use `Connection`, `Topology` and
+  `Serialization`; nothing uses `Publishing` or `Consuming` except `Setup` and `Event/Setup.cs`.
+  `Publishing` and `Consuming` never use each other. A consumer that needs to publish goes
+  through `IIntegrationEventBus`, like any handler.
+- **Make the inside `internal`.** Only `Setup`, `RabbitMqOptions` and
+  `RabbitMqIntegrationEventBus` (registered from `Event/Setup.cs`, same assembly) are needed
+  outside their folder, and nothing outside `Dailu.Infrastructure` needs any of them. Marking
+  the rest `internal sealed` keeps the public surface to `AddRabbitMq()` and the options. If a
+  test project needs to reach in, add
+  `<InternalsVisibleTo Include="Dailu.Infrastructure.Tests" />` to the csproj rather than making
+  things public.
+- **`IntegrationEventSubscription` doesn't belong here.** It lives in
+  `SharedInfrastructure/Event` (phase 2, 2.5) because modules declare it. Its namespace must be
+  `SharedInfrastructure.Event`, not `Dailu.Infrastructure.Messaging`, or modules end up with a
+  `using` that names the RabbitMQ project.
+- **When to split further.** Not before a folder passes about five files. A `Consuming/Retry/`
+  for exponential backoff (several retry queues, 3.1) would be the first candidate.
+
+**Moving existing files.** Move them in the IDE (Rider: *Refactor → Move to Folder*; Visual
+Studio: drag in Solution Explorer, then *Sync Namespaces* on the project). That updates the
+namespaces and every `using` at once. Then build: under `TreatWarningsAsErrors`, a leftover
+unused `using` fails the build and points at the file.
 
 ---
 
