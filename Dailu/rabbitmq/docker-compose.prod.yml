@@ -1,0 +1,71 @@
+# Production RabbitMQ broker, deployed as its own Dokploy Compose service
+# (separate from the app stack so redeploying the API never restarts the broker).
+#
+# Required env (Dokploy → this service → Environment):
+#   RABBITMQ_USER, RABBITMQ_PASSWORD   - broker admin, management UI only
+#   RABBITMQ_API_PASSWORD              - password of the API user (hex: openssl rand -hex 32)
+# Optional:
+#   RABBITMQ_API_USER                  - defaults to dailu-api
+#
+# Deploy this stack first; dailu-rabbitmq-init must exit 0 ("rabbitmq provisioned")
+# before deploying the app.
+name: dailu-rabbitmq
+
+services:
+  dailu-rabbitmq:
+    image: rabbitmq:4-management
+    hostname: dailu-rabbitmq            # node name (and so the data directory) depends on it
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    expose:                             # no host ports: reachable only on dokploy-network
+      - "5672"                          # AMQP
+      - "15672"                         # management UI / HTTP API
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - dokploy-network
+
+  # One-shot: creates the dailu vhost and the API user with permissions on it only.
+  # All calls are idempotent PUTs, so it re-runs safely on every deploy (and rotates the password).
+  dailu-rabbitmq-init:
+    image: curlimages/curl:8.11.1
+    restart: "no"
+    depends_on:
+      dailu-rabbitmq:
+        condition: service_healthy
+    environment:
+      ADMIN_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      ADMIN_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      API_USER: ${RABBITMQ_API_USER:-dailu-api}
+      API_PASS: ${RABBITMQ_API_PASSWORD:?RABBITMQ_API_PASSWORD is required}
+      VHOST: dailu
+    entrypoint: ["sh", "-ec"]
+    command:
+      - |
+        api="http://dailu-rabbitmq:15672/api"
+        put() {
+          curl -fsS --retry 10 --retry-connrefused --retry-delay 3 \
+               -u "$$ADMIN_USER:$$ADMIN_PASS" -H "content-type: application/json" \
+               -X PUT "$$api/$$1" -d "$$2"
+        }
+        put "vhosts/$$VHOST" '{}'
+        put "users/$$API_USER" "{\"password\":\"$$API_PASS\",\"tags\":\"\"}"
+        put "permissions/$$VHOST/$$API_USER" '{"configure":".*","write":".*","read":".*"}'
+        put "permissions/$$VHOST/$$ADMIN_USER" '{"configure":".*","write":".*","read":".*"}'
+        echo "rabbitmq provisioned"
+    networks:
+      - dokploy-network
+
+volumes:
+  rabbitmq-data:
+
+networks:
+  dokploy-network:
+    external: true
