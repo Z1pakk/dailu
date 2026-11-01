@@ -18,6 +18,7 @@ using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
 using SharedInfrastructure.Event;
 using SharedInfrastructure.Options;
+using SharedInfrastructure.Persistence;
 
 namespace Search.Infrastructure;
 
@@ -57,11 +58,9 @@ public static class Setup
         IConfiguration configuration
     )
     {
-        var connectionString = configuration.GetConnectionString(SearchDbConnectionString);
-
         services.AddDbContext<ISearchDbContext, SearchDbContext>(opt =>
             opt.UseNpgsql(
-                    connectionString,
+                    configuration.GetRequiredConnectionString(SearchDbConnectionString),
                     b =>
                     {
                         b.MigrationsAssembly(AssemblyReference.Assembly)

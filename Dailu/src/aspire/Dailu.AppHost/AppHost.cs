@@ -13,6 +13,7 @@ builder
     .WithReference(db, connectionName: "TagPostgresConnectionString")
     .WithReference(db, connectionName: "IdentityPostgresConnectionString")
     .WithReference(db, connectionName: "HabitUserPostgresConnectionString")
+    .WithReference(db, connectionName: "SearchPostgresConnectionString")
     .WaitFor(db)
     .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
 

@@ -18,6 +18,7 @@ using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
 using SharedInfrastructure.Event;
 using SharedInfrastructure.Options;
+using SharedInfrastructure.Persistence;
 using SharedKernel.Persistence;
 
 namespace Identity.Infrastructure;
@@ -60,11 +61,9 @@ public static class Setup
         IConfiguration configuration
     )
     {
-        var connectionString = configuration.GetConnectionString(IdentityDbConnectionString);
-
         services.AddDbContext<IIdentityDbContext, IdentityDbContext>(opt =>
             opt.UseNpgsql(
-                    connectionString,
+                    configuration.GetRequiredConnectionString(IdentityDbConnectionString),
                     b =>
                     {
                         b.MigrationsAssembly(AssemblyReference.Assembly)

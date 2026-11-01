@@ -291,6 +291,7 @@ exec docker run --rm \
   -e ConnectionStrings__HabitUserPostgresConnectionString="$MIGRATIONS_DB_CONNECTION_STRING" \
   -e ConnectionStrings__IdentityPostgresConnectionString="$MIGRATIONS_DB_CONNECTION_STRING" \
   -e ConnectionStrings__TagPostgresConnectionString="$MIGRATIONS_DB_CONNECTION_STRING" \
+  -e ConnectionStrings__SearchPostgresConnectionString="$MIGRATIONS_DB_CONNECTION_STRING" \
   "$IMAGE"
 EOF
 ```
