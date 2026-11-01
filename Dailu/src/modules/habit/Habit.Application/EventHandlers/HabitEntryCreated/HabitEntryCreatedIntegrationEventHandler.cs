@@ -1,15 +1,16 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Habit.Application.Persistence;
 using Habit.Domain.Aggregates;
 using Habit.Domain.Entities;
-using Mediator;
 using Microsoft.EntityFrameworkCore;
+using SharedKernel.Event;
 using StrictId;
 
 namespace Habit.Application.EventHandlers.HabitEntryCreated;
 
 public sealed class HabitEntryCreatedIntegrationEventHandler(IHabitDbContext dbContext)
-    : INotificationHandler<HabitEntryCompletedIntegrationEvent>
+    : IEventHandler<HabitEntryCompletedIntegrationEvent>
 {
     public async ValueTask Handle(
         HabitEntryCompletedIntegrationEvent notification,

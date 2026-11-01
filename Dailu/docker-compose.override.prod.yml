@@ -34,6 +34,11 @@ services:
       GoogleHealth__RedirectUri: ${GOOGLE_HEALTH_REDIRECT_URI:-}
       GoogleHealth__FrontendCallbackUrl: ${GOOGLE_HEALTH_FRONTEND_CALLBACK_URL:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      RabbitMq__IsEnabled: "true"
+      RabbitMq__Host: ${RABBITMQ_HOST:-dailu-rabbitmq}
+      RabbitMq__Port: ${RABBITMQ_PORT:-5672}
+      RabbitMq__UserName: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     networks:
       - default
       - dokploy-network

@@ -16,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 using SharedInfrastructure.Options;
 using SharedKernel.Persistence;
 
@@ -24,6 +25,35 @@ namespace Identity.Infrastructure;
 public static class Setup
 {
     public const string IdentityDbConnectionString = "IdentityPostgresConnectionString";
+
+    public static IServiceCollection AddIdentityModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddIdentityPersistence(configuration);
+
+        services.AddScoped(
+            typeof(IPipelineBehavior<,>),
+            typeof(IdentityEventDispatchingBehavior<,>)
+        );
+
+        services.AddValidateOptions<AltchaOptions>();
+        services.AddMemoryCache();
+
+        services.AddScoped<ITokenProvider, TokenProvider>();
+        services.AddScoped<IAltchaService, AltchaService>();
+
+        services.AddEndpoints(assemblies: IdentityApiRoot.Assembly);
+
+        services.AddHandlerAssembly<IIdentityApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<IIdentityApplicationRoot>("identity");
+
+        services.AddIdentityDataTransferServices();
+
+        return services;
+    }
 
     public static IServiceCollection AddIdentityPersistence(
         this IServiceCollection services,
@@ -64,33 +94,6 @@ public static class Setup
             .AddSignInManager();
 
         services.AddScoped<IDataSeeder, RoleSeeder>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddIdentityModule(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.AddIdentityPersistence(configuration);
-
-        services.AddScoped(
-            typeof(IPipelineBehavior<,>),
-            typeof(IdentityEventDispatchingBehavior<,>)
-        );
-
-        services.AddValidateOptions<AltchaOptions>();
-        services.AddMemoryCache();
-
-        services.AddScoped<ITokenProvider, TokenProvider>();
-        services.AddScoped<IAltchaService, AltchaService>();
-
-        services.AddEndpoints(assemblies: IdentityApiRoot.Assembly);
-
-        services.AddHandlerAssembly<IIdentityApplicationRoot>();
-
-        services.AddIdentityDataTransferServices();
 
         return services;
     }

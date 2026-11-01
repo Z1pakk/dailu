@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 using Tag.Api;
 using Tag.Application;
 using Tag.Application.Persistence;
@@ -18,6 +19,28 @@ namespace Tag.Infrastructure;
 public static class Setup
 {
     public const string TagDbConnectionString = "TagPostgresConnectionString";
+
+    public static IServiceCollection AddTagModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddTagPersistence(configuration);
+
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(TagEventDispatchingBehavior<,>));
+
+        services.AddValidatorsFromAssemblyContaining<ITagApplicationRoot>();
+
+        services.AddEndpoints(assemblies: TagApiRoot.Assembly);
+
+        services.AddHandlerAssembly<ITagApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<ITagApplicationRoot>("tag");
+
+        services.AddTagDataTransferServices();
+
+        return services;
+    }
 
     public static IServiceCollection AddTagPersistence(
         this IServiceCollection services,
@@ -46,29 +69,6 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
-
-        return services;
-    }
-
-    public static IServiceCollection AddTagModule(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.AddTagPersistence(configuration);
-
-        services.AddScoped(
-            typeof(IPipelineBehavior<,>),
-            typeof(TagEventDispatchingBehavior<,>)
-        );
-
-        services.AddValidatorsFromAssemblyContaining<ITagApplicationRoot>();
-
-        services.AddEndpoints(assemblies: TagApiRoot.Assembly);
-
-        services.AddHandlerAssembly<ITagApplicationRoot>();
-
-        services.AddTagDataTransferServices();
 
         return services;
     }

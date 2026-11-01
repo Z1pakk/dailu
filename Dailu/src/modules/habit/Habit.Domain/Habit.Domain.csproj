@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Dailu.Events\Dailu.Events.csproj" />
     <ProjectReference Include="..\..\..\shared\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
   <ItemGroup>

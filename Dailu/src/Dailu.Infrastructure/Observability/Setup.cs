@@ -46,14 +46,18 @@ public static class Setup
                         };
                     })
                     .AddHttpClientInstrumentation()
-                    .AddNpgsql();
+                    .AddNpgsql()
+                    // Default source of Microsoft.Extensions.AI's UseOpenTelemetry();
+                    // name has changed between releases — verify on package upgrades.
+                    .AddSource("Experimental.Microsoft.Extensions.AI");
             })
             .WithMetrics(metrics =>
             {
                 metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddMeter("Experimental.Microsoft.Extensions.AI");
             })
             .UseOtlpExporter();
 

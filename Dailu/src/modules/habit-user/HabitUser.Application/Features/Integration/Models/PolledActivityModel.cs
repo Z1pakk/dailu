@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 
 namespace HabitUser.Application.Features.Integration.Models;
 

@@ -21,6 +21,12 @@ public abstract class BaseEntity<T>
     public DateTime? LastModifiedAtUtc { get; set; }
     public Guid? LastModifiedByUserId { get; set; }
 
+    /// <summary>
+    /// Soft delete: the row is treated as gone. A global query filter hides it from every query
+    /// (bypass with <c>IgnoreQueryFilters()</c>). Not the same as an entity's <c>IsArchived</c>,
+    /// which keeps the record visible to its owner. Must be set explicitly; <c>Remove()</c> still
+    /// issues a hard DELETE.
+    /// </summary>
     public bool IsDeleted { get; set; }
 
     public Guid Version { get; set; } = Guid.NewGuid();

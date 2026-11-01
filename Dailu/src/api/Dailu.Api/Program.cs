@@ -8,6 +8,7 @@ using HabitUser.Infrastructure;
 using Identity.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
+using Search.Infrastructure;
 using SharedInfrastructure.Endpoint;
 using Tag.Infrastructure;
 
@@ -21,6 +22,7 @@ builder
     .AddHabitEntryModule(builder.Configuration)
     .AddHabitUserModule(builder.Configuration)
     .AddTagModule(builder.Configuration)
+    .AddSearchModule(builder.Configuration)
     .AddIdentityModule(builder.Configuration);
 
 builder.Services.AddMediator(opt => opt.ServiceLifetime = ServiceLifetime.Scoped);

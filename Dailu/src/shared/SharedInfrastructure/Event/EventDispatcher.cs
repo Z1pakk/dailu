@@ -1,10 +1,14 @@
-using Mediator;
+using Microsoft.Extensions.Logging;
+using SharedKernel.CQRS;
 using SharedKernel.Event;
 
 namespace SharedInfrastructure.Event;
 
-public sealed class EventDispatcher(IPublisher publisher, IIntegrationEventBus bus)
-    : IEventDispatcher
+public sealed class EventDispatcher(
+    IEventPublisher publisher,
+    IIntegrationEventBus bus,
+    ILogger<EventDispatcher> logger
+) : IEventDispatcher
 {
     public async Task SendAsync<T>(T @event, CancellationToken cancellationToken = default)
         where T : IEvent
@@ -20,14 +24,25 @@ public sealed class EventDispatcher(IPublisher publisher, IIntegrationEventBus b
     {
         foreach (var @event in events)
         {
-            if (@event is IDomainEvent domainEvent)
+            try
             {
-                await publisher.Publish(domainEvent, cancellationToken);
-            }
+                if (@event is IDomainEvent domainEvent)
+                {
+                    await publisher.Publish(domainEvent, cancellationToken);
+                }
 
-            if (@event is IIntegrationEvent integrationEvent)
+                if (@event is IIntegrationEvent integrationEvent)
+                {
+                    await bus.PublishAsync(integrationEvent, cancellationToken);
+                }
+            }
+            catch (Exception ex)
             {
-                await bus.PublishAsync(integrationEvent, cancellationToken);
+                logger.LogError(
+                    ex,
+                    "Failed to publish {EventType}; the event is lost",
+                    @event.GetType().Name
+                );
             }
         }
     }

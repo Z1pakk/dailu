@@ -17,5 +17,10 @@
     <Content Include="docker-compose.override.prod.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </Content>
+    <None Include="rabbitmq\docker-compose.prod.yml" />
+    <None Include="observability\docker-compose.yml" />
+    <None Include="observability\docker-compose.override.prod.yml">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
   </ItemGroup>
 </Project>

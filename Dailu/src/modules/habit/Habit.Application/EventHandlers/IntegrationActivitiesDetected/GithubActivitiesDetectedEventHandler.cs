@@ -1,18 +1,19 @@
 using System.Globalization;
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Habit.Application.Persistence;
 using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects.AutomationFilters;
-using Mediator;
 using Microsoft.EntityFrameworkCore;
+using SharedKernel.Event;
 using StrictId;
 
 namespace Habit.Application.EventHandlers.IntegrationActivitiesDetected;
 
 public sealed class GithubActivitiesDetectedEventHandler(
     IHabitDbContext dbContext,
-    IPublisher publisher
-) : INotificationHandler<IntegrationActivitiesDetectedIntegrationEvent>
+    IEventDispatcher eventDispatcher
+) : IEventHandler<IntegrationActivitiesDetectedIntegrationEvent>
 {
     public async ValueTask Handle(
         IntegrationActivitiesDetectedIntegrationEvent notification,
@@ -69,7 +70,7 @@ public sealed class GithubActivitiesDetectedEventHandler(
             return;
         }
 
-        await publisher.Publish(
+        await eventDispatcher.SendAsync(
             new HabitAutomationEntriesDetectedIntegrationEvent(notification.UserId, entries),
             cancellationToken
         );

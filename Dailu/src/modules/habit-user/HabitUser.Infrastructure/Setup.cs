@@ -16,12 +16,48 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
+using SharedInfrastructure.Event;
 
 namespace HabitUser.Infrastructure;
 
 public static class Setup
 {
     public const string HabitUserDbConnectionString = "HabitUserPostgresConnectionString";
+
+    public static IServiceCollection AddHabitUserModule(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddHabitUserPersistence(configuration);
+
+        services.AddScoped(
+            typeof(IPipelineBehavior<,>),
+            typeof(HabitUserEventDispatchingBehavior<,>)
+        );
+
+        services.AddValidatorsFromAssemblyContaining<IHabitUserApplicationRoot>();
+
+        services.AddEndpoints(assemblies: HabitUserApiRoot.Assembly);
+
+        services.AddHandlerAssembly<IHabitUserApplicationRoot>();
+
+        services.AddIntegrationEventSubscription<IHabitUserApplicationRoot>("habit-user");
+
+        services.AddHabitUserServices();
+
+        services.AddHabitUserIntegrations();
+
+        services.AddGithubModule();
+
+        services.AddStravaModule();
+
+        services.AddGoogleHealthModule();
+
+        services.AddHostedService<IntegrationSyncLogCleanupWorker>();
+
+        return services;
+    }
 
     public static IServiceCollection AddHabitUserPersistence(
         this IServiceCollection services,
@@ -50,39 +86,6 @@ public static class Setup
                 )
                 .UseSnakeCaseNamingConvention()
         );
-
-        return services;
-    }
-
-    public static IServiceCollection AddHabitUserModule(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.AddHabitUserPersistence(configuration);
-
-        services.AddScoped(
-            typeof(IPipelineBehavior<,>),
-            typeof(HabitUserEventDispatchingBehavior<,>)
-        );
-
-        services.AddValidatorsFromAssemblyContaining<IHabitUserApplicationRoot>();
-
-        services.AddEndpoints(assemblies: HabitUserApiRoot.Assembly);
-
-        services.AddHandlerAssembly<IHabitUserApplicationRoot>();
-
-        services.AddHabitUserServices();
-
-        services.AddHabitUserIntegrations();
-
-        services.AddGithubModule();
-
-        services.AddStravaModule();
-
-        services.AddGoogleHealthModule();
-
-        services.AddHostedService<IntegrationSyncLogCleanupWorker>();
 
         return services;
     }

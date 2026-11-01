@@ -1,4 +1,5 @@
 using Dailu.Events;
+using Dailu.Events.IntegrationEvents;
 using Identity.Application.Models;
 using Identity.Application.Persistence;
 using Identity.Application.Services;

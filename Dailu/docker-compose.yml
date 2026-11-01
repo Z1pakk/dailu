@@ -1,6 +1,6 @@
 services:
   dailo.postgres:
-    image: postgres:18.3
+    image: pgvector/pgvector:pg18
     environment:
       POSTGRES_DB: dailo
       POSTGRES_USER: dailo
@@ -9,6 +9,19 @@ services:
       - dailo_posgres_data:/var/lib/postgresql
     ports:
       - 5460:5432
+  dailo.rabbitmq:
+    image: rabbitmq:4-management
+    hostname: dailu-rabbitmq            # node name (and so the data directory) depends on it
+    environment:
+      RABBITMQ_DEFAULT_USER: dailu
+      RABBITMQ_DEFAULT_PASS: Dailo123!@
+    volumes:
+      - dailu_rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - 5672:5672                       # AMQP
+      - 15672:15672                     # management UI
 volumes:
   dailo_posgres_data:
+    external: false
+  dailu_rabbitmq_data:
     external: false
