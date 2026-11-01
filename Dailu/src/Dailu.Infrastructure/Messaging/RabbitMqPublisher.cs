@@ -12,10 +12,14 @@ public class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDisposable
 {
     private const string SequenceHeader = "x-publish-seq";
     private static readonly TimeSpan ConfirmTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan DisposeLockTimeout = TimeSpan.FromSeconds(5);
 
+    // guards _channel and _disposed; not disposed itself, so a publish still waiting on it
+    // during shutdown gets ObjectDisposedException from us, not from the semaphore
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly ConcurrentDictionary<ulong, PendingConfirm> _pendingConfirms = new();
     private IChannel? _channel;
+    private volatile bool _disposed;
 
     public async Task PublishAsync(
         IIntegrationEvent integrationEvent,
@@ -37,6 +41,9 @@ public class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDisposable
 
         try
         {
+            // a publish that was waiting for the lock while we disposed must not open a new channel
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
             var channel = await GetChannelAsync(cancellationToken);
 
             // take the number and send under the same lock, so the broker's numbering
@@ -224,14 +231,45 @@ public class RabbitMqPublisher(RabbitMqConnection connection) : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_channel is not null)
-        {
-            await _channel.CloseAsync();
-            await _channel.DisposeAsync();
-        }
+        // let an in-flight publish finish writing its frames before the channel goes away,
+        // but don't let one stuck on a blocked connection (broker memory alarm) hang shutdown
+        var acquired = await _lock.WaitAsync(DisposeLockTimeout);
 
-        FailAll(new ObjectDisposedException(nameof(RabbitMqPublisher)));
-        _lock.Dispose();
+        try
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+
+            if (_channel is not null)
+            {
+                try
+                {
+                    if (_channel.IsOpen)
+                    {
+                        await _channel.CloseAsync();
+                    }
+                }
+                finally
+                {
+                    await _channel.DisposeAsync();
+                    _channel = null;
+                }
+            }
+        }
+        finally
+        {
+            // also runs if closing threw: nobody may keep waiting for an ack that won't come
+            FailAll(new ObjectDisposedException(nameof(RabbitMqPublisher)));
+
+            if (acquired)
+            {
+                _lock.Release();
+            }
+        }
     }
 
     private sealed class PendingConfirm(string eventType)

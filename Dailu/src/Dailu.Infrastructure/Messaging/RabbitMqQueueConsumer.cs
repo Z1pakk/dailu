@@ -51,18 +51,30 @@ public sealed class RabbitMqQueueConsumer(
     private async Task StartConsumingAsync(CancellationToken ct)
     {
         var amqpConnection = await connection.GetAsync(ct);
-        _channel = await amqpConnection.CreateChannelAsync(cancellationToken: ct);
+        var channel = await amqpConnection.CreateChannelAsync(cancellationToken: ct);
 
-        await RabbitMqTopology.DeclareConsumerAsync(_channel, _subscription, ct);
+        try
+        {
+            await RabbitMqTopology.DeclareConsumerAsync(channel, _subscription, ct);
 
-        // one unacked message at a time: in order, and a slow handler can't
-        // pull the whole queue into memory
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, ct);
+            // one unacked message at a time: in order, and a slow handler can't
+            // pull the whole queue into memory
+            await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, ct);
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += OnReceivedAsync;
+            var consumer = new AsyncEventingBasicConsumer(channel);
+            consumer.ReceivedAsync += OnReceivedAsync;
 
-        await _channel.BasicConsumeAsync(_subscription.Queue, autoAck: false, consumer, ct);
+            await channel.BasicConsumeAsync(_subscription.Queue, autoAck: false, consumer, ct);
+
+            _channel = channel; // only a fully set-up channel becomes the consumer's channel
+        }
+        catch
+        {
+            // a failed attempt must not leave its channel open; RunAsync retries with a new one
+            // (no ct: it may already be cancelled, and cleanup must still run)
+            await channel.DisposeAsync();
+            throw;
+        }
     }
 
     private async Task OnReceivedAsync(object sender, BasicDeliverEventArgs delivery)
