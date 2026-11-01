@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
 using SharedInfrastructure.Event;
+using SharedInfrastructure.Persistence;
 using Tag.Api;
 using Tag.Application;
 using Tag.Application.Persistence;
@@ -47,11 +48,9 @@ public static class Setup
         IConfiguration configuration
     )
     {
-        var connectionString = configuration.GetConnectionString(TagDbConnectionString);
-
         services.AddDbContext<ITagDbContext, TagDbContext>(opt =>
             opt.UseNpgsql(
-                    connectionString,
+                    configuration.GetRequiredConnectionString(TagDbConnectionString),
                     b =>
                     {
                         b.MigrationsAssembly(AssemblyReference.Assembly)

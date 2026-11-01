@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
 using SharedInfrastructure.Event;
+using SharedInfrastructure.Persistence;
 
 namespace HabitUser.Infrastructure;
 
@@ -64,11 +65,9 @@ public static class Setup
         IConfiguration configuration
     )
     {
-        var connectionString = configuration.GetConnectionString(HabitUserDbConnectionString);
-
         services.AddDbContext<IHabitUserDbContext, HabitUserDbContext>(opt =>
             opt.UseNpgsql(
-                    connectionString,
+                    configuration.GetRequiredConnectionString(HabitUserDbConnectionString),
                     b =>
                     {
                         b.MigrationsAssembly(AssemblyReference.Assembly.FullName)
