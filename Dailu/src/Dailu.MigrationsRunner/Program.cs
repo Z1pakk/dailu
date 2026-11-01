@@ -5,6 +5,7 @@ using HabitUser.Infrastructure;
 using Identity.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Search.Infrastructure;
 using Tag.Infrastructure;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -18,7 +19,8 @@ builder
     .AddHabitEntryPersistence(builder.Configuration)
     .AddHabitUserPersistence(builder.Configuration)
     .AddIdentityPersistence(builder.Configuration)
-    .AddTagPersistence(builder.Configuration);
+    .AddTagPersistence(builder.Configuration)
+    .AddSearchPersistence(builder.Configuration);
 
 builder.AddDatabaseInitialization();
 

@@ -52,7 +52,7 @@ public static class Setup
         return services;
     }
 
-    private static void AddSearchPersistence(
+    public static void AddSearchPersistence(
         this IServiceCollection services,
         IConfiguration configuration
     )
