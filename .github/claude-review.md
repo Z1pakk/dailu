@@ -51,9 +51,6 @@ After the inline comments, always post **exactly one** top-level PR comment that
 
 **Verdict:** ✅ Looks good / ⚠️ Changes suggested / ❌ Changes required
 
-<If `gh pr checks` shows the build or tests failing, state that here first,
-e.g. "⚠️ CI is currently failing (build-backend)." Omit this line if CI is green.>
-
 <1–2 sentence overview of what the PR does and its overall quality>
 
 ### 🔴 Must fix
@@ -67,8 +64,12 @@ e.g. "⚠️ CI is currently failing (build-backend)." Omit this line if CI is g
 
 ### ✅ What's good
 - <1–3 bullets on things done well, if any>
+
+### ⏭️ Not reviewed
+- `path/to/File.cs`, `path/to/Other.cs` — <why: ran out of time/budget>
 ```
 
-- Leave out any severity section that has no items.
+- Leave out any severity section that has no items, and leave out "Not reviewed" when every non-generated file was reviewed.
+- Don't report CI status. The separate CI jobs keep their own comment on the PR up to date.
 - Each bullet is one line; the details belong in the inline comments.
 - Verdict: ❌ if there is any 🔴, ⚠️ if only 🟡/🔵, ✅ if nothing to report.
