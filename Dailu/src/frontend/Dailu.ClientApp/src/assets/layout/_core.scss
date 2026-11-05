@@ -16,13 +16,8 @@ body {
   padding: 0;
   margin: 0;
   min-height: 100%;
-  color: var(--text-color);
-  font-family:
-    InterDisplay,
-    Inter,
-    sans-serif;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  font-variation-settings: normal;
+  color: var(--p-text-color);
+  font-family: var(--dl-font-sans);
   -webkit-font-smoothing: antialiased;
-  background-color: var(--surface-ground);
+  background-color: var(--dl-bg-canvas);
 }

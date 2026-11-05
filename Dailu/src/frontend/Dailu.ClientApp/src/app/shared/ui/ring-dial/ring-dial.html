@@ -1,0 +1,27 @@
+<svg class="dial-svg" viewBox="0 0 100 100" aria-hidden="false" role="group">
+  <circle class="track" [attr.cx]="c" [attr.cy]="c" [attr.r]="r" />
+
+  @for (item of $paths(); track $index) {
+    <path [class]="'seg seg--' + item.segment.state"
+          [attr.d]="item.d"
+          [attr.data-seg]="$index"
+          [attr.tabindex]="$interactive() ? 0 : null"
+          [attr.role]="$interactive() ? 'img' : null"
+          [attr.aria-label]="$interactive() ? item.segment.label + ' · ' + item.segment.detail : null"
+          (mouseenter)="enter(item.segment)"
+          (mouseleave)="leave()"
+          (focus)="enter(item.segment)"
+          (blur)="leave()" />
+  }
+</svg>
+
+@if ($centerTitle() || $centerCaption()) {
+  <div class="dial-center" aria-live="polite">
+    @if ($centerTitle()) {
+      <span class="dial-title">{{ $centerTitle() }}</span>
+    }
+    @if ($centerCaption()) {
+      <span class="dial-caption">{{ $centerCaption() }}</span>
+    }
+  </div>
+}

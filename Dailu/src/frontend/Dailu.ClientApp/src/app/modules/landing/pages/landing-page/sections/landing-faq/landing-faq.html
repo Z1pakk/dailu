@@ -1,23 +1,21 @@
-<section class="faq-section">
-  <div class="faq-inner section-inner">
-    <div class="faq-left reveal">
-      <p-tag class="section-label" [rounded]="true" value="Questions" />
-      <h2 class="section-title faq-heading">Anything<br>unclear?</h2>
-      <p class="faq-sub">Can't find the answer? Reach out directly.</p>
-      <a href="mailto:vladshumskiyy@gmail.com" class="faq-link">vladshumskiyy@gmail.com →</a>
-    </div>
-    <div class="faq-list reveal">
-      @for (item of items; track item.q; let i = $index) {
-        <div class="faq-item" [class.open]="$openIndex() === i">
-          <button class="faq-question" (click)="toggle(i)">
-            <span>{{ item.q }}</span>
-            <span class="faq-icon">+</span>
-          </button>
-          <div class="faq-answer">
-            <div class="faq-answer-inner">{{ item.a }}</div>
-          </div>
-        </div>
+<section id="faq" class="landing-section landing-section--surface">
+  <div class="section-inner">
+    <app-section-header class="reveal" eyebrow="FAQ" title="Questions, answered." />
+
+    <p-accordion value="0" class="faq reveal" [dt]="accordionTokens">
+      @for (item of items; track item.question) {
+        <p-accordion-panel [value]="'' + $index">
+          <p-accordion-header>
+            <span class="faq-question">{{ item.question }}</span>
+            <ng-template #toggleicon let-active="active">
+              <i [class]="'faq-icon ' + (active ? 'pi pi-minus' : 'pi pi-plus')" aria-hidden="true"></i>
+            </ng-template>
+          </p-accordion-header>
+          <p-accordion-content>
+            <p class="faq-answer">{{ item.answer }}</p>
+          </p-accordion-content>
+        </p-accordion-panel>
       }
-    </div>
+    </p-accordion>
   </div>
 </section>

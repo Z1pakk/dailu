@@ -1,0 +1,130 @@
+@use 'dailu' as dl;
+
+:host {
+  display: block;
+}
+
+/* On narrow screens the grid scrolls inside its own box, never the page. */
+.hm-scroll {
+  overflow-x: auto;
+  padding-top: dl.space(40); /* room for the popup above the first row */
+  margin-top: -40px;
+}
+
+.hm {
+  position: relative;
+  min-width: 600px; /* a full year scrolls inside .hm-scroll below this */
+}
+
+/* Compact (no month row, e.g. last 20 weeks on mobile): fills the card, never scrolls. */
+:host(.hm--compact) .hm {
+  min-width: 0;
+}
+
+.hm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+  margin-bottom: dl.space(16);
+}
+
+.hm-caption {
+  margin: 0;
+  color: var(--p-text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.hm-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hm-month,
+.hm-day {
+  fill: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  letter-spacing: 0.04em;
+}
+
+.hm-month {
+  font-size: 11px;
+}
+
+.hm-day {
+  font-size: 10px;
+}
+
+.hm-grid {
+  outline: none;
+
+  &:focus-visible .hm-cell--active {
+    stroke-width: 2.5;
+  }
+}
+
+.hm-cell--active {
+  stroke: var(--p-text-color);
+  stroke-width: 2;
+}
+
+.hm-cell--0 {
+  fill: var(--dl-bg-muted);
+  background: var(--dl-bg-muted);
+}
+
+.hm-cell--1 {
+  fill: var(--dl-heat-1);
+  background: var(--dl-heat-1);
+}
+
+.hm-cell--2 {
+  fill: var(--dl-heat-2);
+  background: var(--dl-heat-2);
+}
+
+.hm-cell--3 {
+  fill: var(--dl-heat-3);
+  background: var(--dl-heat-3);
+}
+
+.hm-cell--4 {
+  fill: var(--dl-heat-4);
+  background: var(--dl-heat-4);
+}
+
+.hm-tip {
+  position: absolute;
+  left: var(--hm-tip-x, 0);
+  top: var(--hm-tip-y, 0);
+  z-index: 2;
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: dl.space(4) dl.space(8);
+  border-radius: dl.radius(sm);
+  background: var(--dl-bg-inverse);
+  color: var(--dl-text-inverse);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--dl-shadow-sm);
+  pointer-events: none;
+}
+
+.hm-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(4);
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+}
+
+.hm-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}

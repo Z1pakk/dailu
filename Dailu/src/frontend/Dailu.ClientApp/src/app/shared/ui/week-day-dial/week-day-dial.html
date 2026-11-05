@@ -1,0 +1,9 @@
+<div class="wd" tabindex="0" role="img" [attr.aria-label]="$summary()" [class.wd--future]="$future()">
+  <app-ring-dial [segments]="$segments()" [size]="$size()" [gap]="10" [interactive]="false" />
+  <span class="wd-day">
+    <span class="dl-desktop-only">{{ $day() }}</span>
+    <span class="dl-mobile-only" aria-hidden="true">{{ $day().charAt(0) }}</span>
+  </span>
+  <span class="wd-caption">{{ $caption() }}</span>
+  <span class="wd-tip" role="tooltip" aria-hidden="true">{{ $summary() }}</span>
+</div>

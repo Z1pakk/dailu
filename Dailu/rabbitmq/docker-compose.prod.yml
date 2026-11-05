@@ -21,9 +21,13 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-    expose:                             # no host ports: reachable only on dokploy-network
+    expose:                             # reachable by other containers on dokploy-network
       - "5672"                          # AMQP
       - "15672"                         # management UI / HTTP API
+    ports:
+      # Management UI on the server's loopback only - never the public interface.
+      # Tailscale exposes it to the tailnet: tailscale serve --bg --https=15672 http://127.0.0.1:15672
+      - "127.0.0.1:15672:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s

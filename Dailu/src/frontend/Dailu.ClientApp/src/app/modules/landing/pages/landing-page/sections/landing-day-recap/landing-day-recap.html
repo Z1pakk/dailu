@@ -1,0 +1,39 @@
+<section class="landing-section landing-section--surface">
+  <div class="section-inner">
+    <div class="recap">
+      <div class="recap-copy reveal">
+        <app-section-header align="start" eyebrow="23:59 · Day closed" [title]="title"
+                            subtitle="At midnight Dailu closes the dial and sends a short recap: what got done, what was automatic, and how the streak moved."
+                            subtitleMobile="A short recap at midnight: what got done and how the streak moved." />
+        <span class="recap-pill dl-desktop-only">Delivered by email or push — your choice</span>
+      </div>
+
+      <div class="recap-stage reveal">
+        <figure class="receipt" aria-label="Example day recap for Thursday 5 November">
+          <p class="receipt-logo">dailu</p>
+          <p class="receipt-sub">Day recap · Thu 05 Nov</p>
+
+          <ul class="receipt-rows">
+            @for (row of rows; track row.time; let i = $index) {
+              <!-- Mobile (Figma 9:240) shows the first four rows only. -->
+              <li class="receipt-row" [class.dl-desktop-only]="i >= 4">
+                <span class="receipt-time">{{ row.time }}</span>
+                <span class="receipt-name">{{ row.name }}</span>
+                <span class="receipt-source" [class.receipt-source--you]="row.source === 'YOU'">{{ row.source }}</span>
+              </li>
+            }
+          </ul>
+
+          <dl class="receipt-totals">
+            <div class="dl-desktop-only"><dt>Done</dt><dd>{{ rows.length }} / {{ rows.length }}</dd></div>
+            <div class="dl-desktop-only"><dt>Automatic</dt><dd>{{ automatic }}</dd></div>
+            <div class="receipt-streak"><dt>Streak</dt><dd>48 days ↑</dd></div>
+          </dl>
+
+          <span class="receipt-ring dl-desktop-only" aria-hidden="true"></span>
+          <p class="receipt-foot dl-desktop-only">Dial closed. See you at 06:45.</p>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>

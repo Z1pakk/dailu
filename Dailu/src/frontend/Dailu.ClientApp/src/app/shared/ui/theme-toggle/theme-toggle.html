@@ -1,0 +1,15 @@
+<div class="toggle" role="radiogroup" aria-label="Colour theme" (keydown)="onKeydown($event)">
+  @for (option of options; track option.label) {
+    <button type="button"
+            class="toggle-option"
+            role="radio"
+            [class.toggle-option--active]="option.value === $isDark()"
+            [attr.aria-checked]="option.value === $isDark()"
+            [attr.tabindex]="option.value === $isDark() ? 0 : -1"
+            [attr.aria-label]="option.label"
+            [attr.title]="option.label"
+            (click)="select(option.value)">
+      <i [class]="option.icon" aria-hidden="true"></i>
+    </button>
+  }
+</div>

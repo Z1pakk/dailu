@@ -12,7 +12,7 @@ import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
-import { LogoWidget } from '@shared/ui/logo-widget/logo-widget';
+import { RingLogo } from '@shared/ui/ring-logo/ring-logo';
 import { Password } from 'primeng/password';
 import { RouterLink } from '@angular/router';
 import {
@@ -46,7 +46,7 @@ import { MessageService } from 'primeng/api';
     Button,
     Checkbox,
     InputText,
-    LogoWidget,
+    RingLogo,
     Password,
     ReactiveFormsModule,
     RouterLink,
