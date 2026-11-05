@@ -1,0 +1,74 @@
+@use 'dailu' as dl;
+
+:host {
+  display: inline-block;
+}
+
+.wd {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: dl.space(4);
+  min-width: 44px;
+  padding: dl.space(4);
+  border-radius: dl.radius(md);
+  outline: none;
+  cursor: default;
+  transition: background-color 150ms ease-out;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--dl-bg-muted);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--p-primary-color);
+  }
+}
+
+.wd--future app-ring-dial {
+  opacity: 0.5;
+}
+
+.wd-day {
+  color: var(--p-text-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wd-caption {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.wd-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: dl.space(4) dl.space(8);
+  border-radius: dl.radius(sm);
+  background: var(--dl-bg-inverse);
+  color: var(--dl-text-inverse);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--dl-shadow-sm);
+  pointer-events: none;
+  /* display:none (not visibility) so hidden tips don't widen the page on mobile */
+  display: none;
+}
+
+.wd:hover .wd-tip,
+.wd:focus-visible .wd-tip {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd {
+    transition: none;
+  }
+}

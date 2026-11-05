@@ -1,106 +1,75 @@
-<section class="hiw-section">
-  <div class="hiw-inner section-inner">
-    <div class="reveal">
-      <p-tag [rounded]="true" class="section-label" value="⚡ How it works" />
-      <h2 class="section-title">
-        From zero to tracking
-        <br />
-        in three steps
-      </h2>
-    </div>
-    <p-stepper [value]="$activeStep()"
-               (valueChange)="$activeStep.set($event ?? 0)"
-               class="hiw-stepper reveal block">
-      <p-step-list class="p-1">
-        <p-step [value]="0">
-          <ng-template #content
-                       let-activateCallback="activateCallback"
-                       let-active="active">
-            <div [class.active]="active"
-                 (click)="activateCallback()"
-                 class="hiw-step-card">
-              <div class="hiw-step-num">1</div>
-              <h3 class="hiw-step-title">Connect</h3>
-              <p class="hiw-step-desc">
-                Link your apps and services in seconds. No API keys, no config.
-              </p>
-            </div>
-          </ng-template>
-        </p-step>
-        <p-step [value]="1">
-          <ng-template #content
-                       let-activateCallback="activateCallback"
-                       let-active="active">
-            <div [class.active]="active"
-                 (click)="activateCallback()"
-                 class="hiw-step-card">
-              <div class="hiw-step-num">2</div>
-              <h3 class="hiw-step-title">Track</h3>
-              <p class="hiw-step-desc">
-                Dailu polls your connected apps on a schedule and logs new activity automatically.
-              </p>
-            </div>
-          </ng-template>
-        </p-step>
-        <p-step [value]="2">
-          <ng-template #content
-                       let-activateCallback="activateCallback"
-                       let-active="active">
-            <div [class.active]="active"
-                 (click)="activateCallback()"
-                 class="hiw-step-card">
-              <div class="hiw-step-num">3</div>
-              <h3 class="hiw-step-title">Grow</h3>
-              <p class="hiw-step-desc">
-                Watch your heatmap fill, streaks climb, and milestones unlock as you stay consistent.
-              </p>
-            </div>
-          </ng-template>
-        </p-step>
-      </p-step-list>
-      <p-step-panels>
-        <p-step-panel [value]="0">
-          <ng-template #content>
-            <div class="hiw-demo">
-              <span class="hiw-demo-icon">🔗</span>
-              <div>
-                <p class="hiw-demo-title">Connect the apps you already use</p>
-                <p class="hiw-demo-text">
-                  Pick from a growing list of integrations. We request read-only access — your data stays yours. Disconnect anytime.
-                </p>
-              </div>
-            </div>
-          </ng-template>
-        </p-step-panel>
-        <p-step-panel [value]="1">
-          <ng-template #content>
-            <div class="hiw-demo">
-              <span class="hiw-demo-icon">🔄</span>
-              <div>
-                <p class="hiw-demo-title">
-                  Your activity, logged automatically
-                </p>
-                <p class="hiw-demo-text">
-                  Dailu polls your connected apps on a regular schedule. New activities are turned into habit entries automatically — no manual input needed.
-                </p>
-              </div>
-            </div>
-          </ng-template>
-        </p-step-panel>
-        <p-step-panel [value]="2">
-          <ng-template #content>
-            <div class="hiw-demo">
-              <span class="hiw-demo-icon">📈</span>
-              <div>
-                <p class="hiw-demo-title">Streaks, milestones, momentum</p>
-                <p class="hiw-demo-text">
-                  Your activity heatmap fills up, streaks build day by day, and milestone badges unlock as you hit targets. Progress is visible at a glance.
-                </p>
-              </div>
-            </div>
-          </ng-template>
-        </p-step-panel>
-      </p-step-panels>
-    </p-stepper>
+<section id="how-it-works" class="landing-section landing-section--surface">
+  <div class="section-inner">
+    <app-section-header class="reveal" eyebrow="How it works" [title]="'Three steps.\nThen it runs itself.'" />
+
+    <ol class="steps">
+      <li class="step reveal">
+        <h3 class="step-title dl-h3"><span class="step-num">01</span>Schedule it</h3>
+        <p class="step-text dl-body-sm">
+          <span class="dl-desktop-only">Name the habit, pick the days and give it a time. That’s its slot on the clock.</span>
+          <span class="dl-mobile-only">Name the habit, pick the days, give it a time.</span>
+        </p>
+        <!-- Desktop: name / repeat + time. Mobile (Figma 9:240): name + time in one row. -->
+        <div class="step-panel schedule">
+          <div class="schedule-name">
+            <label class="field-label dl-desktop-only" for="hiw-habit">Habit</label>
+            <input pInputText id="hiw-habit" class="field" maxlength="32" aria-label="Habit"
+                   [ngModel]="$habitName()" (ngModelChange)="$habitName.set($event)" />
+          </div>
+          <div class="schedule-repeat dl-desktop-only">
+            <label class="field-label" id="hiw-repeat-label">Repeat</label>
+            <p-select [options]="repeatOptions" [ngModel]="$repeat()" (ngModelChange)="$repeat.set($event)"
+                      ariaLabelledBy="hiw-repeat-label" [fluid]="true" appendTo="body" />
+          </div>
+          <div class="schedule-time">
+            <label class="field-label dl-desktop-only" id="hiw-time-label">Time</label>
+            <p-select [options]="timeOptions" [ngModel]="$time()" (ngModelChange)="$time.set($event)"
+                      ariaLabelledBy="hiw-time-label" [fluid]="true" appendTo="body" />
+          </div>
+        </div>
+      </li>
+
+      <li class="step reveal">
+        <h3 class="step-title dl-h3"><span class="step-num">02</span>Connect a source</h3>
+        <p class="step-text dl-body-sm">
+          Link the app that proves it happened. Read-only<span class="dl-desktop-only"> access, disconnect anytime</span>.
+        </p>
+        <ul class="step-panel source-list">
+          @for (source of sources; track source.id; let first = $first) {
+            <li class="source" [class.dl-desktop-only]="!first">
+              <span class="source-letter" aria-hidden="true">{{ source.letter }}</span>
+              <label class="source-text" [for]="'hiw-src-' + source.id">
+                <span class="source-name">{{ source.name }}</span>
+                <span class="source-caption dl-desktop-only">{{ source.caption }}</span>
+              </label>
+              <p-toggleswitch [inputId]="'hiw-src-' + source.id"
+                              [ngModel]="$connected()[source.id]"
+                              (ngModelChange)="setConnected(source.id, $event)" />
+            </li>
+          }
+        </ul>
+      </li>
+
+      <li class="step reveal">
+        <h3 class="step-title dl-h3"><span class="step-num">03</span>It checks itself</h3>
+        <p class="step-text dl-body-sm">
+          <span class="dl-desktop-only">When the activity lands, the habit is ticked and the arc fills. You just show up.</span>
+          <span class="dl-mobile-only">The activity lands, the box gets ticked.</span>
+        </p>
+        <ul class="step-panel check-list">
+          @for (row of $rows(); track row.id; let first = $first) {
+            <li class="check" [class.check--done]="row.done" [class.dl-desktop-only]="!first">
+              <p-checkbox [binary]="true" [inputId]="'hiw-check-' + row.id"
+                          [ngModel]="row.done" (ngModelChange)="setDone(row.id, $event)" />
+              <label class="check-text" [for]="'hiw-check-' + row.id">
+                <span class="check-name" [attr.title]="row.name">{{ row.name }}</span>
+                <span class="check-caption" [attr.title]="row.caption">{{ row.caption }}</span>
+              </label>
+              <span class="check-time">{{ row.time }}</span>
+            </li>
+          }
+        </ul>
+      </li>
+    </ol>
   </div>
 </section>

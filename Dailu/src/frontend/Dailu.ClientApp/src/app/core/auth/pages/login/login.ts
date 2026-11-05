@@ -14,7 +14,7 @@ import { Checkbox } from 'primeng/checkbox';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { RouterLink } from '@angular/router';
-import { LogoWidget } from '@shared/ui/logo-widget/logo-widget';
+import { RingLogo } from '@shared/ui/ring-logo/ring-logo';
 import { Store } from '@ngxs/store';
 import { valibotValidator } from '@shared/lib/form/valibot.validator';
 import {
@@ -39,7 +39,7 @@ import { HttpErrorResponse } from '@angular/common/http';
     ReactiveFormsModule,
     InputText,
     RouterLink,
-    LogoWidget,
+    RingLogo,
     Password,
   ],
   providers: [AltchaService],

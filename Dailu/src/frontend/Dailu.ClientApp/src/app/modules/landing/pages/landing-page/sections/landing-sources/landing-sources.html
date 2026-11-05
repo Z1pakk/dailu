@@ -1,0 +1,66 @@
+<section id="sources" class="landing-section landing-section--surface">
+  <div class="section-inner sources">
+    <div class="sources-dial reveal">
+      <div class="dial-box">
+      <svg viewBox="0 0 640 480" role="group" aria-label="Example day: where each check came from"
+           (pointerover)="onPointerOver($event)" (pointerleave)="onPointerLeave()">
+        <circle class="dial-face" [attr.cx]="cx" [attr.cy]="cy" r="190" />
+        <circle class="dial-track" [attr.cx]="cx" [attr.cy]="cy" [attr.r]="ringR" />
+
+        @for (seg of segments; track seg.id) {
+          <line class="dial-leader" [class.dial-leader--active]="$active()?.id === seg.id"
+                [attr.x1]="seg.lineFrom.x" [attr.y1]="seg.lineFrom.y"
+                [attr.x2]="seg.lineTo.x" [attr.y2]="seg.lineTo.y" aria-hidden="true" />
+          <text class="dial-label" [attr.x]="seg.label.x" [attr.y]="seg.label.y"
+                [attr.text-anchor]="seg.anchor" aria-hidden="true">
+            <tspan class="dial-label-name" [attr.x]="seg.label.x" dy="-2">{{ seg.name }}</tspan>
+            <tspan [class]="'dial-label-detail dial-label-detail--' + seg.state" [attr.x]="seg.label.x" dy="16">{{ seg.detail }}</tspan>
+          </text>
+          <path [class]="'dial-seg dial-seg--' + seg.state"
+                [class.dial-seg--active]="$active()?.id === seg.id"
+                [attr.data-seg]="seg.id"
+                [attr.d]="seg.path"
+                tabindex="0"
+                role="img"
+                [attr.aria-label]="seg.name + ' · ' + seg.detail"
+                (focus)="onFocus(seg.id)"
+                (blur)="onBlur(seg.id)" />
+        }
+      </svg>
+
+      <div class="dial-center" aria-live="polite">
+        @if ($active(); as active) {
+          <span class="dial-center-name">{{ active.name }}</span>
+          <span class="dial-center-detail">{{ active.detail }}</span>
+        } @else {
+          <span class="dial-center-value">{{ doneCount }}/{{ segments.length }}</span>
+          <span class="dial-center-detail">Thu 5 Nov</span>
+          <span class="dial-center-hint">hover a segment</span>
+        }
+      </div>
+      </div>
+
+      <!-- Mobile: the outside labels are hidden, so list the same info under the dial. -->
+      <ul class="sources-list" aria-hidden="true">
+        @for (seg of segments; track seg.id) {
+          <li class="sources-item" [class.sources-item--waiting]="seg.state === 'waiting'">
+            <span [class]="'sources-dot sources-dot--' + seg.state"></span>
+            <span class="sources-name">{{ seg.name }}</span>
+            <span [class]="'sources-detail sources-detail--' + seg.state">{{ seg.detail }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="sources-copy reveal">
+      <app-section-header align="start" eyebrow="Transparent by design" [title]="'Every tick shows\nwhere it came from.'"
+                          subtitle="No black box. Each check carries its source and timestamp, so your streak is something you can trust."
+                          subtitleMobile="" />
+      <ul class="points dl-desktop-only">
+        @for (point of points; track point) {
+          <li class="point"><span class="point-icon"><i class="pi pi-check" aria-hidden="true"></i></span>{{ point }}</li>
+        }
+      </ul>
+    </div>
+  </div>
+</section>

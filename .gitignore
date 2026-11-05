@@ -408,6 +408,7 @@ Dailu/containers/
 Dailu/containers/*
 
 superpowers/
+.superpowers/
 
 # Added by code-review-graph
 .code-review-graph/

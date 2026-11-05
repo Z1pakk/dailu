@@ -1,0 +1,40 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--logo-size) * 0.45);
+  color: var(--p-text-color);
+}
+
+.logo-mark {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  flex: none;
+}
+
+.logo-track {
+  fill: var(--dl-dial-track);
+}
+
+.logo-arc {
+  fill: var(--p-primary-color);
+}
+
+.logo-word {
+  font-family: var(--dl-font-sans);
+  font-weight: 600;
+  font-size: calc(var(--logo-size) * 0.98);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+:host(.ring-logo--inverse) {
+  color: var(--dl-white);
+
+  .logo-track {
+    fill: var(--dl-ink-700);
+  }
+
+  .logo-arc {
+    fill: var(--dl-teal-400);
+  }
+}

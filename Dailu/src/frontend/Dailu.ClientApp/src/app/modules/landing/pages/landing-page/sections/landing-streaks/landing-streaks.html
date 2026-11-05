@@ -1,0 +1,38 @@
+<section id="streaks" class="landing-section landing-section--canvas">
+  <!-- Desktop: header + stats left, card right. Mobile (Figma 9:240): header, card, stats. -->
+  <div class="section-inner streaks">
+    <app-section-header class="streaks-head reveal" align="start" eyebrow="Streaks" [title]="title"
+                        subtitle="Every closed dial is a day you showed up. A full week is a streak you never had to log."
+                        subtitleMobile="Every closed dial is a day you showed up." />
+
+    <dl class="stats reveal">
+      @for (stat of stats; track stat.label) {
+        <div class="stat">
+          <dt class="stat-label">{{ stat.label }}</dt>
+          <dd class="stat-value">{{ stat.value }}</dd>
+        </div>
+      }
+    </dl>
+
+    <div class="week-card landing-card reveal">
+      <div class="week-head">
+        <h3 class="week-title">Week 45</h3>
+        <span class="week-closed">3 of 4 days closed</span>
+      </div>
+
+      <ul class="week-days">
+        @for (day of week; track day.day) {
+          <li [class.week-day--today]="day.today">
+            <app-week-day-dial [day]="day.day" [segments]="day.segments" [future]="day.future" [size]="64" />
+          </li>
+        }
+      </ul>
+
+      <ul class="legend dl-desktop-only" aria-label="Legend">
+        @for (item of legend; track item.state) {
+          <li class="legend-item"><span [class]="'legend-dot legend-dot--' + item.state"></span>{{ item.label }}</li>
+        }
+      </ul>
+    </div>
+  </div>
+</section>

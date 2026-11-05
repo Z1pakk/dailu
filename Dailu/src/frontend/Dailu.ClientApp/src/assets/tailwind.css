@@ -2,6 +2,8 @@
 @import 'tailwindcss-primeui';
 @import './variables/color-palette.css';
 @import './variables/typography.css';
+@import './variables/dailu-tokens.css';
+@import './variables/dailu-type.css';
 @import './utilities/utilities.css';
 
 @custom-variant dark (&:where(.app-dark, .app-dark *));
@@ -40,6 +42,8 @@
   --blur-3xl: 64px;
   --default-transition-duration: .15s;
   --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  --font-sans: 'Onest', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --default-font-family: var(--font-sans);
   --default-mono-font-family: var(--font-mono);
   --animate-infinite-scroll: infinite-scroll 25s linear infinite;

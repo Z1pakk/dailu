@@ -1,0 +1,135 @@
+// =============================================================================
+// Dailu — global layout module (spacing, sizes, breakpoints, layout mixins)
+//
+//   @use 'dailu' as dl;
+//
+//   .card    { padding: dl.space(24); border-radius: dl.radius(xl); }
+//   .section { @include dl.section; }
+//   .grid    { @include dl.down(lg) { grid-template-columns: 1fr; } }
+//
+// Values point at the CSS variables in src/assets/variables/dailu-tokens.css,
+// so this file holds names and logic only. Raw numbers live in the token file.
+// Breakpoints are the exception: media queries can't read CSS variables.
+// =============================================================================
+
+@use 'sass:map';
+@use 'sass:meta';
+
+// ---- Spacing scale (Figma "Spacing" collection) -----------------------------
+
+$spaces: (0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 104);
+
+/// Spacing token: dl.space(24) → var(--dl-space-24).
+/// Only values on the scale are allowed; anything else fails the build.
+@function space($step) {
+  @if not index($spaces, $step) {
+    @error 'dl.space(#{$step}) is not on the scale #{$spaces}.';
+  }
+  @return var(--dl-space-#{$step});
+}
+
+// ---- Radius (Figma "Radius" collection) ------------------------------------
+
+$radii: (sm, md, lg, xl, 2xl, full);
+
+/// Radius token: dl.radius(xl) → var(--dl-radius-xl).
+@function radius($name) {
+  @if not index($radii, $name) {
+    @error 'dl.radius(#{$name}) is not one of #{$radii}.';
+  }
+  @return var(--dl-radius-#{$name});
+}
+
+// ---- Layout sizes (responsive, set in dailu-tokens.css) ---------------------
+
+/// Max content width of a page container.
+$container-max: var(--dl-container-max);
+/// Side padding of the page container: 80 / 40 / 20 depending on the breakpoint.
+$gutter: var(--dl-gutter);
+/// Vertical padding of a page section: 104 desktop, 64 mobile.
+$section-y: var(--dl-section-y);
+/// Height of the sticky top nav: 72 desktop, 64 mobile.
+$nav-height: var(--dl-nav-height);
+
+// ---- Breakpoints (same values as Tailwind's @theme in tailwind.css) ---------
+
+$breakpoints: (
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  2xl: 1920px,
+);
+
+@function _bp($name) {
+  @if not map.has-key($breakpoints, $name) {
+    @error 'Unknown breakpoint `#{$name}`. Use one of #{map.keys($breakpoints)}.';
+  }
+  @return map.get($breakpoints, $name);
+}
+
+/// Styles below a breakpoint: @include dl.down(md) { … } → max-width: 767.98px.
+@mixin down($name) {
+  @media (max-width: _bp($name) - 0.02px) {
+    @content;
+  }
+}
+
+/// Styles from a breakpoint up: @include dl.up(lg) { … } → min-width: 992px.
+@mixin up($name) {
+  @media (min-width: _bp($name)) {
+    @content;
+  }
+}
+
+// ---- Layout mixins ---------------------------------------------------------
+
+/// Centered page container with responsive side gutters.
+@mixin container($max: $container-max) {
+  max-width: $max;
+  margin-inline: auto;
+  padding-inline: $gutter;
+}
+
+/// Page section: responsive vertical padding and room for the sticky nav when
+/// it is the target of an anchor link.
+@mixin section {
+  padding-block: $section-y;
+  scroll-margin-top: $nav-height;
+}
+
+/// Vertical flex stack with a gap from the spacing scale.
+@mixin stack($gap: 16) {
+  display: flex;
+  flex-direction: column;
+  gap: space($gap);
+}
+
+/// Horizontal wrapping row (chips, buttons) with a gap from the spacing scale.
+@mixin cluster($gap: 12, $align: center) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: $align;
+  gap: space($gap);
+}
+
+/// White card on the canvas.
+@mixin card($padding: 24) {
+  padding: space($padding);
+  border-radius: radius(xl);
+  background: var(--p-content-background);
+  box-shadow: var(--dl-shadow-sm);
+}
+
+/// Minimum touch target (WCAG / platform guidance: 44px).
+@mixin tap-target($size: 44px) {
+  min-width: $size;
+  min-height: $size;
+}
+
+/// Wrap motion so it is skipped for prefers-reduced-motion users.
+@mixin motion {
+  @media (prefers-reduced-motion: no-preference) {
+    @content;
+  }
+}

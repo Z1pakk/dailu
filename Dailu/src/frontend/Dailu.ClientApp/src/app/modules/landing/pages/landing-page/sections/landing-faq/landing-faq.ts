@@ -1,30 +1,45 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { Tag } from 'primeng/tag';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionPanel,
+} from 'primeng/accordion';
+import { SectionHeader } from '@shared/ui/section-header/section-header';
+import { FAQ_ITEMS } from '../../../../data/faq';
 
-interface FaqItem {
-  q: string;
-  a: string;
-}
-
+/** FAQ (Figma `5:603`): PrimeNG accordion, first item open. */
 @Component({
   selector: 'app-landing-faq',
-  imports: [Tag],
+  imports: [Accordion, AccordionPanel, AccordionHeader, AccordionContent, SectionHeader],
   templateUrl: './landing-faq.html',
-  styleUrls: ['../../_layout.scss', './landing-faq.scss'],
+  styleUrls: ['../../_landing-layout.scss', './landing-faq.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingFaq {
-  protected readonly $openIndex = signal<number | null>(null);
+  protected readonly items = FAQ_ITEMS;
 
-  protected readonly items: FaqItem[] = [
-    { q: 'Is Dailu free to use?', a: 'Yes — completely free. No credit card, no trial period. Sign up and start tracking immediately.' },
-    { q: 'How does automatic sync work?', a: 'Once you connect an integration, Dailu polls it on a regular schedule and converts new activity into habit entries automatically. No manual input needed.' },
-    { q: 'Can I still log habits manually?', a: 'Absolutely. Manual habits work alongside automatic ones. You can mix and match — some auto-synced, some logged by hand.' },
-    { q: 'Will you add more integrations?', a: 'Yes — fitness apps, productivity tools, and health platforms are on the roadmap. The integration library will keep growing.' },
-    { q: 'Is my data private?', a: 'We only request read-only access to your connected apps. Your data is never sold or shared. You can disconnect any integration at any time.' },
-  ];
-
-  protected toggle(i: number): void {
-    this.$openIndex.update(cur => (cur === i ? null : i));
-  }
+  /** Scoped PrimeNG design tokens (no ::ng-deep): flat rows, Figma `5:603`. */
+  protected readonly accordionTokens = {
+    panel: { borderColor: 'var(--dl-border-subtle)' },
+    header: {
+      padding: '20px 0',
+      fontWeight: '500',
+      color: '{text.color}',
+      hoverColor: '{text.color}',
+      activeColor: '{text.color}',
+      activeHoverColor: '{text.color}',
+      background: 'transparent',
+      hoverBackground: 'transparent',
+      activeBackground: 'transparent',
+      activeHoverBackground: 'transparent',
+      toggleIcon: {
+        color: '{text.muted.color}',
+        hoverColor: '{text.color}',
+        activeColor: '{text.color}',
+        activeHoverColor: '{text.color}',
+      },
+    },
+    content: { padding: '0 0 20px 0', background: 'transparent' },
+  };
 }

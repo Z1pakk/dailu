@@ -1,107 +1,29 @@
-<section class="hero-section">
-<!-- Ambient background floating cards -->
-  <div class="hero-bg-cards" aria-hidden="true">
-    <div class="hero-float-card hero-float-left hero-float-top">
-      <p class="hero-float-label">Weekly activity</p>
-      <div class="hero-bar-chart">
-        <div class="hero-bar hero-bar-h1"></div>
-        <div class="hero-bar hero-bar-h3"></div>
-        <div class="hero-bar hero-bar-h0"></div>
-        <div class="hero-bar hero-bar-h4"></div>
-        <div class="hero-bar hero-bar-h2"></div>
-        <div class="hero-bar hero-bar-h5 hero-bar-accent"></div>
-        <div class="hero-bar hero-bar-h3"></div>
-      </div>
+<section class="hero landing-section--canvas" aria-labelledby="hero-title">
+  <div class="section-inner hero-inner">
+    <span class="hero-tag">A study &amp; pet project</span>
+    <p class="hero-eyebrow dl-eyebrow">From 06:00 to lights out</p>
+    <h1 id="hero-title" class="hero-title dl-h1">
+      Your day rises with your habits.<br />
+      Dailu checks them off.
+    </h1>
+    <p class="hero-lead dl-body-lg">
+      Place each habit on today’s arc. When your apps confirm it happened, the segment
+      fills in<span class="dl-desktop-only"> — no logging, no nagging</span>.
+    </p>
+
+    <div class="hero-actions">
+      @if ($isAuthenticated()) {
+        <a pButton routerLink="/app" size="large" class="hero-btn">Open app</a>
+      } @else {
+        <a pButton routerLink="/register" size="large" class="hero-btn">Plan tomorrow</a>
+      }
+      <a pButton routerLink="/" fragment="sources" [outlined]="true" severity="secondary" size="large"
+         class="hero-btn hero-btn--ghost">See an example day</a>
     </div>
-    <div
-      class="hero-float-card hero-float-left hero-float-bottom hero-float-delay1">
-      <div class="flex items-center gap-2">
-        <span class="text-xl">🔥</span>
-        <div>
-          <div class="hero-float-stat">{{ 12 }}</div>
-          <div class="hero-float-label">day streak</div>
-        </div>
-      </div>
+
+    <div class="hero-clock reveal">
+      <app-day-clock class="hero-clock-desktop" [habits]="exampleDay" />
+      <app-day-clock class="hero-clock-mobile" [habits]="exampleDay" [compact]="true" />
     </div>
-    <div
-      class="hero-float-card hero-float-right hero-float-top hero-float-delay2">
-      <p class="hero-float-label">🏆 Milestone progress</p>
-      <div class="hero-milestone">
-        <div class="hero-milestone-row">
-          <span>Open source</span>
-          <span class="text-blue-500 font-bold">67/100</span>
-        </div>
-        <div class="hero-milestone-bar">
-          <div class="hero-milestone-fill hero-milestone-fill-67"></div>
-        </div>
-        <div class="hero-milestone-row mt-2">
-          <span>Morning runs</span>
-          <span class="text-green-600 font-bold">50/50 🎉</span>
-        </div>
-        <div class="hero-milestone-bar">
-          <div
-            class="hero-milestone-fill hero-milestone-fill-100 hero-milestone-fill-green"></div>
-        </div>
-      </div>
-    </div>
-    <div
-      class="hero-float-card hero-float-right hero-float-bottom hero-float-delay3">
-      <div class="flex items-center gap-1.5 mb-1.5">
-        <span class="hero-ai-icon">✦</span>
-        <span class="hero-float-ai-label">AI insight</span>
-      </div>
-      <p class="hero-float-text">Most consistent on weekday mornings 💪</p>
-    </div>
-  </div>
-<!-- Hero content -->
-  <div class="hero-inner section-inner reveal">
-    <div class="hero-text">
-      <p-tag [rounded]="true"
-             class="hero-live-tag mb-5"
-             value="Automatic tracking is live"
-             icon="pi pi-circle-fill" />
-      <h1 class="hero-title">
-        Build habits.
-        <br />
-        Track
-        <span class="text-primary-500">automatically.</span>
-      </h1>
-      <p class="hero-desc">
-        Connect the tools you already use. Dailu syncs your activity, tracks your streaks,
-        and keeps you accountable — without lifting a finger.
-      </p>
-      <div class="hero-actions">
-        @if ($isAuthenticated()) {
-          <span class="btn-glow">
-            <a routerLink="/app" class="hero-btn-primary" pButton>
-              Go to App →
-            </a>
-          </span>
-        }
-        @else {
-          <span class="btn-glow">
-            <a routerLink="/register" class="hero-btn-primary" pButton>
-              Start tracking free →
-            </a>
-          </span>
-          <a routerLink="/login"
-             severity="secondary"
-             class="hero-btn-secondary"
-             pButton>
-            Sign in
-          </a>
-        }
-      </div>
-      <div class="hero-trust">
-        <div class="hero-avatars">
-          <span class="hero-av hero-av-blue">V</span>
-          <span class="hero-av hero-av-green">M</span>
-          <span class="hero-av hero-av-yellow">A</span>
-          <span class="hero-av hero-av-pink">K</span>
-        </div>
-        Joined by developers &amp; athletes building better habits
-      </div>
-    </div>
-    <app-landing-hero-visual-card />
   </div>
 </section>

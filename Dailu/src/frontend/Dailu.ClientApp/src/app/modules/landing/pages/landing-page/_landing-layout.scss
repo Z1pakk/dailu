@@ -1,0 +1,33 @@
+@use 'dailu' as dl;
+
+// Shared section shell for landing sections (imported via styleUrls).
+
+:host {
+  display: block;
+}
+
+.landing-section {
+  @include dl.section;
+}
+
+.landing-section--canvas {
+  background: var(--dl-bg-canvas);
+}
+
+.landing-section--surface {
+  background: var(--p-content-background);
+}
+
+.section-inner {
+  @include dl.container;
+}
+
+.landing-card {
+  border-radius: dl.radius(xl);
+  background: var(--p-content-background);
+  box-shadow: var(--dl-shadow-sm);
+}
+
+.muted {
+  color: var(--p-text-muted-color);
+}

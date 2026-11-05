@@ -1,0 +1,304 @@
+@use 'dailu' as dl;
+
+:host {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.clock-box {
+  position: relative;
+}
+
+.clock-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.clock-face {
+  fill: var(--p-content-background);
+}
+
+.clock-track {
+  fill: none;
+  stroke: var(--dl-dial-track);
+  stroke-width: var(--clock-track-w);
+}
+
+.clock-elapsed {
+  fill: none;
+  stroke: var(--dl-primary-soft);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.clock-hour {
+  fill: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.clock-seg {
+  fill: none;
+  stroke-width: var(--clock-track-w);
+  cursor: pointer;
+  outline: none;
+  transition: filter 150ms ease-out;
+}
+
+/* Highlight without changing the shape under the cursor (resizing it made hover flicker). */
+.clock-seg--active {
+  filter: brightness(1.12) saturate(1.1);
+}
+
+.clock-seg--done {
+  stroke: var(--p-primary-color);
+}
+
+.clock-seg--done.clock-seg--manual {
+  stroke: var(--p-text-color);
+}
+
+/* The upcoming habit looks scheduled on the arc; the coral "Next" tag carries the emphasis (Figma 3:306). */
+.clock-seg--next,
+.clock-seg--scheduled {
+  stroke: var(--dl-dial-scheduled);
+}
+
+.clock-seg,
+.clock-now,
+.clock-label,
+.clock-hour {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clock-now,
+.clock-label,
+.clock-hour,
+.clock-elapsed,
+.clock-face,
+.clock-track {
+  pointer-events: none; /* only segments are interactive */
+}
+
+.clock-seg-ring {
+  fill: none;
+  stroke: var(--p-primary-color);
+  stroke-width: calc(var(--clock-track-w) * 1.45);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.clock-label {
+  font-family: var(--dl-font-sans);
+}
+
+.clock-label-name {
+  fill: var(--p-text-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.clock-label-caption {
+  fill: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+}
+
+.clock-now {
+  fill: var(--dl-accent-now);
+  stroke: var(--p-content-background);
+  stroke-width: 3;
+}
+
+.clock-center {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: dl.space(4);
+  text-align: center;
+  pointer-events: none;
+}
+
+.clock-time {
+  color: var(--p-text-color);
+}
+
+.clock-count {
+  color: var(--p-text-muted-color);
+}
+
+.clock-next {
+  margin-top: dl.space(4);
+  padding: dl.space(4) dl.space(12);
+  border-radius: dl.radius(full);
+  background: var(--dl-accent-now-tint);
+  color: var(--dl-accent-now-text);
+  white-space: nowrap;
+}
+
+.clock-popup {
+  position: absolute;
+  left: var(--clock-popup-left, 50%);
+  top: var(--clock-popup-top, 50%);
+  z-index: 2;
+  transform: translate(-50%, calc(-100% - 34px));
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(4);
+  padding: dl.space(8) dl.space(12);
+  border-radius: dl.radius(md);
+  background: var(--dl-bg-inverse);
+  color: var(--dl-text-inverse);
+  box-shadow: var(--dl-shadow-lg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.clock-popup-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.clock-popup-detail {
+  font-family: var(--dl-font-mono);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+:host(.day-clock--compact) {
+  max-width: 335px;
+
+  /* Narrower time so its corners stay inside the elapsed ring (Figma 9:232). */
+  .clock-time {
+    font-size: 44px;
+    font-variant-numeric: normal;
+  }
+
+  .clock-elapsed {
+    stroke-width: 4;
+  }
+
+  .clock-center {
+    bottom: 0; /* sit low in the ring, the Next tag fits between the 06 and 00 labels */
+    gap: dl.space(4);
+  }
+
+  .clock-hour {
+    font-size: 11px;
+  }
+
+  .clock-count {
+    font-size: 13px;
+  }
+
+  .clock-next {
+    margin-top: dl.space(4);
+    padding: dl.space(4) dl.space(8);
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clock-seg {
+    transition: none;
+  }
+}
+
+/* ---- Mobile today list (Figma 9:240 → today-list: 8px padding, 2px gap, r20) ---- */
+.today-list {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(4);
+  margin: dl.space(16) 0 0;
+  padding: dl.space(8);
+  border-radius: dl.radius(xl);
+  background: var(--p-content-background);
+  box-shadow: var(--dl-shadow-sm);
+  list-style: none;
+  text-align: left; /* the hero centres its text; the list reads left to right */
+}
+
+.today-row {
+  display: grid;
+  grid-template-columns: 36px 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: dl.space(8);
+  min-height: 40px;
+  padding: dl.space(8) dl.space(12);
+  border-radius: dl.radius(md);
+}
+
+.today-row--next {
+  background: var(--dl-accent-now-tint);
+}
+
+.today-time {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+}
+
+.today-row--next .today-time {
+  color: var(--p-text-color);
+}
+
+.today-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--p-content-border-color);
+  border-radius: dl.radius(sm);
+  background: var(--p-content-background);
+
+  i {
+    font-size: 10px;
+  }
+}
+
+.today-check--done {
+  border-color: var(--p-primary-color);
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+}
+
+.today-check--done.today-check--manual {
+  border-color: var(--p-text-color);
+  background: var(--p-text-color);
+  color: var(--p-content-background);
+}
+
+.today-name {
+  overflow: hidden;
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-caption {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.today-caption--auto {
+  color: var(--p-primary-color);
+}
+
+.today-row--next .today-caption {
+  color: var(--dl-accent-now-text);
+}

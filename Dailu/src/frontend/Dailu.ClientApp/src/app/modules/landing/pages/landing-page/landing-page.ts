@@ -7,11 +7,13 @@ import {
   inject,
 } from '@angular/core';
 import { LandingHero } from './sections/landing-hero/landing-hero';
-import { LandingStats } from './sections/landing-stats/landing-stats';
-import { LandingHowItWorks } from './sections/landing-how-it-works/landing-how-it-works';
 import { LandingIntegrations } from './sections/landing-integrations/landing-integrations';
-import { LandingFeatures } from './sections/landing-features/landing-features';
-import { LandingTestimonials } from './sections/landing-testimonials/landing-testimonials';
+import { LandingHowItWorks } from './sections/landing-how-it-works/landing-how-it-works';
+import { LandingStreaks } from './sections/landing-streaks/landing-streaks';
+import { LandingSources } from './sections/landing-sources/landing-sources';
+import { LandingLongGame } from './sections/landing-long-game/landing-long-game';
+import { LandingDayRecap } from './sections/landing-day-recap/landing-day-recap';
+import { LandingProof } from './sections/landing-proof/landing-proof';
 import { LandingFaq } from './sections/landing-faq/landing-faq';
 import { LandingCta } from './sections/landing-cta/landing-cta';
 import { IntersectionService } from '@shared/lib/intersection/intersection.service';
@@ -19,8 +21,9 @@ import { IntersectionService } from '@shared/lib/intersection/intersection.servi
 @Component({
   selector: 'app-landing-page',
   imports: [
-    LandingHero, LandingStats, LandingHowItWorks, LandingIntegrations,
-    LandingFeatures, LandingTestimonials, LandingFaq, LandingCta,
+    LandingHero, LandingIntegrations, LandingHowItWorks, LandingStreaks,
+    LandingSources, LandingLongGame, LandingDayRecap, LandingProof,
+    LandingFaq, LandingCta,
   ],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.scss',

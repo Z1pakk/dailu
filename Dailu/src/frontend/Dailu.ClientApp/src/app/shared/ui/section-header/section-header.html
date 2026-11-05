@@ -1,0 +1,10 @@
+@if ($eyebrow()) {
+  <p class="sh-eyebrow dl-eyebrow">{{ $eyebrow() }}</p>
+}
+<h2 class="sh-title dl-h2">{{ $title() }}</h2>
+@if ($subtitle()) {
+  <p class="sh-subtitle dl-body-lg" [class.dl-desktop-only]="$subtitleMobile() !== null">{{ $subtitle() }}</p>
+}
+@if ($subtitleMobile(); as mobile) {
+  <p class="sh-subtitle dl-body-lg dl-mobile-only">{{ mobile }}</p>
+}

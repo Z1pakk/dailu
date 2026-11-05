@@ -1,0 +1,155 @@
+@use 'dailu' as dl;
+
+/* Figma 5:522: a centred 996px block — copy left, 440px receipt stage right. */
+.recap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 440px;
+  align-items: center;
+  gap: dl.space(80);
+  max-width: 996px;
+  margin-inline: auto;
+
+  @include dl.down(lg) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: dl.space(24);
+  }
+}
+
+.recap-pill {
+  display: inline-flex;
+  margin-top: dl.space(24);
+  padding: dl.space(4) dl.space(12);
+  border-radius: dl.radius(full);
+  background: var(--p-highlight-background);
+  color: var(--p-highlight-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.recap-stage {
+  display: flex;
+  justify-content: center;
+  padding: dl.space(40) dl.space(24);
+  border-radius: dl.radius(2xl);
+  background: var(--dl-bg-subtle);
+
+  @include dl.down(md) {
+    padding: dl.space(24);
+  }
+}
+
+.receipt {
+  width: min(100%, 340px);
+  margin: 0;
+  padding: dl.space(24);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  font-family: var(--dl-font-mono);
+  font-size: 13px;
+  box-shadow: var(--dl-shadow-lg);
+  transform: rotate(3deg);
+
+  @include dl.motion {
+    transition: transform 300ms ease-out;
+
+    &:hover {
+      transform: rotate(0deg);
+    }
+  }
+
+  /* Figma mobile: upright and tighter. */
+  @include dl.down(md) {
+    padding: dl.space(20);
+    font-size: 12px;
+    transform: none;
+  }
+}
+
+.receipt-logo {
+  margin: 0;
+  font-family: var(--dl-font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.receipt-sub {
+  margin: dl.space(4) 0 0;
+  padding-bottom: dl.space(12);
+  border-bottom: 1px dashed var(--p-text-muted-color);
+  color: var(--p-text-muted-color);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.receipt-rows {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(8);
+  margin: dl.space(12) 0 0;
+  padding: 0 0 dl.space(12);
+  border-bottom: 1px dashed var(--p-text-muted-color);
+  list-style: none;
+}
+
+.receipt-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: dl.space(8);
+}
+
+.receipt-source {
+  color: var(--p-primary-color);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.receipt-source--you {
+  color: var(--p-text-muted-color);
+}
+
+.receipt-totals {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(4);
+  margin: dl.space(12) 0 0;
+  padding-bottom: dl.space(12);
+  border-bottom: 1px dashed var(--p-text-muted-color);
+
+  div {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.receipt-streak {
+  font-weight: 600;
+
+  dd {
+    color: var(--p-primary-color);
+  }
+}
+
+.receipt-ring {
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: dl.space(20) auto 0;
+  border: 5px solid var(--p-primary-color);
+  border-radius: 50%;
+}
+
+.receipt-foot {
+  margin: dl.space(12) 0 0;
+  color: var(--p-text-muted-color);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}

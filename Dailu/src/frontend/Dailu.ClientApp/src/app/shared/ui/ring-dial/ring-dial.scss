@@ -1,0 +1,95 @@
+@use 'dailu' as dl;
+
+:host {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  /* A parent may set --dial-size-override (e.g. smaller on mobile) without touching internals. */
+  width: var(--dial-size-override, var(--dial-size));
+  height: var(--dial-size-override, var(--dial-size));
+}
+
+.dial-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.track {
+  fill: none;
+  stroke: var(--dl-dial-track);
+  stroke-width: 10;
+}
+
+.seg {
+  fill: none;
+  stroke-width: 10;
+  outline: none;
+  transition: filter 150ms ease-out;
+
+  &[tabindex] {
+    cursor: pointer;
+  }
+
+  /* Highlight without resizing — a growing stroke flickers on hover at the edges. */
+  &[tabindex]:hover,
+  &[tabindex]:focus-visible {
+    filter: brightness(1.12) saturate(1.1);
+  }
+}
+
+.track {
+  pointer-events: none;
+}
+
+.seg--auto {
+  stroke: var(--p-primary-color);
+}
+
+.seg--manual {
+  stroke: var(--p-text-color);
+}
+
+.seg--scheduled {
+  stroke: var(--dl-dial-scheduled);
+}
+
+.seg--missed {
+  stroke: var(--dl-accent-now);
+  stroke-dasharray: 6 4;
+}
+
+.dial-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: dl.space(4);
+  padding: 18%;
+  text-align: center;
+  pointer-events: none;
+}
+
+.dial-title {
+  color: var(--p-text-color);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.dial-caption {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg {
+    transition: none;
+  }
+}

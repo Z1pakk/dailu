@@ -1,0 +1,62 @@
+<div class="hm-head">
+  @if ($caption()) {
+    <h3 class="hm-caption">{{ $caption() }}</h3>
+  }
+  @if ($showMonths()) {
+    <span class="hm-legend" aria-hidden="true">
+      Less
+      @for (level of levels; track level) {
+        <span [class]="'hm-swatch hm-cell--' + level"></span>
+      }
+      More
+    </span>
+  }
+</div>
+
+<div class="hm-scroll">
+  <div class="hm">
+    <svg class="hm-svg" [attr.viewBox]="'0 0 ' + $svgWidth() + ' ' + $svgHeight()">
+      @if ($showDays()) {
+        <g aria-hidden="true">
+          @for (day of days; track $index) {
+            <text class="hm-day" x="0" [attr.y]="$index * step + cellSize - 2">{{ day }}</text>
+          }
+        </g>
+      }
+
+      <g class="hm-grid"
+         tabindex="0"
+         role="img"
+         [attr.aria-label]="$label()"
+         [attr.transform]="'translate(' + $gridX() + ' 0)'"
+         (focus)="onFocus()"
+         (blur)="onBlur()"
+         (keydown)="onKeydown($event)"
+         (mouseleave)="unhover()">
+        @for (week of $weeks(); track $index; let w = $index) {
+          @for (cell of week; track $index; let d = $index) {
+            @if (cell) {
+              <rect [class]="'hm-cell hm-cell--' + cell.level"
+                    [class.hm-cell--active]="$active()?.week === w && $active()?.day === d"
+                    [attr.x]="w * step" [attr.y]="d * step"
+                    [attr.width]="cellSize" [attr.height]="cellSize" rx="2.5"
+                    (mouseenter)="hover(w, d)" />
+            }
+          }
+        }
+      </g>
+
+      @if ($showMonths()) {
+        <g aria-hidden="true">
+          @for (month of $months(); track month.label) {
+            <text class="hm-month" [attr.x]="$gridX() + month.week * step" [attr.y]="gridHeight + 16">{{ month.label }}</text>
+          }
+        </g>
+      }
+    </svg>
+
+    @if ($active(); as active) {
+      <div class="hm-tip" role="tooltip" aria-live="polite">{{ active.text }}</div>
+    }
+  </div>
+</div>

@@ -1,0 +1,47 @@
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: dl.space(16);
+  max-width: 720px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+:host(.sh--start) {
+  align-items: flex-start;
+  margin-inline: 0;
+  text-align: start;
+}
+
+.sh-eyebrow {
+  margin: 0;
+  color: var(--p-primary-color);
+}
+
+.sh-title {
+  margin: 0;
+  color: var(--p-text-color);
+  white-space: pre-line;
+  text-wrap: balance;
+}
+
+.sh-subtitle {
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+/* Figma mobile: headers are left-aligned and the title wraps naturally (no forced break). */
+@include dl.down(md) {
+  :host {
+    align-items: flex-start;
+    margin-inline: 0;
+    text-align: start;
+  }
+
+  .sh-title {
+    white-space: normal;
+  }
+}
