@@ -12,7 +12,7 @@ import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
-import { RingLogo } from '@shared/ui/ring-logo/ring-logo';
+import { AuthShell } from '@auth/ui/auth-shell/auth-shell';
 import { Password } from 'primeng/password';
 import { RouterLink } from '@angular/router';
 import {
@@ -36,7 +36,9 @@ import {
 } from '@auth/pages/register/types/register-form.type';
 import { RegisterRequest } from '@auth/requests/register.request';
 import { markAllAsDirty } from '@shared/lib/form/mark-as-dirty';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { passwordStrength } from './password-strength';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 
@@ -46,8 +48,8 @@ import { MessageService } from 'primeng/api';
     Button,
     Checkbox,
     InputText,
-    RingLogo,
     Password,
+    AuthShell,
     ReactiveFormsModule,
     RouterLink,
   ],
@@ -66,7 +68,26 @@ export class Register implements OnInit {
 
   private readonly _$altchaWidgetRef = viewChild<ElementRef>('altchaWidget');
 
-  protected readonly altcha = inject(AltchaService);
+  protected readonly panelHeadline = ['Three steps to your', 'first auto-check.'];
+  protected readonly steps = [
+    {
+      title: 'Create your account',
+      description: 'Email or Google / Facebook — takes a minute.',
+    },
+    {
+      title: 'Connect a source',
+      description: 'GitHub, Strava or Google Health. Dailu reads your activity in the background.',
+    },
+    {
+      title: 'Put habits on the clock',
+      description: 'Give each habit a time. It gets ticked off when the activity lands.',
+    },
+  ] as const;
+  protected readonly strengthBars = [1, 2, 3] as const;
+  protected readonly socialProviders = [
+    { name: 'Google', icon: 'pi pi-google' },
+    { name: 'Facebook', icon: 'pi pi-facebook' },
+  ] as const;
 
   protected readonly registerForm: RegisterFormGroup =
     this._fb.group<RegisterForm>({
@@ -96,6 +117,11 @@ export class Register implements OnInit {
       ),
     });
 
+  protected readonly $strength = toSignal(
+    this.registerForm.controls.password.valueChanges.pipe(map(passwordStrength)),
+    { initialValue: passwordStrength('') },
+  );
+
   ngOnInit() {
     this.registerForm.controls.password.valueChanges
       .pipe(takeUntilDestroyed(this._destroyRef))
@@ -114,7 +140,7 @@ export class Register implements OnInit {
   protected register() {
     markAllAsDirty(this.registerForm);
 
-    if (!this.altcha.$isSolved() || !this.registerForm.valid) {
+    if (!this.altchaService.$isSolved() || !this.registerForm.valid) {
       return;
     }
 
@@ -127,7 +153,7 @@ export class Register implements OnInit {
       password: value.password,
       confirmPassword: value.confirmPassword,
       isAcceptedPrivacyTerms: value.isAcceptedPrivacyTerms,
-      captchaPayload: this.altcha.$captchaPayload()!,
+      captchaPayload: this.altchaService.$captchaPayload()!,
     }) satisfies RegisterRequest;
 
     this._store.dispatch(new AuthRegister(registerRequest)).subscribe({

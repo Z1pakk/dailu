@@ -66,6 +66,67 @@
   margin-top: dl.space(24);
 }
 
+// The desktop clock is 900×400 and scales with its width. Cap the width so the
+// nav + hero copy + clock fit the viewport height; `--hero-above` is the height
+// taken by everything above the clock. Below 560px wide the labels get too small,
+// so very short screens scroll instead.
+.hero-clock-desktop {
+  --hero-above: 500px;
+  max-width: clamp(560px, calc((100dvh - var(--hero-above)) * 2.25), 900px);
+}
+
+@include dl.up(md) {
+  @media (max-height: 860px) {
+    .hero {
+      padding-top: dl.space(24);
+    }
+
+    .hero-eyebrow,
+    .hero-title,
+    .hero-lead {
+      margin-top: dl.space(12);
+    }
+
+    .hero-title {
+      font-size: 44px;
+    }
+
+    .hero-actions {
+      margin-top: dl.space(20);
+    }
+
+    .hero-clock {
+      margin-top: dl.space(16);
+    }
+
+    .hero-clock-desktop {
+      --hero-above: 420px;
+    }
+  }
+
+  @media (max-height: 720px) {
+    .hero {
+      padding-top: dl.space(16);
+    }
+
+    .hero-tag {
+      display: none;
+    }
+
+    .hero-eyebrow {
+      margin-top: 0;
+    }
+
+    .hero-title {
+      font-size: 36px;
+    }
+
+    .hero-clock-desktop {
+      --hero-above: 340px;
+    }
+  }
+}
+
 .hero-clock-mobile {
   display: none;
 }

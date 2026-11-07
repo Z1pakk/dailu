@@ -1,0 +1,193 @@
+@use 'dailu' as dl;
+
+:host {
+  display: block;
+}
+
+/* ---- Header band ---------------------------------------------------------- */
+
+.terms-header {
+  border-bottom: 1px solid var(--dl-border-subtle);
+}
+
+.terms-header-inner {
+  @include dl.container;
+  @include dl.stack(16);
+  padding-top: 72px; // Figma header inset; not on the spacing scale
+  padding-bottom: dl.space(56);
+
+  @include dl.down(md) {
+    padding-top: dl.space(40);
+    padding-bottom: dl.space(32);
+  }
+}
+
+.terms-eyebrow,
+.terms-title {
+  margin: 0;
+}
+
+.terms-eyebrow {
+  color: var(--p-primary-color);
+}
+
+.terms-meta {
+  @include dl.cluster(16);
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+}
+
+/* ---- Body: TOC + content -------------------------------------------------- */
+
+.terms-body {
+  @include dl.container;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 760px);
+  gap: dl.space(80);
+  padding-top: dl.space(56);
+  padding-bottom: dl.space(104);
+
+  @include dl.down(lg) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  @include dl.down(md) {
+    padding-top: dl.space(32);
+    padding-bottom: dl.space(64);
+  }
+}
+
+.terms-toc {
+  position: sticky;
+  top: calc(#{dl.$nav-height} + #{dl.space(32)});
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: dl.space(4);
+  padding-top: dl.space(4);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.terms-toc-label {
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+.terms-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--p-primary-color);
+  text-underline-offset: 3px;
+  transition: color 150ms ease-out;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--p-primary-hover-color);
+    text-decoration: underline;
+  }
+}
+
+.terms-toc-link {
+  padding-block: 9px;
+}
+
+.terms-content {
+  @include dl.stack(48);
+  min-width: 0;
+
+  @include dl.down(md) {
+    gap: dl.space(40);
+  }
+}
+
+/* ---- "The short version" card --------------------------------------------- */
+
+.terms-short {
+  @include dl.stack(12);
+  padding: dl.space(24) 28px;
+  border-radius: dl.radius(xl);
+  background: var(--p-highlight-background);
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+  }
+
+  @include dl.down(md) {
+    padding: dl.space(20);
+  }
+}
+
+.terms-short-list {
+  @include dl.stack(12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    padding-left: 18px;
+    color: var(--p-text-color);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.6em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--p-primary-color);
+    }
+  }
+}
+
+/* ---- Numbered sections ---------------------------------------------------- */
+
+.terms-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px; // Figma section rhythm; not on the spacing scale
+  scroll-margin-top: calc(#{dl.$nav-height} + #{dl.space(32)});
+}
+
+.terms-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: dl.space(12);
+  margin: 0;
+  color: var(--p-text-color);
+}
+
+.terms-num {
+  font-family: var(--dl-font-mono);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--p-primary-color);
+}
+
+.terms-text {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  overflow-wrap: anywhere;
+}
+
+.terms-list {
+  padding: 0;
+  list-style: none;
+
+  li::before {
+    content: '• ';
+  }
+}
+
+.terms-back {
+  align-self: flex-start;
+  padding-top: dl.space(8);
+}

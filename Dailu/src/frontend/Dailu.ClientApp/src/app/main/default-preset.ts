@@ -62,6 +62,14 @@ export const DefaultPreset = definePreset(Aura, {
         },
       },
     },
+    // Figma styleguide Checkbox `7:224`: 20px box, r6.
+    checkbox: {
+      root: {
+        width: '20px',
+        height: '20px',
+        borderRadius: 'var(--dl-radius-sm)',
+      },
+    },
   },
   primitive: {
     // Danger severity reads red.500 in light and red.400 in dark.
@@ -72,6 +80,13 @@ export const DefaultPreset = definePreset(Aura, {
   },
   semantic: {
     primary: teal,
+    // Figma styleguide InputText `7:170` / Password `7:181`: 14/12 padding, r10.
+    // The 15px text size has no Aura token — see assets/scss/dailu-primeng.scss.
+    formField: {
+      paddingX: '14px',
+      paddingY: 'var(--dl-space-12)',
+      borderRadius: 'var(--dl-radius-md)',
+    },
     colorScheme: {
       light: {
         surface,

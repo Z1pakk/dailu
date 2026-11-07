@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { ParallaxContainerDirective } from './parallax-container.directive';
 
 @Component({
-  template: `<div parallaxContainer></div>`,
+  template: `<div appParallaxContainer></div>`,
   imports: [ParallaxContainerDirective],
   standalone: true,
 })

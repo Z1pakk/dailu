@@ -1,0 +1,14 @@
+@use '../../ui/auth-form';
+
+.login-clock {
+  max-width: 570px;
+
+  // The clock scales with its width, so cap the width on short screens.
+  @media (max-height: 860px) {
+    max-width: 480px;
+  }
+
+  @media (max-height: 720px) {
+    max-width: 380px;
+  }
+}

@@ -21,3 +21,9 @@
 .p-button {
   font-weight: 600;
 }
+
+// InputText / Password — Figma styleguide `7:170`.
+// Aura inherits the 14px html size; the design's field text is 15px.
+.p-inputtext {
+  font-size: 15px;
+}

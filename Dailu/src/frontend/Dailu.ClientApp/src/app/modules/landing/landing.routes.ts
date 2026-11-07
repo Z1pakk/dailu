@@ -7,4 +7,10 @@ export const landingRoutes: Routes = [
     loadComponent: () =>
       import('./pages/landing-page/landing-page').then((m) => m.LandingPage),
   },
+  {
+    title: 'Terms & Conditions',
+    path: 'terms',
+    loadComponent: () =>
+      import('@auth/pages/terms/terms').then((m) => m.Terms),
+  },
 ];

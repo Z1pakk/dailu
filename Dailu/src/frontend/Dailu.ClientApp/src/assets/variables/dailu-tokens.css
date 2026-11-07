@@ -95,7 +95,7 @@
   --dl-container-max: 1440px;
   --dl-gutter: var(--dl-space-80);
   --dl-section-y: var(--dl-space-104);
-  --dl-nav-height: 94px; /* Figma nav 3:315 */
+  --dl-nav-height: 72px; /* Figma nav 3:315 is 94px; trimmed so the hero fits laptop screens */
 
   /* ---------- Semantic · Light (default) ---------- */
   --dl-bg-canvas: var(--dl-mist-100);
@@ -159,6 +159,13 @@
   :root {
     --dl-gutter: var(--dl-space-20);
     --dl-section-y: var(--dl-space-64);
-    --dl-nav-height: 78px; /* Figma mobile nav */
+    --dl-nav-height: 64px; /* Figma mobile nav is 78px; trimmed with the desktop nav */
+  }
+}
+
+/* Short viewports: slimmer nav so the hero fits the screen height */
+@media (max-height: 720px) {
+  :root {
+    --dl-nav-height: 60px;
   }
 }
