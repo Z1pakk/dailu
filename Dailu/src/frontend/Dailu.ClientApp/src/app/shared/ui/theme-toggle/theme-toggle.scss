@@ -1,0 +1,57 @@
+@use 'dailu' as dl;
+
+// Figma `3:18`: 88×46 pill, 1px border, 4px padding, 2px gap, 38×36 round options.
+:host {
+  display: inline-flex;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: dl.space(4);
+  padding: dl.space(4);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: dl.radius(full);
+  background: var(--p-content-background);
+}
+
+.toggle-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: dl.radius(full);
+  background: transparent;
+  color: var(--p-text-muted-color);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+
+  i {
+    font-size: 14px;
+  }
+
+  &:hover {
+    background: var(--dl-bg-muted);
+    color: var(--p-text-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.toggle-option--active,
+.toggle-option--active:hover {
+  background: var(--dl-bg-inverse);
+  color: var(--dl-text-inverse);
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle-option {
+    transition: none;
+  }
+}

@@ -1,16 +1,163 @@
-.landing-container {
-  max-width: var(--landing-max-w);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  border: 1px solid color-mix(in srgb, var(--p-surface-200) 80%, transparent);
-  transition: box-shadow 0.3s;
+@use 'dailu' as dl;
+
+:host {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: block;
+}
+
+.nav {
+  border-bottom: 1px solid var(--dl-border-subtle);
+  background: color-mix(in srgb, var(--dl-bg-canvas) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+.nav-inner {
+  @include dl.container;
+  display: flex;
+  align-items: center;
+  gap: dl.space(24);
+  height: dl.$nav-height;
+}
+
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--p-text-color);
+}
+
+.nav-links {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: dl.space(8);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: dl.space(12);
+  border-radius: dl.radius(md);
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 150ms ease-out, background-color 150ms ease-out;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--p-text-color);
+    background: var(--dl-bg-muted);
+  }
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+  margin-left: auto;
+}
+
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(8);
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-ink {
+  border-color: var(--dl-bg-inverse);
+  background: var(--dl-bg-inverse);
+  color: var(--dl-text-inverse);
 
   &:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+    border-color: var(--dl-bg-inverse);
+    background: color-mix(in srgb, var(--dl-bg-inverse) 86%, var(--p-primary-color));
+    color: var(--dl-text-inverse);
+  }
+}
+
+.nav-signin {
+  color: var(--p-text-color);
+}
+
+.nav-menu {
+  display: none;
+  width: 44px;
+  height: 44px;
+  color: var(--p-text-color);
+}
+
+@include dl.down(lg) {
+  .nav-theme,
+  .nav-signin,
+  .nav-user,
+  .nav-cta {
+    display: none;
   }
 
-  & > div {
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    background: color-mix(in srgb, var(--p-surface-50) 72%, transparent);
+  .nav-menu {
+    display: inline-flex;
   }
+}
+
+/* ---- Mobile menu (drawer) ---- */
+.menu-links {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: dl.space(24);
+}
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  border-bottom: 1px solid var(--dl-border-subtle);
+  color: var(--p-text-color);
+  font-size: 18px;
+  font-weight: 500;
+
+  i {
+    color: var(--p-text-muted-color);
+    font-size: 14px;
+  }
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: dl.space(24);
+}
+
+.menu-label {
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(12);
+}
+
+.menu-btn {
+  justify-content: center;
+  width: 100%;
+}
+
+/* Outlined "Sign in" in the drawer: full-contrast text instead of Aura's muted secondary. */
+.menu-btn:not(.btn-ink) {
+  border-color: var(--p-content-border-color);
+  color: var(--p-text-color);
 }

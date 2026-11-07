@@ -35,6 +35,8 @@ export default tseslint.config(
         'error',
         { type: 'element', prefix: 'app', style: 'kebab-case' },
       ],
+      // Signal inputs are named `$foo` and exposed to templates via `alias: 'foo'`.
+      '@angular-eslint/no-input-rename': 'off',
     },
   },
   {

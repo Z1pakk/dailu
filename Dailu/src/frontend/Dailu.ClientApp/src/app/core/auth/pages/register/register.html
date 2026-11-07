@@ -1,159 +1,162 @@
-<section class="min-h-screen flex items-center lg:items-start lg:py-20 justify-center animate-fadein animate-duration-300 animate-ease-in max-w-400 mx-auto">
-  <div class="flex w-full h-full justify-center gap-12">
-    <div class="flex flex-col py-20 lg:min-w-120">
-      <a routerLink="/"
-         class="flex items-center justify-center lg:justify-start mb-8"
-      >
-        <app-logo-widget />
-      </a>
-      <div class="flex flex-col justify-center grow">
-        <div class="max-w-md mx-auto w-full">
-          <h2 class="text-4xl font-medium text-center lg:text-left">Sign up</h2>
-          <p class="body-small mt-3.5 text-center lg:text-left">Let's get started</p>
+<app-auth-shell eyebrow="GET STARTED"
+                [headline]="panelHeadline"
+                chipsLabel="WORKS WITH">
+  <form class="auth-form"
+        [formGroup]="registerForm"
+        (ngSubmit)="register()"
+        novalidate
+        autocomplete="new-password">
+    <div class="auth-heading">
+      <h1 class="dl-h2">Create your account</h1>
+      <p class="dl-body">Free — it’s a study &amp; pet project.</p>
+    </div>
 
-          <p-button
-            class="mt-8 inline-block w-full"
-            label="Sign up with Google"
-            severity="secondary"
-            variant="outlined"
-            icon="pi pi-google"
-            fluid
-          />
+    <!-- Full labels stacked; on short screens the short pair sits side by side instead. -->
+    <div class="register-social">
+      @for (provider of socialProviders; track provider.name) {
+        <p-button class="register-social-full"
+                  [label]="'Sign up with ' + provider.name"
+                  [icon]="provider.icon"
+                  severity="secondary"
+                  variant="outlined"
+                  fluid />
+        <p-button class="register-social-short"
+                  [label]="provider.name"
+                  [ariaLabel]="'Sign up with ' + provider.name"
+                  [icon]="provider.icon"
+                  severity="secondary"
+                  variant="outlined"
+                  fluid />
+      }
+    </div>
 
-          <p-button
-            class="mt-4 inline-block w-full"
-            label="Sign up with Facebook"
-            severity="secondary"
-            variant="outlined"
-            icon="pi pi-facebook"
-            fluid
-          />
+    <div class="auth-divider">or</div>
 
-          <div class="flex items-center gap-3.5 my-7">
-            <span class="flex-1 h-px bg-surface-200 dark:bg-surface-800"></span>
-            <span class="body-small text-surface-400 dark:text-surface-600">or</span>
-            <span class="flex-1 h-px bg-surface-200 dark:bg-surface-800"></span>
-          </div>
+    <div class="auth-field">
+      <label for="email" class="auth-label">Email</label>
+      <input [formControl]="registerForm.controls.email"
+             (input)="emailInput($event)"
+             id="email"
+             type="email"
+             class="auth-input"
+             placeholder="you@email.com"
+             name="email"
+             autocomplete="new-password"
+             pInputText />
+      @if (registerForm.controls.email.invalid && registerForm.controls.email.touched) {
+        <small class="auth-error">{{ registerForm.controls.email.getError('issue') }}</small>
+      }
+    </div>
 
-          <form [formGroup]="registerForm" novalidate autocomplete="new-password" (ngSubmit)="register()">
-            <input
-              [formControl]="registerForm.controls.email"
-              pInputText
-              class="w-full"
-              placeholder="Email"
-              name="email"
-              autocomplete="new-password"
-              (input)="emailInput($event)"
-            />
+    <div class="register-name-row">
+      <div class="auth-field">
+        <label for="firstName" class="auth-label">First name</label>
+        <input [formControl]="registerForm.controls.firstName"
+               id="firstName"
+               type="text"
+               class="auth-input"
+               name="firstName"
+               autocomplete="new-password"
+               pInputText />
+        @if (registerForm.controls.firstName.invalid && registerForm.controls.firstName.touched) {
+          <small class="auth-error">{{ registerForm.controls.firstName.getError('issue') }}</small>
+        }
+      </div>
 
-            @if (registerForm.controls.email.invalid && registerForm.controls.email.touched) {
-              <small class="text-sm text-red-500 mt-1">
-                {{ registerForm.controls.email.getError('issue') }}
-              </small>
-            }
-
-            <div class="flex items-start gap-4 mt-4">
-              <div class="flex-1">
-                <input
-                  [formControl]="registerForm.controls.firstName"
-                  pInputText
-                  type="text"
-                  fluid
-                  name="firstName"
-                  autocomplete="new-password"
-                  placeholder="First name"
-                />
-                @if (registerForm.controls.firstName.invalid && registerForm.controls.firstName.touched) {
-                  <small class="text-sm text-red-500 mt-1">
-                    {{ registerForm.controls.firstName.getError('issue') }}
-                  </small>
-                }
-              </div>
-
-              <div class="flex-1">
-                <input
-                  [formControl]="registerForm.controls.lastName"
-                  pInputText
-                  type="text"
-                  fluid
-                  name="lastName"
-                  autocomplete="new-password"
-                  placeholder="Last name"
-                />
-                @if (registerForm.controls.lastName.invalid && registerForm.controls.lastName.touched) {
-                  <small class="text-sm text-red-500 mt-1">
-                    {{ registerForm.controls.lastName.getError('issue') }}
-                  </small>
-                }
-              </div>
-            </div>
-
-            <p-password
-              [formControl]="registerForm.controls.password"
-              type="password"
-              class="w-full mt-4"
-              fluid
-              name="password"
-              placeholder="Password"
-              feedback
-              autocomplete="new-password"
-            />
-
-            @if (registerForm.controls.password.invalid && registerForm.controls.password.touched) {
-              <small class="text-sm text-red-500 mt-1">
-                {{ registerForm.controls.password.getError('issue') }}
-              </small>
-            }
-
-            <p-password
-              [formControl]="registerForm.controls.confirmPassword"
-              type="password"
-              class="w-full mt-4"
-              fluid
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              [feedback]="false"
-              autocomplete="new-password"
-            />
-
-            @if (registerForm.controls.confirmPassword.invalid && registerForm.controls.confirmPassword.touched) {
-              <small class="text-sm text-red-500 mt-1">
-                {{ registerForm.controls.confirmPassword.getError('issue') }}
-              </small>
-            }
-
-            <div class="my-8">
-              <div class="flex items-center gap-2">
-                <p-checkbox [formControl]="registerForm.controls.isAcceptedPrivacyTerms" [binary]="true" inputId="isAcceptedPrivacyTerms"/>
-                <label for="isAcceptedPrivacyTerms" class="body-small"><b>I have read</b> the Terms and Conditions</label>
-              </div>
-
-              @if (registerForm.controls.isAcceptedPrivacyTerms.invalid && registerForm.controls.isAcceptedPrivacyTerms.touched) {
-                <small class="text-sm text-red-500 mt-1 block">
-                  {{ registerForm.controls.isAcceptedPrivacyTerms.getError('issue') }}
-                </small>
-              }
-            </div>
-
-            <altcha-widget #altchaWidget
-                           [attr.challenge]="altcha.challengeUrl"
-                           (statechange)="altcha.onStateChange($event)"
-                           auto="onload"
-                           display="invisible" />
-
-            <p-button type="submit" fluid [disabled]="!altcha.$isSolved()">
-              Submit
-            </p-button>
-          </form>
-
-          <div class="mt-8 body-small text-center lg:text-left">
-            <span>Already have an account?</span>
-            <a routerLink="/login" class="text-primary-500 hover:underline">
-              Login
-            </a>
-          </div>
-        </div>
+      <div class="auth-field">
+        <label for="lastName" class="auth-label">Last name</label>
+        <input [formControl]="registerForm.controls.lastName"
+               id="lastName"
+               type="text"
+               class="auth-input"
+               name="lastName"
+               autocomplete="new-password"
+               pInputText />
+        @if (registerForm.controls.lastName.invalid && registerForm.controls.lastName.touched) {
+          <small class="auth-error">{{ registerForm.controls.lastName.getError('issue') }}</small>
+        }
       </div>
     </div>
-  </div>
-</section>
+
+    <div class="auth-field">
+      <label for="password" class="auth-label">Password</label>
+      <p-password [formControl]="registerForm.controls.password"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  inputId="password"
+                  name="password"
+                  autocomplete="new-password"
+                  fluid />
+      @if (registerForm.controls.password.invalid && registerForm.controls.password.touched) {
+        <small class="auth-error">{{ registerForm.controls.password.getError('issue') }}</small>
+      }
+      @if ($strength().level > 0) {
+        <div class="register-strength" aria-live="polite">
+          <div class="register-strength-bars" aria-hidden="true">
+            @for (bar of strengthBars; track bar) {
+              <span class="register-strength-bar" [class.is-filled]="bar <= $strength().level"></span>
+            }
+          </div>
+          <span class="register-strength-label">{{ $strength().label }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="auth-field">
+      <label for="confirmPassword" class="auth-label">Confirm password</label>
+      <p-password [formControl]="registerForm.controls.confirmPassword"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  inputId="confirmPassword"
+                  name="confirmPassword"
+                  autocomplete="new-password"
+                  fluid />
+      @if (registerForm.controls.confirmPassword.invalid && registerForm.controls.confirmPassword.touched) {
+        <small class="auth-error">{{ registerForm.controls.confirmPassword.getError('issue') }}</small>
+      }
+    </div>
+
+    <div class="auth-field">
+      <div class="auth-check">
+        <p-checkbox [formControl]="registerForm.controls.isAcceptedPrivacyTerms"
+                    [binary]="true"
+                    inputId="isAcceptedPrivacyTerms" />
+        <label for="isAcceptedPrivacyTerms">I have read the</label>
+        <!-- New tab, so leaving to read the terms doesn't wipe the form. -->
+        <a routerLink="/terms" target="_blank" rel="noopener" class="auth-link">Terms and Conditions</a>
+      </div>
+      @if (registerForm.controls.isAcceptedPrivacyTerms.invalid && registerForm.controls.isAcceptedPrivacyTerms.touched) {
+        <small class="auth-error">{{ registerForm.controls.isAcceptedPrivacyTerms.getError('issue') }}</small>
+      }
+    </div>
+
+    <altcha-widget #altchaWidget
+                   [attr.challenge]="altchaService.challengeUrl"
+                   (statechange)="altchaService.onStateChange($event)"
+                   auto="onload"
+                   display="invisible" />
+
+    <p-button [disabled]="!altchaService.$isSolved()"
+              type="submit"
+              label="Create account"
+              size="large"
+              fluid />
+
+    <div class="auth-switch">
+      <span>Already have an account?</span>
+      <a routerLink="/login" class="auth-link">Log in</a>
+    </div>
+  </form>
+
+  <ol authPanel class="register-steps">
+    @for (step of steps; track step.title; let i = $index) {
+      <li class="register-step">
+        <span class="register-step-num">{{ '0' + (i + 1) }}</span>
+        <div class="register-step-text">
+          <span class="dl-h3">{{ step.title }}</span>
+          <span class="dl-body-sm register-step-desc">{{ step.description }}</span>
+        </div>
+      </li>
+    }
+  </ol>
+</app-auth-shell>

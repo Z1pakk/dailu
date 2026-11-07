@@ -38,8 +38,9 @@ services:
       RabbitMq__IsEnabled: "true"
       RabbitMq__Host: ${RABBITMQ_HOST:-dailu-rabbitmq}
       RabbitMq__Port: ${RABBITMQ_PORT:-5672}
-      RabbitMq__UserName: ${RABBITMQ_USER:?RABBITMQ_USER is required}
-      RabbitMq__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RabbitMq__VirtualHost: ${RABBITMQ_VHOST:-dailu}
+      RabbitMq__UserName: ${RABBITMQ_API_USER:-dailu-api}
+      RabbitMq__Password: ${RABBITMQ_API_PASSWORD:?RABBITMQ_API_PASSWORD is required}
     networks:
       - default
       - dokploy-network

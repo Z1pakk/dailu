@@ -1,38 +1,65 @@
-<nav
-  class="landing-container fixed top-4 left-1/2 -translate-x-1/2 w-full z-1000 rounded-2xl">
-  <div
-    class="py-4 px-6 rounded-2xl border border-surface-200 transition-all">
-    <div class="flex items-center justify-between">
-      <div class="flex-1 flex">
-        <a routerLink="/">
-          <app-logo-widget heightPx="30" widthPx="110" />
-        </a>
-      </div>
-      <ul class="flex-none hidden md:flex items-center gap-2"></ul>
+<header class="nav">
+  <div class="nav-inner">
+    <a routerLink="/" class="nav-logo" aria-label="Dailu home">
+      <app-ring-logo [size]="22" />
+    </a>
+
+    <nav class="nav-links" aria-label="Sections">
+      @for (link of links; track link.fragment) {
+        <a routerLink="/" [fragment]="link.fragment" class="nav-link">{{ link.label }}</a>
+      }
+    </nav>
+
+    <div class="nav-actions">
+      <app-theme-toggle class="nav-theme" />
+
       @if ($isAuthenticated()) {
-        <div class="flex-1 md:flex items-center justify-end gap-4">
-          <a routerLink="/app"
-             class="flex items-center justify-center leading-normal font-medium py-1.5 border border-primary-600 text-surface-0 transition-all"
-             pButton>
-            Go to App
-          </a>
-        </div>
+        <span class="nav-user">
+          <p-avatar [label]="$initials()" shape="circle" [dt]="avatarTokens" />
+          <span class="nav-user-name">{{ $firstName() }}</span>
+        </span>
+        <a pButton routerLink="/app" class="nav-cta btn-ink">Open app</a>
+      } @else {
+        <a pButton routerLink="/login" [text]="true" severity="secondary" class="nav-signin">Sign in</a>
+        <a pButton routerLink="/register" class="nav-cta btn-ink">Get started</a>
       }
-      @else {
-        <div class="flex-1 md:flex items-center justify-end gap-4">
-          <a routerLink="/login"
-             severity="secondary"
-             class="flex items-center justify-center w-24 leading-normal font-medium py-2 border border-surface-200 text-surface-900 transition-all"
-             pButton>
-            Login
-          </a>
-          <a routerLink="/register"
-             class="flex items-center justify-center w-24 leading-normal font-medium py-2 border border-primary-600 text-surface-0 transition-all"
-             pButton>
-            Register
-          </a>
-        </div>
-      }
+
+      <button pButton type="button" class="nav-menu" icon="pi pi-bars" [text]="true" severity="secondary"
+              aria-label="Open menu" [attr.aria-expanded]="$menuOpen()" (click)="$menuOpen.set(true)"></button>
     </div>
   </div>
-</nav>
+</header>
+
+<p-drawer [visible]="$menuOpen()" (visibleChange)="$menuOpen.set($event)" position="right"
+          styleClass="landing-menu" [modal]="true" [blockScroll]="true" appendTo="body">
+  <ng-template #header>
+    <app-ring-logo [size]="22" />
+  </ng-template>
+
+  <nav class="menu-links" aria-label="Sections">
+    @for (link of links; track link.fragment) {
+      <a routerLink="/" [fragment]="link.fragment" class="menu-link" (click)="closeMenu()">
+        {{ link.label }}
+        <i class="pi pi-chevron-right" aria-hidden="true"></i>
+      </a>
+    }
+  </nav>
+
+  <div class="menu-row">
+    <span class="menu-label">Theme</span>
+    <app-theme-toggle />
+  </div>
+
+  <div class="menu-actions">
+    @if ($isAuthenticated()) {
+      <span class="nav-user">
+        <p-avatar [label]="$initials()" shape="circle" [dt]="avatarTokens" />
+        <span>{{ $firstName() }}</span>
+      </span>
+      <a pButton routerLink="/app" size="large" class="btn-ink menu-btn" (click)="closeMenu()">Open app</a>
+    } @else {
+      <a pButton routerLink="/register" size="large" class="btn-ink menu-btn" (click)="closeMenu()">Get started</a>
+      <a pButton routerLink="/login" [outlined]="true" severity="secondary" size="large" class="menu-btn" (click)="closeMenu()">Sign in</a>
+    }
+  </div>
+</p-drawer>

@@ -411,6 +411,35 @@ Child components can inject the directive from a parent's `hostDirectives` via n
 }
 ```
 
+### Styling PrimeNG components — never use `::ng-deep`
+
+`::ng-deep` is deprecated and leaks styles out of the component. Do not use it, and do not reach into PrimeNG's internal classes (`.p-button-label`, `.p-progressbar-value`, …) from component styles. Use, in this order:
+
+1. **Component inputs:** `size`, `severity`, `[outlined]`, `[text]`, `[fluid]`, `shape`, …
+2. **Scoped design tokens:** the `[dt]` input on the component instance, with token names from `@primeuix/themes` Aura (e.g. `node_modules/@primeuix/themes/dist/aura/<component>/index.mjs`).
+3. **App-wide tokens:** `components.<name>` in `src/app/main/default-preset.ts`.
+4. **Last resort, only when Aura has no token:** a global rule in `src/assets/scss/dailu-primeng.scss`, with a comment saying why.
+
+Content you project into a PrimeNG component (spans, icons in `ng-template`s) belongs to your template, so plain component styles reach it without `::ng-deep`.
+
+**Bad:**
+```scss
+:host ::ng-deep .milestone-bar .p-progressbar-value {
+  background: var(--p-text-color);
+}
+```
+
+**Good:**
+```ts
+protected readonly barTokens = {
+  root: { height: '6px', background: 'var(--dl-bg-muted)' },
+  value: { background: '{text.color}' },
+};
+```
+```html
+<p-progressbar [value]="percent" [showValue]="false" [dt]="barTokens" />
+```
+
 ---
 
 ## Git & Version Control

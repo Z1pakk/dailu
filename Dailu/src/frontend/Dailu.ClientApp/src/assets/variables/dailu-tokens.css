@@ -1,0 +1,171 @@
+/*
+ * Dailu design tokens — mirrored from the Figma file "Dailu — Landing Redesign"
+ * (collections Primitives, Color, Spacing, Radius). Hex values live ONLY here.
+ * Semantic tokens that PrimeNG owns (--p-primary-color, --p-text-color, ...) are set
+ * in src/app/main/default-preset.ts, not in this file.
+ */
+
+:root {
+  /* ---------- Primitives ---------- */
+  --dl-white: #ffffff;
+
+  --dl-mist-25: #f4f7f8;
+  --dl-mist-50: #eef3f4;
+  --dl-mist-100: #eaeff1;
+  --dl-mist-150: #e6ecee;
+  --dl-mist-200: #d9e1e4;
+  --dl-mist-300: #d3dce0;
+
+  --dl-slate-300: #afc0c7;
+  --dl-slate-400: #8fa1a8;
+  --dl-slate-500: #6f8188;
+  --dl-slate-600: #5d6e75;
+  --dl-slate-700: #4a5d64;
+
+  --dl-ink-700: #24363d;
+  --dl-ink-750: #1f3036;
+  --dl-ink-800: #1c2d33;
+  --dl-ink-850: #16252b;
+  --dl-ink-900: #0f2027;
+  --dl-ink-950: #0a1418;
+  --dl-ink-feature: #13302a;
+
+  --dl-teal-100: #dcebe6;
+  --dl-teal-200: #bfdcd3;
+  --dl-teal-300: #8fd8c3;
+  --dl-teal-400: #5fcba9;
+  --dl-teal-600: #0a6b58;
+  --dl-teal-700: #085848;
+  --dl-teal-800: #1b4d41;
+  --dl-teal-900: #123b32;
+
+  --dl-coral-50: #ffe7e1;
+  --dl-coral-200: #ffb3a1;
+  --dl-coral-400: #ff8466;
+  --dl-coral-500: #ff6b4a;
+  --dl-coral-700: #9c3217;
+  --dl-coral-900: #3d1e17;
+
+  --dl-red-50: #fdecea;
+  --dl-red-200: #f5b5ae;
+  --dl-red-300: #fda29b;
+  --dl-red-400: #f97066;
+  --dl-red-600: #b42318;
+  --dl-red-800: #6b2a25;
+  --dl-red-850: #3a1a18;
+
+  --dl-heat-l1: #cfe6de;
+  --dl-heat-l2: #8cc7b4;
+  --dl-heat-l3: #3f9e87;
+  --dl-heat-d1: #173a31;
+  --dl-heat-d2: #22604f;
+  --dl-heat-d3: #329b7c;
+
+  /* ---------- Fonts ---------- */
+  --dl-font-sans: 'Onest', ui-sans-serif, system-ui, sans-serif;
+  --dl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---------- Spacing / radius / shadow ---------- */
+  --dl-space-0: 0px;
+  --dl-space-4: 4px;
+  --dl-space-8: 8px;
+  --dl-space-12: 12px;
+  --dl-space-16: 16px;
+  --dl-space-20: 20px;
+  --dl-space-24: 24px;
+  --dl-space-32: 32px;
+  --dl-space-40: 40px;
+  --dl-space-48: 48px;
+  --dl-space-56: 56px;
+  --dl-space-64: 64px;
+  --dl-space-80: 80px;
+  --dl-space-104: 104px;
+
+  --dl-radius-sm: 6px;
+  --dl-radius-md: 10px;
+  --dl-radius-lg: 14px;
+  --dl-radius-xl: 24px;
+  --dl-radius-2xl: 36px;
+  --dl-radius-full: 999px;
+
+  --dl-shadow-sm: 0 4px 12px rgb(15 33 38 / 0.06);
+  --dl-shadow-lg: 0 24px 56px rgb(15 33 38 / 0.08);
+
+  /* ---------- Layout (responsive values below) ---------- */
+  --dl-container-max: 1440px;
+  --dl-gutter: var(--dl-space-80);
+  --dl-section-y: var(--dl-space-104);
+  --dl-nav-height: 72px; /* Figma nav 3:315 is 94px; trimmed so the hero fits laptop screens */
+
+  /* ---------- Semantic · Light (default) ---------- */
+  --dl-bg-canvas: var(--dl-mist-100);
+  --dl-bg-subtle: var(--dl-mist-25);
+  --dl-bg-muted: var(--dl-mist-150);
+  --dl-bg-inverse: var(--dl-ink-900);
+  --dl-bg-feature: var(--dl-ink-900);
+  --dl-text-inverse: var(--dl-white);
+  --dl-border-subtle: var(--dl-mist-200);
+  --dl-primary-soft: var(--dl-teal-200);
+  --dl-primary-border: var(--dl-teal-200);
+  --dl-accent-now: var(--dl-coral-500);
+  --dl-accent-now-tint: var(--dl-coral-50);
+  --dl-accent-now-text: var(--dl-coral-700);
+  --dl-dial-track: var(--dl-mist-300);
+  --dl-dial-scheduled: var(--dl-slate-300);
+  --dl-danger-tint: var(--dl-red-50);
+  --dl-danger-border: var(--dl-red-200);
+  --dl-danger-text: var(--dl-red-600);
+  --dl-heat-1: var(--dl-heat-l1);
+  --dl-heat-2: var(--dl-heat-l2);
+  --dl-heat-3: var(--dl-heat-l3);
+  --dl-heat-4: var(--dl-teal-600);
+  --dl-heat-on-3: var(--dl-ink-900);
+}
+
+/* ---------- Semantic · Dark ---------- */
+.app-dark {
+  --dl-bg-canvas: var(--dl-ink-950);
+  --dl-bg-subtle: var(--dl-ink-850);
+  --dl-bg-muted: var(--dl-ink-750);
+  --dl-bg-inverse: var(--dl-mist-50);
+  --dl-bg-feature: var(--dl-ink-feature);
+  --dl-text-inverse: var(--dl-ink-900);
+  --dl-border-subtle: var(--dl-ink-800);
+  --dl-primary-soft: var(--dl-teal-800);
+  --dl-primary-border: var(--dl-teal-800);
+  --dl-accent-now: var(--dl-coral-400);
+  --dl-accent-now-tint: var(--dl-coral-900);
+  --dl-accent-now-text: var(--dl-coral-200);
+  --dl-dial-track: var(--dl-ink-700);
+  --dl-dial-scheduled: var(--dl-slate-700);
+  --dl-danger-tint: var(--dl-red-850);
+  --dl-danger-border: var(--dl-red-800);
+  --dl-danger-text: var(--dl-red-300);
+  --dl-heat-1: var(--dl-heat-d1);
+  --dl-heat-2: var(--dl-heat-d2);
+  --dl-heat-3: var(--dl-heat-d3);
+  --dl-heat-4: var(--dl-teal-400);
+  --dl-heat-on-3: var(--dl-ink-950);
+}
+
+/* ---------- Layout · responsive (breakpoints match Tailwind @theme) ---------- */
+@media (max-width: 1199.98px) {
+  :root {
+    --dl-gutter: var(--dl-space-40);
+  }
+}
+
+@media (max-width: 767.98px) {
+  :root {
+    --dl-gutter: var(--dl-space-20);
+    --dl-section-y: var(--dl-space-64);
+    --dl-nav-height: 64px; /* Figma mobile nav is 78px; trimmed with the desktop nav */
+  }
+}
+
+/* Short viewports: slimmer nav so the hero fits the screen height */
+@media (max-height: 720px) {
+  :root {
+    --dl-nav-height: 60px;
+  }
+}

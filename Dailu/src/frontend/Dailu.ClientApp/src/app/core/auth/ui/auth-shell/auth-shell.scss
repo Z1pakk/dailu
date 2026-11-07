@@ -1,0 +1,185 @@
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  gap: dl.space(16);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: dl.space(16);
+  background: var(--dl-bg-canvas);
+}
+
+/* ---- Form column ---------------------------------------------------------- */
+
+.shell-column {
+  display: flex;
+  flex: 0 0 640px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: dl.space(40);
+  padding: dl.space(32) dl.space(64);
+
+  @include dl.down(lg) {
+    flex: 1 1 auto;
+    padding: dl.space(20) dl.space(4);
+  }
+}
+
+.shell-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shell-logo {
+  display: inline-flex;
+  @include dl.tap-target;
+  align-items: center;
+}
+
+.shell-form {
+  width: 400px;
+  max-width: 100%;
+
+  @include dl.down(lg) {
+    width: 100%;
+    max-width: 480px;
+  }
+}
+
+.shell-footer {
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+/* ---- Brand panel ---------------------------------------------------------- */
+
+// The panel is dark in both themes (Figma `32:646` / `33:1335`), so it pins the
+// dark-scheme values of every token its content reads — including the DayClock.
+.shell-panel {
+  --p-text-color: var(--dl-mist-50);
+  --p-text-muted-color: var(--dl-slate-400);
+  --p-primary-color: var(--dl-teal-400);
+  --p-primary-contrast-color: var(--dl-ink-950);
+  --p-content-background: var(--dl-ink-900);
+  --p-content-border-color: var(--dl-ink-800);
+  --dl-bg-inverse: var(--dl-mist-50);
+  --dl-text-inverse: var(--dl-ink-900);
+  --dl-primary-soft: var(--dl-teal-800);
+  --dl-accent-now: var(--dl-coral-400);
+  --dl-accent-now-tint: var(--dl-coral-900);
+  --dl-accent-now-text: var(--dl-coral-200);
+  --dl-dial-track: var(--dl-ink-700);
+  --dl-dial-scheduled: var(--dl-slate-700);
+
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: dl.space(40);
+  min-width: 0;
+  padding: dl.space(56);
+  overflow: hidden;
+  border-radius: dl.radius(2xl);
+  background: var(--dl-ink-feature);
+  color: var(--p-text-color);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.panel-head {
+  @include dl.stack(12);
+}
+
+.panel-eyebrow,
+.panel-title {
+  margin: 0;
+}
+
+.panel-eyebrow {
+  color: var(--p-primary-color);
+}
+
+.panel-title-line {
+  display: block;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.panel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px; // Figma chip row gap; not on the spacing scale
+}
+
+.panel-chips-label {
+  color: var(--p-text-muted-color);
+}
+
+.panel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(8);
+  padding: 10px dl.space(16);
+  border-radius: dl.radius(full);
+  background: var(--p-content-background);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.panel-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--p-primary-color);
+}
+
+/* ---- Short viewports: tighten spacing so the page fits the screen height ---- */
+
+@media (max-height: 860px) {
+  :host {
+    padding: dl.space(12);
+  }
+
+  .shell-column {
+    gap: dl.space(24);
+    padding-block: dl.space(20);
+  }
+
+  .shell-panel {
+    gap: dl.space(24);
+    padding: dl.space(40);
+  }
+
+  .panel-title {
+    font-size: 44px;
+  }
+}
+
+@media (max-height: 720px) {
+  :host {
+    padding: dl.space(8);
+  }
+
+  .shell-column {
+    gap: dl.space(16);
+    padding-block: dl.space(12);
+  }
+
+  .shell-panel {
+    padding: dl.space(32);
+  }
+
+  .panel-title {
+    font-size: 36px;
+  }
+}

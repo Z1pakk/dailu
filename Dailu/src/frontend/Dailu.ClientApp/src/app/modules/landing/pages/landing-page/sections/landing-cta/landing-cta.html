@@ -1,28 +1,33 @@
-<section class="cta-section">
-  <div class="section-inner reveal">
-    <h2 class="cta-title">Ready to start tracking?</h2>
-    <p class="cta-sub">
-      Free to use. No credit card required. Connect your apps in under a minute.
-    </p>
-    <div class="cta-actions">
+<section class="landing-section landing-section--canvas">
+  <div class="section-inner">
+    <div class="cta reveal">
+      <p class="cta-eyebrow dl-eyebrow">Tomorrow starts at 06:00</p>
+      <h2 class="cta-title dl-h2">Plan it tonight.<br class="dl-desktop-only" /> Let Dailu do the ticking.</h2>
+
       @if ($isAuthenticated()) {
-        <span class="btn-glow">
-          <a routerLink="/app" class="cta-btn-primary" pButton>Go to App →</a>
-        </span>
+        <a pButton routerLink="/app" size="large" class="cta-btn cta-btn--solo">Open app</a>
+      } @else {
+        <form class="cta-form" novalidate (submit)="submit($event)">
+          <label for="cta-email" class="sr-only">Email</label>
+          <div class="cta-field">
+            <input pInputText id="cta-email" type="email" autocomplete="email" placeholder="you@email.com"
+                   class="cta-input" [class.ng-invalid]="!!$error()" [class.ng-dirty]="!!$error()"
+                   [attr.aria-invalid]="!!$error()" [attr.aria-describedby]="$error() ? 'cta-email-error' : null"
+                   [ngModel]="$email()" (ngModelChange)="onInput($event)" name="email" />
+            @if ($error(); as error) {
+              <span id="cta-email-error" class="cta-error" role="alert">{{ error }}</span>
+            }
+          </div>
+          <button pButton type="submit" size="large" class="cta-btn">Start free</button>
+        </form>
       }
-      @else {
-        <span class="btn-glow">
-          <a routerLink="/register" class="cta-btn-primary" pButton>
-            Start tracking free →
-          </a>
-        </span>
-        <a routerLink="/login"
-           severity="secondary"
-           class="cta-btn-secondary"
-           pButton>
-          Sign in
-        </a>
-      }
+
+      <p class="cta-caption dl-mono-sm">A study &amp; pet project · Free to use</p>
+
+      <svg class="cta-arc" viewBox="0 -54 600 254" aria-hidden="true">
+        <path class="cta-arc-track" d="M 60 200 A 240 240 0 0 1 540 200" />
+        <path class="cta-arc-fill" d="M 60 200 A 240 240 0 0 1 374.16 -28.25" />
+      </svg>
     </div>
   </div>
 </section>

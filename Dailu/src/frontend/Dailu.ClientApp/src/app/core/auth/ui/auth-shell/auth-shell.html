@@ -1,0 +1,39 @@
+<div class="shell-column">
+  <div class="shell-top">
+    <a routerLink="/" class="shell-logo" aria-label="Dailu home">
+      <app-ring-logo [size]="22" />
+    </a>
+    <app-theme-toggle />
+  </div>
+
+  <main class="shell-form">
+    <ng-content />
+  </main>
+
+  <p class="dl-mono-sm shell-footer">A study &amp; pet project · Protected by ALTCHA</p>
+</div>
+
+<aside class="shell-panel">
+  <div class="panel-head">
+    <p class="dl-eyebrow panel-eyebrow">{{ $eyebrow() }}</p>
+    <h2 class="dl-h1 panel-title">
+      @for (line of $headline(); track $index) {
+        <span class="panel-title-line">{{ line }}</span>
+      }
+    </h2>
+  </div>
+
+  <div class="panel-body">
+    <ng-content select="[authPanel]" />
+  </div>
+
+  <div class="panel-chips">
+    <span class="dl-mono-sm panel-chips-label">{{ $chipsLabel() }}</span>
+    @for (source of sources; track source) {
+      <span class="panel-chip">
+        <span class="panel-chip-dot" aria-hidden="true"></span>
+        {{ source }}
+      </span>
+    }
+  </div>
+</aside>

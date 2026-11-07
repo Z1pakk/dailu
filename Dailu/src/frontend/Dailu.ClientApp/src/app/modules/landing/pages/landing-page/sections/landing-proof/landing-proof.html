@@ -1,0 +1,24 @@
+<section class="landing-section landing-section--canvas">
+  <div class="section-inner">
+    <app-section-header class="reveal" eyebrow="Under the hood" title="What Dailu is made of." />
+
+    <dl class="facts reveal">
+      @for (fact of facts; track fact.value) {
+        <div class="fact">
+          <dt class="fact-label">{{ fact.label }}</dt>
+          <dd class="fact-value">{{ fact.value }}</dd>
+        </div>
+      }
+    </dl>
+
+    <ul class="cards">
+      @for (card of cards; track card.title) {
+        <li class="landing-card card reveal">
+          <p class="card-eyebrow dl-eyebrow">{{ card.eyebrow }}</p>
+          <h3 class="card-title dl-h3">{{ card.title }}</h3>
+          <p class="card-text dl-body-sm">{{ card.text }}</p>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

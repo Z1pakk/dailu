@@ -1,0 +1,118 @@
+@use 'dailu' as dl;
+@use '../../ui/auth-form';
+
+.register-social {
+  @include dl.stack(20);
+}
+
+.register-social-short {
+  display: none;
+}
+
+.register-name-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: dl.space(16);
+}
+
+/* ---- Password strength (Figma `32:774`) ----------------------------------- */
+
+.register-strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.register-strength-bars {
+  display: flex;
+  gap: dl.space(4);
+}
+
+.register-strength-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--dl-bg-muted);
+  transition: background-color 150ms ease-out;
+
+  &.is-filled {
+    background: var(--p-primary-color);
+  }
+}
+
+.register-strength-label {
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+}
+
+/* ---- Brand panel steps (Figma `32:803`) ----------------------------------- */
+
+.register-steps {
+  @include dl.stack(12);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.register-step {
+  display: flex;
+  align-items: flex-start;
+  gap: dl.space(16);
+  padding: 18px dl.space(20);
+  border-radius: 20px;
+  background: var(--p-content-background);
+}
+
+.register-step-num {
+  flex-shrink: 0;
+  padding: dl.space(4) 10px;
+  border-radius: dl.radius(full);
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  font-family: var(--dl-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.register-step-text {
+  @include dl.stack(4);
+  min-width: 0;
+}
+
+.register-step-desc {
+  color: var(--p-text-muted-color);
+}
+
+/* ---- Short viewports: the register form is the tallest auth page ---------- */
+// Pairs with the AuthShell / auth-form height breakpoints (860px, 720px).
+
+@media (max-height: 860px) {
+  .auth-form,
+  .register-social {
+    gap: dl.space(12);
+  }
+
+  .auth-field {
+    gap: dl.space(4);
+  }
+
+  .auth-heading p {
+    display: none;
+  }
+}
+
+@media (max-height: 720px) {
+  .register-social {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .register-social-full {
+    display: none;
+  }
+
+  .register-social-short {
+    display: block;
+  }
+}

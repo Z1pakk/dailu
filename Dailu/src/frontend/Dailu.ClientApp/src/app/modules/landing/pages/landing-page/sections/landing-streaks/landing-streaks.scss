@@ -1,0 +1,161 @@
+@use 'dailu' as dl;
+
+.streaks {
+  display: grid;
+  grid-template-areas:
+    'head card'
+    'stats card';
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-rows: auto 1fr;
+  column-gap: dl.space(64);
+  row-gap: dl.space(32);
+
+  /* Figma mobile: header, card, stats. */
+  @include dl.down(lg) {
+    grid-template-areas:
+      'head'
+      'card'
+      'stats';
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    row-gap: dl.space(24);
+  }
+}
+
+.streaks-head {
+  grid-area: head;
+  align-self: end;
+}
+
+.week-card {
+  grid-area: card;
+  align-self: center;
+}
+
+.stats {
+  grid-area: stats;
+  display: flex;
+  gap: dl.space(40);
+  margin: 0;
+
+  @include dl.down(md) {
+    justify-content: space-between;
+    gap: dl.space(16);
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: dl.space(4);
+}
+
+.stat-value {
+  margin: 0;
+  color: var(--p-text-color);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.stat-label {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.week-card {
+  padding: dl.space(32);
+
+  @include dl.down(md) {
+    padding: dl.space(20);
+  }
+}
+
+.week-closed {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+}
+
+.week-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+}
+
+.week-title {
+  margin: 0;
+  color: var(--p-text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: dl.space(4);
+  margin: dl.space(24) 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: center;
+    border-radius: dl.radius(md);
+  }
+
+  /* Figma mobile: all 7 days in one row with smaller dials. */
+  @include dl.down(md) {
+    --dial-size-override: 36px;
+    gap: 0;
+    margin-top: dl.space(16);
+  }
+}
+
+.week-day--today {
+  background: var(--dl-bg-subtle);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: dl.space(16);
+  margin: dl.space(24) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(4);
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot--auto {
+  background: var(--p-primary-color);
+}
+
+.legend-dot--manual {
+  background: var(--p-text-color);
+}
+
+.legend-dot--scheduled {
+  background: var(--dl-dial-scheduled);
+}
+
+.legend-dot--missed {
+  background: var(--dl-accent-now);
+}

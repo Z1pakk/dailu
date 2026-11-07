@@ -1,0 +1,60 @@
+@use 'dailu' as dl;
+
+.long-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: dl.space(24);
+  margin-top: dl.space(56);
+
+  @include dl.down(xl) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.heat-card,
+.milestones {
+  min-width: 0;
+  padding: dl.space(24);
+}
+
+.card-title {
+  margin: 0 0 dl.space(20);
+  color: var(--p-text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.milestone-list {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.milestone-head {
+  display: flex;
+  justify-content: space-between;
+  gap: dl.space(12);
+  margin-bottom: dl.space(8);
+}
+
+.milestone-name {
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.milestone-count {
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+}
+
+.milestone--unlocked .milestone-count {
+  color: var(--p-primary-color);
+}
+
+

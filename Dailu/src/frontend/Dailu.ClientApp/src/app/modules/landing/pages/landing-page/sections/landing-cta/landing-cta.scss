@@ -1,62 +1,138 @@
-.cta-section {
-  background: var(--p-surface-50);
-  border-top: 1px solid var(--p-surface-200);
-  padding: 80px 0;
+@use 'dailu' as dl;
+
+// The CTA panel is always dark (ink in light mode, deep teal-ink in dark mode),
+// so its text uses fixed light tokens rather than the theme text colour.
+.cta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  padding: dl.space(80) dl.space(24) 0;
+  border-radius: dl.radius(2xl);
+  background: var(--dl-bg-feature);
   text-align: center;
+
+  @include dl.down(md) {
+    padding-top: dl.space(56);
+  }
+}
+
+.cta-eyebrow {
+  margin: 0;
+  color: var(--dl-teal-300);
 }
 
 .cta-title {
-  font-size: clamp(28px, 4vw, 42px);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  color: var(--p-surface-900);
+  margin: dl.space(16) 0 0;
+  color: var(--dl-white);
 }
 
-.cta-sub {
-  font-size: 16px;
-  color: var(--p-surface-500);
-  margin-top: 12px;
-}
-
-.cta-actions {
+.cta-form {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
   justify-content: center;
-  margin-top: 28px;
+  align-items: flex-start;
+  gap: dl.space(8);
+  width: 100%;
+  max-width: 460px;
+  margin-top: dl.space(32);
 }
 
-.cta-btn-primary {
-  font-size: 15px;
-  padding: 13px 32px;
-  border-radius: 12px;
-  position: relative !important;
-  overflow: visible !important;
-  isolation: isolate;
+.cta-field {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: dl.space(4);
+  text-align: left;
+}
 
-  &::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    background: linear-gradient(90deg, var(--color-blue-400), var(--color-blue-500), var(--color-blue-600), var(--color-blue-500), var(--color-blue-400));
-    background-size: 200% 100%;
-    border-radius: 14px;
-    z-index: -1;
-    opacity: 0;
-    animation: borderGlow 3s linear infinite;
-    transition: opacity 0.3s;
+.cta-input {
+  width: 100%;
+  min-height: 52px;
+  border-color: var(--dl-ink-700);
+  background: var(--dl-ink-800);
+  color: var(--dl-white);
+
+  &::placeholder {
+    color: var(--dl-slate-400);
+  }
+}
+
+.cta-error {
+  color: var(--dl-red-300);
+  font-size: 13px;
+}
+
+.cta-btn {
+  border-color: var(--dl-teal-600);
+  background: var(--dl-teal-600);
+  color: var(--dl-white);
+
+  &:hover {
+    border-color: var(--dl-teal-700);
+    background: var(--dl-teal-700);
+    color: var(--dl-white);
   }
 
-  &:hover::after { opacity: 1; }
+  /* Figma mobile: full-width light-teal button with ink text. */
+  @include dl.down(md) {
+    flex: 1 1 100%;
+    justify-content: center;
+    border-color: var(--dl-teal-300);
+    background: var(--dl-teal-300);
+    color: var(--dl-ink-900);
+
+    &:hover {
+      border-color: var(--dl-teal-400);
+      background: var(--dl-teal-400);
+      color: var(--dl-ink-900);
+    }
+  }
 }
 
-@keyframes borderGlow {
-  from { background-position: 0% 50%; }
-  to   { background-position: 200% 50%; }
+@include dl.down(md) {
+  .cta-field {
+    flex-basis: 100%;
+  }
 }
 
-.cta-btn-secondary {
-  font-size: 15px;
-  padding: 13px 32px;
-  border-radius: 12px;
+.cta-btn--solo {
+  margin-top: dl.space(32);
 }
 
+.cta-caption {
+  margin: dl.space(16) 0 0;
+  color: var(--dl-slate-400);
+}
+
+/* Figma 5:630: a wide arc whose lower part is cut off by the panel's bottom edge. */
+.cta-arc {
+  display: block;
+  flex: none;
+  width: 640px;
+  max-width: none;
+  height: auto;
+  margin-top: dl.space(40);
+  margin-bottom: -140px;
+
+  @include dl.down(md) {
+    width: 300px;
+    margin-top: dl.space(32);
+    margin-bottom: -64px;
+  }
+}
+
+.cta-arc-track,
+.cta-arc-fill {
+  fill: none;
+  stroke-width: 28;
+}
+
+.cta-arc-track {
+  stroke: var(--dl-ink-700);
+}
+
+.cta-arc-fill {
+  stroke: var(--dl-teal-300);
+}

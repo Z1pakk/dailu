@@ -14,7 +14,11 @@ import { Checkbox } from 'primeng/checkbox';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { RouterLink } from '@angular/router';
-import { LogoWidget } from '@shared/ui/logo-widget/logo-widget';
+import { Message } from 'primeng/message';
+import { DayClock } from '@shared/ui/day-clock/day-clock';
+import { AuthShell } from '@auth/ui/auth-shell/auth-shell';
+import { EXAMPLE_DAY } from '../../../../modules/landing/data/example-day';
+import { loginPanelDate } from './login-panel-date';
 import { Store } from '@ngxs/store';
 import { valibotValidator } from '@shared/lib/form/valibot.validator';
 import {
@@ -39,8 +43,10 @@ import { HttpErrorResponse } from '@angular/common/http';
     ReactiveFormsModule,
     InputText,
     RouterLink,
-    LogoWidget,
     Password,
+    Message,
+    DayClock,
+    AuthShell,
   ],
   providers: [AltchaService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -54,6 +60,20 @@ export class Login {
   protected readonly altchaService = inject(AltchaService);
 
   protected readonly $loginError = signal<string | null>(null);
+  /** 401: outline the password field as well as showing the banner (Figma `42:2450`). */
+  protected readonly $isCredentialsRejected = signal(false);
+
+  protected readonly panelDate = loginPanelDate(new Date());
+  protected readonly panelHeadline = ['Your dial is waiting.', '4 of 6 already checked.'];
+  protected readonly exampleDay = EXAMPLE_DAY;
+  protected readonly errorMessageTokens = {
+    error: {
+      background: 'var(--dl-danger-tint)',
+      borderColor: 'var(--dl-danger-border)',
+      color: 'var(--dl-danger-text)',
+      shadow: 'none',
+    },
+  };
 
   private readonly _$altchaWidgetRef = viewChild<ElementRef>('altchaWidget');
 
@@ -83,6 +103,7 @@ export class Login {
 
   protected login() {
     this.$loginError.set(null);
+    this.$isCredentialsRejected.set(false);
     markAllAsDirty(this.loginForm);
 
     if (!this.altchaService.$isSolved() || !this.loginForm.valid) {
@@ -104,6 +125,7 @@ export class Login {
       error: (error: HttpErrorResponse) => {
         this._resetCaptcha();
         if (error.status === 401) {
+          this.$isCredentialsRejected.set(true);
           this.$loginError.set('Invalid email or password.');
         } else if (error.status === 0 || error.status >= 500) {
           this.$loginError.set('An error occurred. Please try again later.');

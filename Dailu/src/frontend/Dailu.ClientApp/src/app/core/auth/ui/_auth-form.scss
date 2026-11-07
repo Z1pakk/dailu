@@ -1,0 +1,133 @@
+// Shared form styles for the login / register pages (Figma `32:645`, `32:736`).
+// `@use`d by each page's stylesheet, so the rules stay scoped to that component.
+@use 'dailu' as dl;
+
+.auth-form {
+  @include dl.stack(20);
+}
+
+.auth-heading {
+  @include dl.stack(8);
+  padding-bottom: dl.space(8);
+
+  h1,
+  p {
+    margin: 0;
+  }
+
+  p {
+    color: var(--p-text-muted-color);
+  }
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px; // Figma divider gap; not on the spacing scale
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--dl-border-subtle);
+  }
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px; // Figma label → input gap; not on the spacing scale
+  min-width: 0;
+}
+
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-label {
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.auth-input {
+  width: 100%;
+}
+
+.auth-error {
+  color: var(--dl-danger-text);
+  font-size: 12px;
+}
+
+.auth-link {
+  color: var(--p-primary-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-underline-offset: 3px;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--p-primary-hover-color);
+    text-decoration: underline;
+  }
+}
+
+.auth-check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px; // Figma checkbox → label gap; not on the spacing scale
+  row-gap: dl.space(4);
+
+  label {
+    color: var(--p-text-color);
+    font-size: 15px;
+    cursor: pointer;
+  }
+}
+
+.auth-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: dl.space(8);
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+}
+
+/* ---- Short viewports (pairs with the AuthShell height breakpoints) ---- */
+
+@media (max-height: 860px) {
+  .auth-form {
+    gap: dl.space(16);
+  }
+
+  .auth-heading {
+    gap: dl.space(4);
+    padding-bottom: 0;
+
+    h1 {
+      font-size: 36px;
+    }
+  }
+}
+
+@media (max-height: 720px) {
+  .auth-form {
+    gap: dl.space(12);
+  }
+
+  .auth-heading h1 {
+    font-size: 30px;
+  }
+
+  .auth-switch {
+    padding-top: 0;
+  }
+}

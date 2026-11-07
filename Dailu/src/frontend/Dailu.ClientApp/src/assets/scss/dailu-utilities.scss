@@ -1,0 +1,26 @@
+// Global layout classes built from the `dailu` module, for use straight in templates:
+//   <section class="dl-section"><div class="dl-container">…</div></section>
+// For anything finer, @use 'dailu' as dl; inside the component's SCSS.
+@use 'dailu' as dl;
+
+.dl-container {
+  @include dl.container;
+}
+
+.dl-section {
+  @include dl.section;
+}
+
+// Figma has separate desktop (1440) and mobile (375) layouts; these switch at `md` (768px).
+// `!important` so a component's own `display` can't override the visibility switch.
+.dl-mobile-only {
+  @include dl.up(md) {
+    display: none !important;
+  }
+}
+
+.dl-desktop-only {
+  @include dl.down(md) {
+    display: none !important;
+  }
+}

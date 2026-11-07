@@ -1,0 +1,55 @@
+<header class="terms-header">
+  <div class="terms-header-inner">
+    <p class="dl-eyebrow terms-eyebrow">Legal</p>
+    <h1 class="dl-h1 terms-title">Terms &amp; Conditions</h1>
+    <p class="terms-meta">
+      <span class="dl-mono-sm">{{ updated }}</span>
+      <span aria-hidden="true">·</span>
+      <span class="dl-mono-sm">{{ readTime }}</span>
+    </p>
+  </div>
+</header>
+
+<div class="terms-body">
+  <nav class="terms-toc" aria-label="On this page">
+    <p class="dl-mono-sm terms-toc-label">ON THIS PAGE</p>
+    @for (section of sections; track section.id; let i = $index) {
+      <a routerLink="/terms" [fragment]="section.id" class="terms-link terms-toc-link">
+        {{ i + 1 }}. {{ section.title }}
+      </a>
+    }
+  </nav>
+
+  <article class="terms-content">
+    <aside class="terms-short" aria-labelledby="terms-short-title">
+      <h2 id="terms-short-title" class="dl-h3">The short version</h2>
+      <ul class="terms-short-list">
+        @for (item of shortVersion; track item) {
+          <li class="dl-body">{{ item }}</li>
+        }
+      </ul>
+    </aside>
+
+    @for (section of sections; track section.id; let i = $index) {
+      <section class="terms-section" [id]="section.id">
+        <h2 class="terms-section-title">
+          <span class="terms-num">{{ sectionNumber(i) }}</span>
+          <span class="dl-h3">{{ section.title }}</span>
+        </h2>
+        @for (block of section.blocks; track $index) {
+          @if (block.kind === 'p') {
+            <p class="dl-body terms-text">{{ block.text }}</p>
+          } @else {
+            <ul class="dl-body terms-text terms-list">
+              @for (item of block.items; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        }
+      </section>
+    }
+
+    <a routerLink="/register" class="terms-link terms-back">← Back to sign up</a>
+  </article>
+</div>

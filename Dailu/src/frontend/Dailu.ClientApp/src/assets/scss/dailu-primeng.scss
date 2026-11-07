@@ -1,0 +1,29 @@
+// Global PrimeNG tweaks that Aura has no design token for.
+// Unlayered, so these win over PrimeNG's `@layer primeng` styles.
+// Everything with a token lives in src/app/main/default-preset.ts instead.
+
+// Button — Figma styleguide `7:144`.
+// Aura's default button text is `1rem`, which is 14px here (html is 14px), so md is set explicitly.
+.p-button:not(.p-button-sm):not(.p-button-lg) {
+  font-size: 15px;
+}
+
+.p-button.p-button-sm {
+  border-radius: 10px;
+}
+
+.p-button.p-button-lg {
+  border-radius: 14px;
+}
+
+// `pButton` on <a>/<button> keeps its text as-is (no .p-button-label span), so Aura's
+// label fontWeight token doesn't reach it — set the Figma weight on the button itself.
+.p-button {
+  font-weight: 600;
+}
+
+// InputText / Password — Figma styleguide `7:170`.
+// Aura inherits the 14px html size; the design's field text is 15px.
+.p-inputtext {
+  font-size: 15px;
+}

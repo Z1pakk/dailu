@@ -1,0 +1,83 @@
+<div class="clock-box">
+  <svg class="clock-svg" [attr.viewBox]="$frame().viewBox" role="group"
+       aria-label="Today's habits on a clock from 06:00 to midnight"
+       (pointerover)="onPointerOver($event)" (pointerleave)="onPointerLeave()">
+    @if ($frame().face; as face) {
+      <path class="clock-face" [attr.d]="face" />
+    }
+    <path class="clock-track" [attr.d]="$frame().track" />
+
+    @if ($elapsedPath(); as elapsed) {
+      <path class="clock-elapsed" [attr.d]="elapsed" />
+    }
+
+    @for (hour of $frame().hours; track hour.label) {
+      <text class="clock-hour" [attr.x]="hour.at.x" [attr.y]="hour.at.y"
+            text-anchor="middle" dominant-baseline="middle" aria-hidden="true">
+        {{ hour.label }}
+      </text>
+    }
+
+    @if ($active(); as active) {
+      <path class="clock-seg-ring" [attr.d]="active.path" aria-hidden="true" />
+    }
+
+    @for (seg of $segments(); track seg.view.id) {
+      <path [class]="'clock-seg clock-seg--' + seg.view.state + (seg.view.source === 'manual' ? ' clock-seg--manual' : '')"
+            [class.clock-seg--active]="$activeId() === seg.view.id"
+            [attr.d]="seg.path"
+            [attr.data-habit]="seg.view.id"
+            tabindex="0"
+            role="img"
+            [attr.aria-label]="seg.view.name + ' · ' + seg.detail"
+            (focus)="onFocus(seg.view.id)"
+            (blur)="onBlur(seg.view.id)" />
+
+      @if (!$compact()) {
+        <text class="clock-label"
+              [attr.x]="seg.labelAt.x" [attr.y]="seg.labelAt.y"
+              [attr.text-anchor]="seg.labelAnchor" aria-hidden="true">
+          <tspan class="clock-label-name" [attr.x]="seg.labelAt.x" dy="-4">{{ seg.view.name }}</tspan>
+          <tspan class="clock-label-caption" [attr.x]="seg.labelAt.x" dy="15">{{ seg.caption }}</tspan>
+        </text>
+      }
+    }
+
+    <circle class="clock-now" [attr.cx]="$nowDot().x" [attr.cy]="$nowDot().y" [attr.r]="$nowDot().r" aria-hidden="true" />
+  </svg>
+
+  <div class="clock-center">
+    <div class="clock-time dl-display-clock">{{ $time() }}</div>
+    <div class="clock-count dl-body-sm">{{ $summary().done }} of {{ $summary().total }} done</div>
+    <div class="clock-next dl-label">{{ $nextText() }}</div>
+  </div>
+
+  @if ($active(); as active) {
+    <div class="clock-popup" role="tooltip">
+      <span class="clock-popup-name">{{ active.view.name }}</span>
+      <span class="clock-popup-detail">{{ active.detail }}</span>
+    </div>
+  }
+</div>
+
+@if ($compact()) {
+  <ul class="today-list" aria-label="Today's habits">
+    @for (row of $listRows(); track row.id) {
+      <li class="today-row" [class.today-row--next]="row.state === 'next'">
+        <span class="today-time">{{ row.time }}</span>
+        <span class="today-check"
+              [class.today-check--done]="row.state === 'done'"
+              [class.today-check--manual]="row.manual"
+              aria-hidden="true">
+          @if (row.state === 'done') {
+            <i class="pi pi-check"></i>
+          }
+        </span>
+        <span class="today-name">{{ row.name }}</span>
+        <span class="today-caption" [class.today-caption--auto]="row.state === 'done' && !row.manual">
+          {{ row.caption }}
+        </span>
+      </li>
+    }
+  </ul>
+}

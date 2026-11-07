@@ -1,0 +1,33 @@
+<section class="landing-section landing-section--canvas">
+  <div class="section-inner">
+    <app-section-header class="reveal" eyebrow="The long game" title="Small days add up."
+                        subtitle="A year of habits at a glance, with milestones that turn daily checks into something bigger."
+                        subtitleMobile="" />
+
+    <div class="long-grid">
+      <div class="landing-card heat-card reveal">
+        <!-- Desktop: the whole year. Mobile (Figma 9:240): the last 20 weeks, no labels. -->
+        <app-heatmap class="dl-desktop-only" [weeks]="weeks" [caption]="caption" [habitsPerDay]="habitsPerDay" />
+        <app-heatmap class="dl-mobile-only" [weeks]="recentWeeks" [caption]="recentCaption"
+                     [habitsPerDay]="habitsPerDay" [showMonths]="false" />
+      </div>
+
+      <div class="landing-card milestones reveal">
+        <h3 class="card-title">Milestones</h3>
+        <ul class="milestone-list">
+          @for (m of milestones; track m.name; let last = $last) {
+            <li class="milestone" [class.milestone--unlocked]="m.unlocked" [class.dl-desktop-only]="last">
+              <span class="milestone-head">
+                <span class="milestone-name">{{ m.name }}</span>
+                <span class="milestone-count">{{ m.unlocked ? 'Unlocked' : m.current + '/' + m.target }}</span>
+              </span>
+              <p-progressbar [value]="m.percent" [showValue]="false"
+                             [dt]="m.unlocked ? unlockedBarTokens : barTokens"
+                             [attr.aria-label]="m.name + ' ' + m.percent + '%'" />
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
