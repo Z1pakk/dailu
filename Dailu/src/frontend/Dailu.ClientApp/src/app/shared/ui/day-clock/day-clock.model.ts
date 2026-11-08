@@ -14,6 +14,11 @@ export interface ClockHabit {
   doneLabel: string;
   /** Shown before it is done, e.g. "at 18:00". */
   waitingLabel: string;
+  /**
+   * Real completion. When set, state follows it instead of the clock, and the
+   * times are only positions on the dial (habits without a time of day).
+   */
+  isDone?: boolean;
 }
 
 export interface ClockHabitView extends ClockHabit {
@@ -41,8 +46,8 @@ export function sourceLabel(source: HabitSource): string {
 }
 
 /**
- * A habit is done once `now >= end`; the first habit still running or ahead is
- * `next`; everything after it is `scheduled`.
+ * A habit is done once `now >= end` — or, when it carries `isDone`, once it is
+ * actually completed. The first habit not done is `next`; the rest are `scheduled`.
  */
 export function resolveClockHabits(
   habits: readonly ClockHabit[],
@@ -53,7 +58,8 @@ export function resolveClockHabits(
     .sort((a, b) => a.startMinutes - b.startMinutes)
     .map((habit) => {
       let state: ClockHabitState = 'scheduled';
-      if (nowMinutes >= habit.endMinutes) {
+      const isDone = habit.isDone ?? nowMinutes >= habit.endMinutes;
+      if (isDone) {
         state = 'done';
       } else if (!nextAssigned) {
         state = 'next';

@@ -123,6 +123,11 @@ export class DayClock {
     alias: 'compact',
     transform: booleanAttribute,
   });
+  /** Compact mode's own "today" list under the dial; off when the host renders its own list. */
+  public readonly $showList = input(true, {
+    alias: 'showList',
+    transform: booleanAttribute,
+  });
 
   private readonly _$tick = signal(new Date());
 
@@ -229,8 +234,13 @@ export class DayClock {
 
   protected readonly $nextText = computed(() => {
     const { next } = this.$summary();
+    // Completion-based habits have no real time of day: name the next one, no time.
+    const isUntimed = this._$views().some((v) => v.isDone !== undefined);
     if (next) {
-      return `Next: ${next.name} at ${formatMinutes(next.startMinutes)}`;
+      return isUntimed ? `Next: ${next.name}` : `Next: ${next.name} at ${formatMinutes(next.startMinutes)}`;
+    }
+    if (isUntimed) {
+      return this._$views().length > 0 ? 'All done for today' : '';
     }
     const first = this._$views()[0];
     return first

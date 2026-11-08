@@ -5,13 +5,16 @@
 <footer class="landing-footer">
   <div class="landing-footer-inner">
     <span class="landing-footer-copy">© {{ year }} Dailu · a study &amp; pet project</span>
-    <nav class="landing-footer-links" aria-label="Footer">
-      <a routerLink="/terms" class="landing-footer-link">Terms</a>
-      <a href="https://github.com/Z1pakk/dailu" target="_blank" rel="noopener noreferrer"
-         class="landing-footer-link">
-        <i class="pi pi-github" aria-hidden="true"></i>
-        GitHub
-      </a>
-    </nav>
+    <div class="landing-footer-end">
+      <nav class="landing-footer-links" aria-label="Footer">
+        <a routerLink="/terms" class="landing-footer-link">Terms</a>
+        <a href="https://github.com/Z1pakk/dailu" target="_blank" rel="noopener noreferrer"
+           class="landing-footer-link">
+          <i class="pi pi-github" aria-hidden="true"></i>
+          GitHub
+        </a>
+      </nav>
+      <app-theme-toggle />
+    </div>
   </div>
 </footer>

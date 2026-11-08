@@ -5,6 +5,7 @@ using Dailu.Infrastructure.Cors;
 using Dailu.Infrastructure.CQRS;
 using Dailu.Infrastructure.DataProtection;
 using Dailu.Infrastructure.Event;
+using Dailu.Infrastructure.Health;
 using Dailu.Infrastructure.Observability;
 using Dailu.Infrastructure.ProblemDetails;
 using Dailu.Infrastructure.User;
@@ -34,6 +35,8 @@ public static class Setup
         services.AddUserServices();
 
         services.AddCookieServices();
+
+        services.AddHealthServices();
 
         services.AddValidateOptions<DataEncryptionOptions>();
         services.AddSingleton<

@@ -57,6 +57,35 @@ export function buildYearWeeks(
   return weeks;
 }
 
+/**
+ * The last `weeks` Monday-first weeks up to and including `end`'s week.
+ * Days after `end` are `null` (not yet happened).
+ */
+export function buildRecentWeeks(
+  end: Date,
+  weeks: number,
+  counts: ReadonlyMap<string, number>,
+  maxPerDay: number,
+): (HeatCell | null)[][] {
+  const endKey = format(end, 'yyyy-MM-dd');
+  const firstMonday = addDays(startOfWeek(end, { weekStartsOn: 1 }), -7 * (weeks - 1));
+  const result: (HeatCell | null)[][] = [];
+  for (let w = 0; w < weeks; w++) {
+    const week: (HeatCell | null)[] = [];
+    for (let d = 0; d < 7; d++) {
+      const key = format(addDays(firstMonday, w * 7 + d), 'yyyy-MM-dd');
+      if (key > endKey) {
+        week.push(null);
+        continue;
+      }
+      const count = counts.get(key) ?? 0;
+      week.push({ date: key, count, level: heatLevel(count, maxPerDay) });
+    }
+    result.push(week);
+  }
+  return result;
+}
+
 /** The column where each month's 1st falls. */
 export function monthLabels(weeks: readonly (HeatCell | null)[][]): MonthLabel[] {
   const labels: MonthLabel[] = [];

@@ -1,0 +1,54 @@
+@use 'dailu' as dl;
+
+:host {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 900;
+  border-top: 1px solid var(--dl-border-subtle);
+  background: var(--p-content-background);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tb {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  height: var(--main-tabbar-height);
+}
+
+.tb-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: dl.space(4);
+  color: var(--p-text-muted-color);
+  font-size: 11px;
+  font-weight: 500;
+
+  i {
+    font-size: 18px;
+  }
+
+  &.is-active {
+    color: var(--p-primary-color);
+  }
+}
+
+.tb-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  box-shadow: var(--dl-shadow-sm);
+
+  i {
+    font-size: 18px;
+  }
+}

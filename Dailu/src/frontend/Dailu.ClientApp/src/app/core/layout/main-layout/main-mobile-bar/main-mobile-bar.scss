@@ -1,0 +1,29 @@
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+  padding: dl.space(12) dl.space(20);
+}
+
+.mb-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.mb-actions {
+  display: flex;
+  align-items: center;
+  gap: dl.space(8);
+}
+
+.mb-avatar {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}

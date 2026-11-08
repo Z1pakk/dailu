@@ -1,6 +1,7 @@
 using Dailu.Api.Extensions;
 using Dailu.Infrastructure;
 using Dailu.Infrastructure.Database;
+using Dailu.Infrastructure.Health;
 using Dailu.Infrastructure.Observability;
 using Habit.Infrastructure;
 using HabitEntry.Infrastructure;
@@ -74,6 +75,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthEndpoints();
 app.MapEndpointGroups();
 
 await app.RunAsync();

@@ -37,6 +37,9 @@ public static class Setup
                     .AddSource(CqrsDiagnostics.SourceName)
                     .AddAspNetCoreInstrumentation(options =>
                     {
+                        // probes run every few seconds — tracing them only buries real requests
+                        options.Filter = context =>
+                            !context.Request.Path.StartsWithSegments("/health");
                         options.EnrichWithHttpRequest = (activity, request) =>
                         {
                             activity.SetTag(

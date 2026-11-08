@@ -1,0 +1,32 @@
+<div class="card-header">
+  <h2 class="dl-h3">Integrations</h2>
+  <a routerLink="/app/profile/integrations" class="card-link">Manage</a>
+</div>
+
+@if ($integrations().length === 0) {
+  <p class="card-empty">
+    <a routerLink="/app/profile/integrations" class="card-link">Connect GitHub, Strava or Google Health</a>
+    to tick habits off automatically.
+  </p>
+} @else {
+  @for (item of $integrations(); track item.type) {
+    <div class="int-row">
+      <span class="int-avatar" aria-hidden="true">{{ item.initial }}</span>
+      <span class="int-text">
+        <span class="int-name">{{ item.name }}</span>
+        <span class="dl-mono-sm int-detail" [class.is-live]="item.state === 'live'">{{ item.detail }}</span>
+      </span>
+      @switch (item.state) {
+        @case ('live') {
+          <span class="pill">Live</span>
+        }
+        @case ('failed') {
+          <span class="pill pill--danger">Failed</span>
+        }
+        @case ('never') {
+          <span class="pill pill--muted">Pending</span>
+        }
+      }
+    </div>
+  }
+}

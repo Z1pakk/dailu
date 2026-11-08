@@ -1,0 +1,20 @@
+<div class="card-header">
+  <h2 class="dl-h3">Streak</h2>
+</div>
+
+<p class="streak-value">
+  <span class="dl-display-clock">{{ $streak().current }}</span>
+  <span class="streak-unit">{{ $streak().current === 1 ? 'day' : 'days' }}</span>
+</p>
+
+<div class="streak-week">
+  @for (day of $week(); track day.day) {
+    <app-week-day-dial [class.is-today]="day.isToday"
+                       [day]="day.label"
+                       [segments]="segments(day)"
+                       [future]="day.isFuture"
+                       [size]="36" />
+  }
+</div>
+
+<p class="dl-mono-sm streak-foot">Best: {{ $streak().best }} days</p>

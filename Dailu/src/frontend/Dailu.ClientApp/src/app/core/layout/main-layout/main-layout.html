@@ -1,14 +1,10 @@
-<div class="layout-wrapper">
-  <app-main-sidebar />
-  <div class="layout-content-wrapper">
-    <div class="layout-content-wrapper-inside">
-      <app-main-topbar />
-      <main class="layout-content">
-        <router-outlet />
-      </main>
-      <footer>
-        <app-main-footer />
-      </footer>
-    </div>
-  </div>
+<app-main-sidebar class="layout-sidebar" />
+
+<div class="layout-body">
+  <app-main-mobile-bar class="layout-mobile-bar" />
+  <main class="layout-content">
+    <router-outlet />
+  </main>
 </div>
+
+<app-main-tabbar class="layout-tabbar" />

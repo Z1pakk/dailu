@@ -98,7 +98,6 @@
 }
 
 @include dl.down(lg) {
-  .nav-theme,
   .nav-signin,
   .nav-user,
   .nav-cta {
@@ -131,18 +130,6 @@
     color: var(--p-text-muted-color);
     font-size: 14px;
   }
-}
-
-.menu-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: dl.space(24);
-}
-
-.menu-label {
-  color: var(--p-text-muted-color);
-  font-size: 14px;
 }
 
 .menu-actions {

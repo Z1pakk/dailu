@@ -14,6 +14,8 @@
 .hm {
   position: relative;
   min-width: 600px; /* a full year scrolls inside .hm-scroll below this */
+  /* Fill mode caps the grid (and the popup's positioning box) at its natural size. */
+  max-width: var(--hm-max-w, none);
 }
 
 /* Compact (no month row, e.g. last 20 weeks on mobile): fills the card, never scrolls. */
@@ -103,6 +105,16 @@
   top: var(--hm-tip-y, 0);
   z-index: 2;
   transform: translate(-50%, calc(-100% - 8px));
+
+  /* Near the edges, anchor the popup to its side instead of centring it, so it never
+     overflows the grid (which would add a scrollbar to .hm-scroll). */
+  &--start {
+    transform: translate(0, calc(-100% - 8px));
+  }
+
+  &--end {
+    transform: translate(-100%, calc(-100% - 8px));
+  }
   padding: dl.space(4) dl.space(8);
   border-radius: dl.radius(sm);
   background: var(--dl-bg-inverse);

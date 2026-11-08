@@ -30,11 +30,6 @@
   font-weight: 500;
 }
 
-.hero-eyebrow {
-  margin: dl.space(20) 0 0;
-  color: var(--p-primary-color);
-}
-
 .hero-title {
   max-width: 900px;
   margin: dl.space(16) 0 0;
@@ -81,7 +76,6 @@
       padding-top: dl.space(24);
     }
 
-    .hero-eyebrow,
     .hero-title,
     .hero-lead {
       margin-top: dl.space(12);
@@ -111,10 +105,6 @@
 
     .hero-tag {
       display: none;
-    }
-
-    .hero-eyebrow {
-      margin-top: 0;
     }
 
     .hero-title {

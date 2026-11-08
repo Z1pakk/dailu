@@ -5,6 +5,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DataView } from 'primeng/dataview';
 import { Store } from '@ngxs/store';
 import { HabitFetchHabits } from '@habits/state/habit.action';
@@ -30,6 +31,8 @@ import { HabitEntryStateSelectors } from '@habit-entries/state/habit-entry.selec
 export class HabitList implements OnInit {
   private readonly _store = inject(Store);
   private readonly _dialogService = inject(DialogService);
+  private readonly _route = inject(ActivatedRoute);
+  private readonly _router = inject(Router);
 
   protected readonly $habits = this._store.selectSignal(
     HabitStateSelectors.getSlices.habits,
@@ -42,6 +45,12 @@ export class HabitList implements OnInit {
   ngOnInit() {
     this._store.dispatch(new HabitFetchHabits());
     this._store.dispatch(new HabitEntryGetHabitEntries());
+
+    // `?new=1` (dashboard "New habit", mobile "+" tab) opens the create dialog once.
+    if (this._route.snapshot.queryParamMap.get('new') === '1') {
+      this._router.navigate([], { queryParams: { new: null }, replaceUrl: true });
+      this.addHabit();
+    }
   }
 
   protected addHabit() {

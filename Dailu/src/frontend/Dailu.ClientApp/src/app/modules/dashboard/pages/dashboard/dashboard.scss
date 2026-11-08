@@ -1,0 +1,160 @@
+@use 'dailu' as dl;
+
+:host {
+  display: block;
+}
+
+/* ---- Header row (Figma `54:2372`) ----------------------------------------- */
+
+.dash-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(16);
+  margin-bottom: dl.space(24);
+}
+
+.dash-title {
+  @include dl.stack(4);
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+
+    @include dl.down(md) {
+      font-size: 26px;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+  }
+}
+
+.dash-actions {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.dash-search {
+  position: relative;
+  width: 280px;
+
+  input {
+    width: 100%;
+  }
+}
+
+.dash-kbd {
+  position: absolute;
+  top: 50%;
+  right: dl.space(12);
+  transform: translateY(-50%);
+  color: var(--p-text-muted-color);
+  pointer-events: none;
+}
+
+/* ---- Card grid ------------------------------------------------------------ */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: dl.space(24);
+
+  @include dl.down(xl) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: dl.space(16);
+  }
+}
+
+// Rows 1–2: 2/3 + 1/3. Row 3: three equal columns.
+.dash-today,
+.dash-consistency {
+  grid-column: span 4;
+}
+
+.dash-streak,
+.dash-integrations {
+  grid-column: span 2;
+}
+
+.dash-milestones,
+.dash-activity,
+.dash-ai {
+  grid-column: span 2;
+}
+
+@include dl.down(xl) {
+  .dash-grid > * {
+    grid-column: auto;
+  }
+
+  // Mobile order (Figma `55:3098`): Today, Streak, Integrations, Consistency, Activity, AI, Milestones.
+  .dash-integrations {
+    order: 1;
+  }
+
+  .dash-consistency {
+    order: 2;
+  }
+
+  .dash-activity {
+    order: 3;
+  }
+
+  .dash-ai {
+    order: 4;
+  }
+
+  .dash-milestones {
+    order: 5;
+  }
+}
+
+/* ---- Short desktop viewports: tighten so more of the grid fits the screen ---- */
+
+@include dl.up(lg) {
+  @media (max-height: 860px) {
+    .dash-header {
+      margin-bottom: dl.space(16);
+    }
+
+    .dash-title h1 {
+      font-size: 28px;
+    }
+
+    .dash-grid {
+      gap: dl.space(16);
+    }
+  }
+
+  @media (max-height: 720px) {
+    .dash-header {
+      margin-bottom: dl.space(12);
+    }
+
+    .dash-title {
+      gap: 0;
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+
+    .dash-grid {
+      gap: dl.space(12);
+    }
+  }
+}

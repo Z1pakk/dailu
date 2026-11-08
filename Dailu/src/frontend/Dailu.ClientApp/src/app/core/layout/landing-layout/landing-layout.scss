@@ -25,6 +25,10 @@
   font-size: 13px;
 }
 
+.landing-footer-end {
+  @include dl.cluster(16);
+}
+
 .landing-footer-links {
   display: flex;
   gap: dl.space(8);

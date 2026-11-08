@@ -1,0 +1,45 @@
+<div class="card-header">
+  <h2 class="dl-h3">Today</h2>
+  @if ($habits().length > 0) {
+    <span class="dl-mono-sm card-meta">{{ $done() }} of {{ $habits().length }} · {{ $left() }} left today</span>
+  }
+</div>
+
+<div class="today-body" [class.has-clock]="$habits().length > 0">
+  @if ($habits().length > 0) {
+    <app-day-clock class="today-clock" [habits]="$clockHabits()" [compact]="true" [showList]="false" />
+  }
+
+  <div class="today-main">
+    @if ($habits().length === 0) {
+      <p class="card-empty">
+        No daily habits yet. <a routerLink="/app/habits" [queryParams]="{ new: 1 }" class="card-link">New habit</a>
+      </p>
+    } @else {
+      <ul class="today-list">
+        @for (habit of $habits(); track habit.id) {
+          <li class="today-row" [class.is-done]="habit.isDone">
+            <button type="button"
+                    class="today-box"
+                    role="checkbox"
+                    [attr.aria-checked]="habit.isDone"
+                    [attr.aria-label]="habit.name"
+                    [disabled]="!canCheck(habit)"
+                    [class.is-pending]="$pendingIds().has(habit.id)"
+                    (click)="onCheck(habit)">
+              @if (habit.isDone) {
+                <i class="pi pi-check" aria-hidden="true"></i>
+              }
+            </button>
+            <span class="today-name">{{ habit.name }}</span>
+            @if (habit.sourceLabel) {
+              <span class="pill">{{ habit.sourceLabel }}</span>
+            } @else if (habit.isAutomated) {
+              <span class="pill pill--muted">waiting</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>
