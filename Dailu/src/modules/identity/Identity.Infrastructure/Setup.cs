@@ -7,6 +7,7 @@ using Identity.DataTransfer;
 using Identity.Domain.Entities;
 using Identity.Infrastructure.Database;
 using Identity.Infrastructure.Database.Seeders;
+using Identity.Infrastructure.Health;
 using Identity.Infrastructure.Pipeline;
 using Mediator;
 using Microsoft.AspNetCore.Identity;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SharedInfrastructure.CQRS;
 using SharedInfrastructure.Endpoint;
 using SharedInfrastructure.Event;
+using SharedInfrastructure.Health;
 using SharedInfrastructure.Options;
 using SharedInfrastructure.Persistence;
 using SharedKernel.Persistence;
@@ -52,6 +54,14 @@ public static class Setup
         services.AddIntegrationEventSubscription<IIdentityApplicationRoot>("identity");
 
         services.AddIdentityDataTransferServices();
+
+        services
+            .AddHealthChecks()
+            .AddCheck<IdentityHealthCheck>(
+                "identity",
+                tags: [HealthCheckTags.Ready],
+                timeout: TimeSpan.FromSeconds(5)
+            );
 
         return services;
     }
