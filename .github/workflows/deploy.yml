@@ -171,3 +171,57 @@ jobs:
 
       - name: Trigger Dokploy deployment
         run: curl --fail -X POST "${{ secrets.DOKPLOY_WEBHOOK_URL }}"
+
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    needs: deploy
+    permissions: {}
+    timeout-minutes: 15
+    env:
+      API: ${{ secrets.SMOKE_API_URL }}
+      WEB: ${{ secrets.SMOKE_FRONTEND_URL }}
+      EXPECTED_VERSION: ${{ github.sha }}
+
+    steps:
+      # Only needed if the URLs are reachable only over the tailnet
+      # - name: Connect to Tailscale
+      #   uses: tailscale/github-action@v3
+      #   with:
+      #     oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      #     oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+      #     tags: tag:ci
+
+      # The Dokploy webhook returns before the new containers are up,
+      # so wait until /version reports this commit.
+      - name: Wait for new version to go live
+        run: |
+          for i in $(seq 1 40); do
+            v=$(curl -fsS --max-time 5 "$API/version" | jq -r .version 2>/dev/null || true)
+            if [ "$v" = "$EXPECTED_VERSION" ]; then echo "Live: $v"; exit 0; fi
+            echo "Attempt $i: serving '$v', waiting..."
+            sleep 15
+          done
+          echo "::error::Version $EXPECTED_VERSION never went live"
+          exit 1
+
+      # check the body, not just the status: a mis-routed path gets the SPA's index.html with a 200
+      - name: API is live
+        run: curl -fsS --max-time 5 "$API/health/live" | jq -e '.status == "Healthy"'
+
+      # postgres + rabbitmq + identity (roles seeded, JWT signing works);
+      # no -f so a 503 body still shows which check failed
+      - name: API is ready
+        run: |
+          code=$(curl -sS --max-time 15 --retry 5 --retry-delay 5 --retry-all-errors \
+            -o ready.json -w "%{http_code}" "$API/health/ready" || true)
+          cat ready.json 2>/dev/null; echo
+          [ "$code" = "200" ] || { echo "::error::/health/ready returned $code"; exit 1; }
+          jq -e '.status == "Healthy"' ready.json > /dev/null
+
+      - name: Frontend serves the app
+        run: |
+          curl -fsS --max-time 10 "$WEB/" | grep -q "<app-root"
+          # deep links must fall back to index.html via nginx
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$WEB/login")
+          [ "$code" = "200" ] || { echo "::error::/login returned $code"; exit 1; }

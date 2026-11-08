@@ -13,9 +13,10 @@ namespace Dailu.Infrastructure.Health;
 
 public static class Setup
 {
-    public const string LivePath = "/health/live";
-    public const string ReadyPath = "/health/ready";
-    public const string VersionPath = "/version";
+    // under /api so the reverse proxy routes them to the API, not to the frontend's nginx
+    public const string LivePath = "/api/health/live";
+    public const string ReadyPath = "/api/health/ready";
+    public const string VersionPath = "/api/version";
 
     private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(5);
 
