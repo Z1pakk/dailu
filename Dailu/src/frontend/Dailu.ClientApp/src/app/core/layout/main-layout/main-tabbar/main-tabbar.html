@@ -1,0 +1,19 @@
+<nav class="tb" aria-label="Main">
+  @for (tab of leftTabs; track tab.route) {
+    <a class="tb-tab" [routerLink]="tab.route" routerLinkActive="is-active">
+      <i [class]="tab.icon" aria-hidden="true"></i>
+      <span>{{ tab.label }}</span>
+    </a>
+  }
+
+  <a class="tb-add" routerLink="/app/habits" [queryParams]="{ new: 1 }" aria-label="New habit">
+    <i class="pi pi-plus" aria-hidden="true"></i>
+  </a>
+
+  @for (tab of rightTabs; track tab.route) {
+    <a class="tb-tab" [routerLink]="tab.route" routerLinkActive="is-active">
+      <i [class]="tab.icon" aria-hidden="true"></i>
+      <span>{{ tab.label }}</span>
+    </a>
+  }
+</nav>

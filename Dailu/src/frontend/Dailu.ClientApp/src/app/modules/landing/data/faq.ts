@@ -27,6 +27,6 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: 'Who’s behind Dailu?',
     answer:
-      'Dailu is a study & pet project built by one developer to learn Angular, PrimeNG and a modular .NET backend. It’s free to use.',
+      'Dailu is a study & pet project built by one developer. It’s free to use.',
   },
 ];

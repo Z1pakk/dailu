@@ -1,0 +1,27 @@
+@use 'dailu' as dl;
+@use '../dashboard-card';
+
+.ms-row {
+  @include dl.stack(8);
+}
+
+.ms-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: dl.space(12);
+}
+
+.ms-name {
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ms-value {
+  color: var(--p-text-muted-color);
+
+  &.is-unlocked {
+    color: var(--p-primary-color);
+  }
+}

@@ -1,10 +1,38 @@
-<div class="layout-sidebar layout-sidebar-dark">
-  <div class="sidebar-header">
-    <a routerLink="/app" class="logo">
-      <app-ring-logo [size]="24" inverse />
-    </a>
+<div class="sb-top">
+  <a routerLink="/app" class="sb-logo" aria-label="Dailu dashboard">
+    <app-ring-logo [size]="22" />
+  </a>
+
+  <nav class="sb-nav" aria-label="Main">
+    @for (item of nav; track item.label) {
+      @if (item.route) {
+        <a class="sb-item"
+           [routerLink]="'/app/' + item.route"
+           routerLinkActive="is-active">
+          <i [class]="item.icon" aria-hidden="true"></i>
+          {{ item.label }}
+        </a>
+      } @else {
+        <span class="sb-item is-disabled" pTooltip="Coming soon" tooltipPosition="right" aria-disabled="true">
+          <i [class]="item.icon" aria-hidden="true"></i>
+          {{ item.label }}
+        </span>
+      }
+    }
+  </nav>
+</div>
+
+<div class="sb-bottom">
+  <div class="sb-note">
+    <span class="sb-note-title">A study &amp; pet project</span>
+    <span class="dl-mono-sm sb-note-sub">free · no ads</span>
   </div>
-  <div class="sidebar-menu-container">
-    <app-main-menu />
-  </div>
+
+  <app-theme-toggle />
+
+  <button type="button" class="sb-user" aria-haspopup="menu" (click)="userMenu.toggle($event)">
+    <p-avatar [label]="user.$initials()" shape="circle" [dt]="avatarTokens" />
+    <span class="sb-user-name">{{ user.$fullName() }}</span>
+  </button>
+  <p-menu #userMenu [model]="user.menuItems" [popup]="true" appendTo="body" />
 </div>

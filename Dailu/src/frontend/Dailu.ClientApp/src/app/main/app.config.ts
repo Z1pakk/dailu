@@ -43,6 +43,9 @@ export const appConfig: ApplicationConfig = {
       developmentMode: !environment.isProduction,
     }),
     providePrimeNG({
+      // Default is 'self': tooltips / overlays render inside their host, so in a bordered
+      // card or the scrolling sidebar they overflow it and flash a scrollbar.
+      overlayAppendTo: 'body',
       theme: {
         preset: DefaultPreset,
         options: {

@@ -1,0 +1,14 @@
+@use 'dailu' as dl;
+
+:host {
+  position: fixed;
+  right: dl.space(32);
+  bottom: dl.space(32);
+  z-index: 800;
+
+  // Sit above the mobile tab bar.
+  @include dl.down(lg) {
+    right: dl.space(20);
+    bottom: calc(64px + env(safe-area-inset-bottom) + #{dl.space(16)});
+  }
+}

@@ -11,8 +11,6 @@
     </nav>
 
     <div class="nav-actions">
-      <app-theme-toggle class="nav-theme" />
-
       @if ($isAuthenticated()) {
         <span class="nav-user">
           <p-avatar [label]="$initials()" shape="circle" [dt]="avatarTokens" />
@@ -44,11 +42,6 @@
       </a>
     }
   </nav>
-
-  <div class="menu-row">
-    <span class="menu-label">Theme</span>
-    <app-theme-toggle />
-  </div>
 
   <div class="menu-actions">
     @if ($isAuthenticated()) {

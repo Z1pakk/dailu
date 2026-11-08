@@ -1,0 +1,58 @@
+@use 'dailu' as dl;
+@use '../dashboard-card';
+
+.ra-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ra-row {
+  display: flex;
+  align-items: flex-start;
+  gap: dl.space(12);
+}
+
+// Automatic entries use the primary dot, manual ones the text colour (Figma `54:3021`).
+.ra-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--p-text-color);
+
+  &.is-auto {
+    background: var(--p-primary-color);
+  }
+}
+
+.ra-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ra-name {
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ra-detail,
+.ra-time {
+  color: var(--p-text-muted-color);
+}
+
+@include dl.up(lg) {
+  @media (max-height: 860px) {
+    .ra-list {
+      gap: dl.space(12);
+    }
+  }
+}

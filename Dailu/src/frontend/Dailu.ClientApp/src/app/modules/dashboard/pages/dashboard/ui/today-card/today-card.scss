@@ -1,0 +1,104 @@
+@use 'dailu' as dl;
+@use '../dashboard-card';
+
+.today-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: dl.space(20);
+
+  &.has-clock {
+    grid-template-columns: minmax(0, 335px) minmax(0, 1fr);
+
+    @include dl.down(md) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+
+// Today's habits spread evenly on the dial (no time of day yet), coloured by completion.
+.today-clock {
+  max-width: 335px;
+  justify-self: center;
+}
+
+.today-main {
+  min-width: 0;
+}
+
+.today-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Figma "Habit row" `58:3290`.
+.today-row {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 12px;
+}
+
+.today-box {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid var(--dl-dial-scheduled);
+  border-radius: dl.radius(sm);
+  background: var(--p-content-background);
+  color: var(--p-primary-contrast-color);
+  cursor: pointer;
+
+  i {
+    font-size: 11px;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &.is-pending {
+    opacity: 0.5;
+  }
+
+  .is-done & {
+    border-color: var(--p-primary-color);
+    background: var(--p-primary-color);
+  }
+}
+
+.today-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--p-text-color);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@include dl.up(lg) {
+  @media (max-height: 860px) {
+    .today-row {
+      min-height: 36px;
+      padding-block: dl.space(4);
+    }
+  }
+
+  @media (max-height: 720px) {
+    .today-row {
+      min-height: 32px;
+      padding-block: 2px;
+    }
+  }
+}

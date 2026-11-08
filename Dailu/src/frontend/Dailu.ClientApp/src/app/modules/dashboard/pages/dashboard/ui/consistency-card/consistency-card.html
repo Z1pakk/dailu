@@ -1,0 +1,13 @@
+<div class="card-header">
+  <h2 class="dl-h3">Consistency</h2>
+  <span class="dl-mono-sm card-meta">Last {{ $weeks().length }} weeks</span>
+</div>
+
+<app-heatmap [weeks]="$weeks()"
+             [habitsPerDay]="$habitsPerDay()"
+             [showDays]="true"
+             [showMonths]="true"
+             [fill]="true"
+             [cellSize]="$cellSize()" />
+
+<p class="dl-mono-sm card-meta consistency-foot">{{ $fullyDone() }} of {{ $days() }} days fully done</p>

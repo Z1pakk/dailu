@@ -1,27 +1,73 @@
-.layout-wrapper {
-  height: 100vh;
+@use 'dailu' as dl;
+
+// App shell (Figma `54:2292` desktop, `55:3098` mobile).
+:host {
+  --main-tabbar-height: 64px;
+
   display: flex;
-  transition: all .2s ease;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--dl-bg-canvas);
+  /* Safety net (as on the landing layout): hover popups near the screen edge must never
+     widen the page. `clip`, not `hidden`, so the sticky sidebar keeps working. */
+  overflow-x: clip;
+}
 
-  .layout-content-wrapper {
-    flex: 1;
-    height: 100%;
-    overflow: auto;
-    z-index: 9;
-    transition: all .2s ease;
+.layout-sidebar {
+  position: sticky;
+  top: 0;
+  flex: 0 0 264px;
+  height: 100vh;
+  height: 100dvh;
 
-    .layout-content-wrapper-inside {
-      max-width: 1540px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      margin: 0 auto;
+  @include dl.down(lg) {
+    display: none;
+  }
+}
 
-      .layout-content {
-        position: relative;
-        padding: 2rem;
-        flex: 1 1 auto;
-      }
+.layout-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.layout-content {
+  width: 100%;
+  max-width: 1176px;
+  padding: dl.space(32) dl.space(40);
+
+  @include dl.down(lg) {
+    padding: dl.space(8) dl.space(20) calc(var(--main-tabbar-height) + env(safe-area-inset-bottom) + #{dl.space(24)});
+  }
+}
+
+.layout-mobile-bar,
+.layout-tabbar {
+  display: none;
+
+  @include dl.down(lg) {
+    display: block;
+  }
+}
+
+.layout-mobile-bar {
+  @include dl.down(lg) {
+    display: flex;
+  }
+}
+
+/* Short desktop viewports: less padding around the page (pairs with the dashboard's 860 / 720px steps). */
+@include dl.up(lg) {
+  @media (max-height: 860px) {
+    .layout-content {
+      padding-block: dl.space(20);
+    }
+  }
+
+  @media (max-height: 720px) {
+    .layout-content {
+      padding-block: dl.space(12);
     }
   }
 }

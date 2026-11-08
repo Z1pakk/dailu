@@ -1,0 +1,17 @@
+<a routerLink="/app" class="mb-logo" aria-label="Dailu dashboard">
+  <app-ring-logo [size]="22" />
+</a>
+
+<div class="mb-actions">
+  <app-theme-toggle />
+  <!-- Notifications have no backend yet. -->
+  <span pTooltip="Coming soon" tooltipPosition="bottom">
+    <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
+              ariaLabel="Notifications" [disabled]="true" />
+  </span>
+  <button type="button" class="mb-avatar" aria-haspopup="menu" aria-label="Account menu"
+          (click)="userMenu.toggle($event)">
+    <p-avatar [label]="user.$initials()" shape="circle" [dt]="avatarTokens" />
+  </button>
+  <p-menu #userMenu [model]="user.menuItems" [popup]="true" appendTo="body" />
+</div>

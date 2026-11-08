@@ -15,7 +15,6 @@ import { AuthStateSelectors } from '@auth/state/auth.selector';
 import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
 import { UserProfileGetProfile } from '@user-profile/state/user-profile.action';
 import { RingLogo } from '@shared/ui/ring-logo/ring-logo';
-import { ThemeToggle } from '@shared/ui/theme-toggle/theme-toggle';
 
 interface NavLink {
   label: string;
@@ -25,7 +24,7 @@ interface NavLink {
 /** Landing nav (Figma `3:315`; logged in `33:1723`; mobile menus `13:340` / `33:4773`). */
 @Component({
   selector: 'app-landing-topbar',
-  imports: [RouterLink, ButtonDirective, Drawer, Avatar, RingLogo, ThemeToggle],
+  imports: [RouterLink, ButtonDirective, Drawer, Avatar, RingLogo],
   templateUrl: './landing-topbar.html',
   styleUrl: './landing-topbar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,21 @@
+<div class="card-header">
+  <h2 class="dl-h3">Recent activity</h2>
+  <a routerLink="/app/entries" class="card-link">All entries</a>
+</div>
+
+@if ($recent().length === 0) {
+  <p class="card-empty">No entries yet.</p>
+} @else {
+  <ul class="ra-list">
+    @for (entry of $recent(); track entry.id) {
+      <li class="ra-row">
+        <span class="ra-dot" [class.is-auto]="isAuto(entry)" aria-hidden="true"></span>
+        <span class="ra-text">
+          <span class="ra-name">{{ entry.habitName }}</span>
+          <span class="dl-mono-sm ra-detail">{{ detail(entry) }}</span>
+        </span>
+        <span class="dl-mono-sm ra-time">{{ entry.completedAtUtc | date: 'HH:mm' }}</span>
+      </li>
+    }
+  </ul>
+}

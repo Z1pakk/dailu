@@ -16,9 +16,8 @@ interface CellPos {
   day: number;
 }
 
+/** Default cell size; bigger cells (dashboard) get a proportionally bigger gap. */
 const CELL = 11;
-const GAP = 2;
-const STEP = CELL + GAP;
 /** Width of the optional Mon/Wed/Fri column. */
 const DAYS_W = 30;
 /** Height of the optional month row under the grid. */
@@ -35,7 +34,9 @@ const MONTHS_H = 20;
   styleUrl: './heatmap.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.hm--compact]': '!$showMonths()',
+    '[class.hm--compact]': '!$showMonths() || $fill()',
+    // Fill mode: never upscale past the natural size, so cells keep $cell px and labels stay small.
+    '[style.--hm-max-w.px]': '$fill() ? $svgWidth() : null',
     '[style.--hm-tip-x.%]': '$active()?.left',
     '[style.--hm-tip-y.%]': '$active()?.top',
   },
@@ -53,20 +54,24 @@ export class Heatmap {
   public readonly $showDays = input(false, { alias: 'showDays', transform: booleanAttribute });
   /** Month labels under the grid. Off = compact (e.g. "last 20 weeks" on mobile). */
   public readonly $showMonths = input(true, { alias: 'showMonths', transform: booleanAttribute });
+  /** Fit the container instead of keeping the full-year minimum width (e.g. a few weeks in a card). */
+  public readonly $fill = input(false, { alias: 'fill', transform: booleanAttribute });
+  /** Cell size in px (SVG units). */
+  public readonly $cell = input(CELL, { alias: 'cellSize', transform: numberAttribute });
 
-  protected readonly step = STEP;
-  protected readonly cellSize = CELL;
+  private readonly _$gap = computed(() => Math.max(2, Math.round(this.$cell() / 6)));
+  protected readonly $step = computed(() => this.$cell() + this._$gap());
   protected readonly days = ['Mon', '', 'Wed', '', 'Fri', '', ''];
   protected readonly levels = [0, 1, 2, 3, 4];
 
   protected readonly $gridX = computed(() => (this.$showDays() ? DAYS_W : 0));
-  protected readonly gridHeight = 7 * STEP - GAP;
+  protected readonly $gridHeight = computed(() => 7 * this.$step() - this._$gap());
   protected readonly $svgHeight = computed(
-    () => this.gridHeight + (this.$showMonths() ? MONTHS_H : 0),
+    () => this.$gridHeight() + (this.$showMonths() ? MONTHS_H : 0),
   );
   protected readonly $months = computed(() => monthLabels(this.$weeks()));
   protected readonly $svgWidth = computed(
-    () => this.$gridX() + this.$weeks().length * STEP - GAP,
+    () => this.$gridX() + this.$weeks().length * this.$step() - this._$gap(),
   );
 
   private readonly _$hover = signal<CellPos | null>(null);
@@ -81,11 +86,19 @@ export class Heatmap {
     if (!cell) {
       return null;
     }
+    const left = ((this.$gridX() + pos.week * this.$step() + this.$cell() / 2) / this.$svgWidth()) * 100;
+    let align: 'start' | 'center' | 'end' = 'center';
+    if (left < 20) {
+      align = 'start';
+    } else if (left > 80) {
+      align = 'end';
+    }
     return {
       ...pos,
+      align,
       // Percentages, because the SVG scales to its container.
-      left: ((this.$gridX() + pos.week * STEP + CELL / 2) / this.$svgWidth()) * 100,
-      top: ((pos.day * STEP) / this.$svgHeight()) * 100,
+      left,
+      top: ((pos.day * this.$step()) / this.$svgHeight()) * 100,
       text: `${format(parseISO(cell.date), 'EEE d MMM')} · ${cell.count} of ${this.$habitsPerDay()} habits`,
     };
   });

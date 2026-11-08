@@ -1,0 +1,87 @@
+// Shared dashboard card frame (Figma `54:2963` and siblings). `@use`d by each card,
+// so the rules stay scoped to that component.
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 18px; // Figma card rhythm; not on the spacing scale
+  min-width: 0;
+  padding: 22px dl.space(24) dl.space(24);
+  border-radius: dl.radius(xl);
+  background: var(--p-content-background);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+  }
+}
+
+.card-meta {
+  color: var(--p-text-muted-color);
+}
+
+.card-link {
+  color: var(--p-primary-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-underline-offset: 3px;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--p-primary-hover-color);
+    text-decoration: underline;
+  }
+}
+
+.card-empty {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+}
+
+// Figma "Tag" `7:247`: rounded pill. Modifiers follow its severity mapping.
+.pill {
+  flex-shrink: 0;
+  padding: dl.space(4) 10px;
+  border-radius: dl.radius(full);
+  background: var(--p-highlight-background);
+  color: var(--p-primary-color);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &--muted {
+    background: var(--dl-bg-subtle);
+    color: var(--p-text-muted-color);
+  }
+
+  &--danger {
+    background: var(--dl-danger-tint);
+    color: var(--dl-danger-text);
+  }
+}
+
+/* Short desktop viewports (pairs with the dashboard's 860 / 720px steps). */
+@include dl.up(lg) {
+  @media (max-height: 860px) {
+    :host {
+      gap: dl.space(12);
+      padding: dl.space(16) dl.space(20) dl.space(20);
+    }
+  }
+
+  @media (max-height: 720px) {
+    :host {
+      gap: dl.space(8);
+      padding: dl.space(12) dl.space(16) dl.space(16);
+    }
+  }
+}

@@ -1,0 +1,24 @@
+<div class="card-header">
+  <h2 class="dl-h3">Milestones</h2>
+</div>
+
+@if ($milestones().length === 0) {
+  <p class="card-empty">No milestones yet. Add a target to a habit to track one.</p>
+} @else {
+  @for (m of $milestones(); track m.habitId) {
+    <div class="ms-row">
+      <div class="ms-head">
+        <span class="ms-name">{{ m.name }}</span>
+        @if (m.isUnlocked) {
+          <span class="dl-mono-sm ms-value is-unlocked">Unlocked</span>
+        } @else {
+          <span class="dl-mono-sm ms-value">{{ m.current }}/{{ m.target }}</span>
+        }
+      </div>
+      <p-progressbar [value]="m.percent"
+                     [showValue]="false"
+                     [dt]="m.isUnlocked ? unlockedBarTokens : barTokens"
+                     [attr.aria-label]="m.name + ' ' + m.percent + '%'" />
+    </div>
+  }
+}

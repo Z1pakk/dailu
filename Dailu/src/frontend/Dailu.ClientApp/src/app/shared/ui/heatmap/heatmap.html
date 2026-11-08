@@ -19,7 +19,7 @@
       @if ($showDays()) {
         <g aria-hidden="true">
           @for (day of days; track $index) {
-            <text class="hm-day" x="0" [attr.y]="$index * step + cellSize - 2">{{ day }}</text>
+            <text class="hm-day" x="0" [attr.y]="$index * $step() + $cell() / 2 + 4">{{ day }}</text>
           }
         </g>
       }
@@ -38,8 +38,8 @@
             @if (cell) {
               <rect [class]="'hm-cell hm-cell--' + cell.level"
                     [class.hm-cell--active]="$active()?.week === w && $active()?.day === d"
-                    [attr.x]="w * step" [attr.y]="d * step"
-                    [attr.width]="cellSize" [attr.height]="cellSize" rx="2.5"
+                    [attr.x]="w * $step()" [attr.y]="d * $step()"
+                    [attr.width]="$cell()" [attr.height]="$cell()" rx="2.5"
                     (mouseenter)="hover(w, d)" />
             }
           }
@@ -49,14 +49,14 @@
       @if ($showMonths()) {
         <g aria-hidden="true">
           @for (month of $months(); track month.label) {
-            <text class="hm-month" [attr.x]="$gridX() + month.week * step" [attr.y]="gridHeight + 16">{{ month.label }}</text>
+            <text class="hm-month" [attr.x]="$gridX() + month.week * $step()" [attr.y]="$gridHeight() + 16">{{ month.label }}</text>
           }
         </g>
       }
     </svg>
 
     @if ($active(); as active) {
-      <div class="hm-tip" role="tooltip" aria-live="polite">{{ active.text }}</div>
+      <div class="hm-tip" [class.hm-tip--start]="active.align === 'start'" [class.hm-tip--end]="active.align === 'end'" role="tooltip" aria-live="polite">{{ active.text }}</div>
     }
   </div>
 </div>

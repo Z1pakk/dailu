@@ -28,7 +28,7 @@ export const TERMS_SECTIONS: readonly TermsSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Dailu is a free study & pet project built by one developer to learn Angular, PrimeNG and a modular .NET backend. It is not a commercial service.',
+        text: 'Dailu is a free study & pet project built by one developer. It is not a commercial service.',
       },
       {
         kind: 'p',

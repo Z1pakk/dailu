@@ -19,8 +19,8 @@ export class LandingProof {
   protected readonly cards = [
     {
       eyebrow: 'Frontend',
-      title: 'Angular 21 + PrimeNG 21',
-      text: 'Aura theme preset with light and dark tokens, Tailwind 4 for layout.',
+      title: 'One design system',
+      text: 'Figma tokens drive the light and dark themes, from phone to desktop.',
     },
     {
       eyebrow: 'Backend',
@@ -30,7 +30,7 @@ export class LandingProof {
     {
       eyebrow: 'Why',
       title: 'A study project, end to end',
-      text: 'Built to practise modular architecture, background sync and a design system — from Figma tokens to PrimeNG components.',
+      text: 'Built to practise modular architecture, background sync and a design system — from Figma to production.',
     },
   ];
 }

@@ -1,38 +1,42 @@
-<div class="grid grid-cols-3 gap-6 items-start">
-  <div class="flex flex-col gap-6">
-    <app-activity-heatmap [habitEntries]="$habitEntries()" />
-    <app-quick-entries />
+<header class="dash-header">
+  <div class="dash-title">
+    <h1>{{ $greeting() }}</h1>
+    <p class="dl-body">{{ $subtitle() }}</p>
   </div>
 
-  <div class="col-span-2 flex flex-col gap-6">
-    <div class="border border-(--surface-border) rounded-xl p-6 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold">Recent Activity</h2>
-        <a routerLink="/app/entries" class="text-sm text-surface-500 hover:text-surface-700 transition-colors">
-          View all
-        </a>
-      </div>
-
-      @if ($isLoading()) {
-        <div class="flex flex-col gap-3">
-          @for (_ of [1, 2, 3]; track $index) {
-            <div class="h-16 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse"></div>
-          }
-        </div>
-      } @else if ($recentEntries().length === 0) {
-        <p class="text-surface-500 text-sm py-6 text-center">No entries yet. Start tracking your habits!</p>
-      } @else {
-        <div class="flex flex-col gap-3 max-h-80 overflow-y-auto">
-          @for (entry of $recentEntries(); track entry.id) {
-            <app-habit-entry-list-item [habitEntry]="entry" />
-          }
-        </div>
-      }
-    </div>
-
-    <div class="border border-(--surface-border) rounded-xl p-6 shadow-sm">
-      <h2 class="text-xl font-semibold mb-4">Measurable Habits</h2>
-      <app-measurable-habits [habits]="$habits()" [habitEntries]="$habitEntries()" />
-    </div>
+  <div class="dash-actions">
+    <!-- Search and notifications have no backend yet: placeholders. -->
+    <span class="dash-search" pTooltip="Coming soon" tooltipPosition="bottom">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="search" placeholder="Search habits, entries…" aria-label="Search" [disabled]="true" />
+      </p-iconfield>
+      <kbd class="dl-mono-sm dash-kbd">⌘K</kbd>
+    </span>
+    <span pTooltip="Coming soon" tooltipPosition="bottom">
+      <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
+                ariaLabel="Notifications" [disabled]="true" />
+    </span>
+    <a pButton routerLink="/app/habits" [queryParams]="{ new: 1 }" icon="pi pi-plus" label="New habit"></a>
   </div>
+</header>
+
+<div class="dash-grid">
+  <app-today-card class="dash-today"
+                  [habits]="$today()"
+                  [pendingIds]="$pendingIds()"
+                  (check)="checkOff($event)" />
+  <app-streak-card class="dash-streak" [streak]="$streak()" [week]="$week()" />
+  <app-consistency-card class="dash-consistency"
+                        [weeks]="$heatWeeks()"
+                        [habitsPerDay]="$habitsPerDay()"
+                        [fullyDone]="$heatSummary().fullyDone"
+                        [days]="$heatSummary().days"
+                        [cellSize]="$heatCellSize()" />
+  <app-integrations-card class="dash-integrations" [integrations]="$integrations()" />
+  <app-milestones-card class="dash-milestones" [milestones]="$milestones()" />
+  <app-recent-activity-card class="dash-activity" [entries]="entries()" />
+  <app-ai-insights-card class="dash-ai" />
 </div>
+
+<app-coach-button />

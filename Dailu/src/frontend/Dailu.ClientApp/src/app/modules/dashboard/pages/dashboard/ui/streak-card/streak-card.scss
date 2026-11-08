@@ -1,0 +1,49 @@
+@use 'dailu' as dl;
+@use '../dashboard-card';
+
+.streak-value {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: dl.space(8) 0 0;
+  color: var(--p-text-color);
+}
+
+.streak-unit {
+  color: var(--p-text-muted-color);
+  font-size: 18px;
+}
+
+.streak-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-top: auto;
+
+  .is-today {
+    border-radius: 12px;
+    background: var(--dl-bg-subtle);
+  }
+}
+
+.streak-foot {
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+@include dl.up(lg) {
+  @media (max-height: 860px) {
+    .streak-value {
+      margin-top: 0;
+
+      .dl-display-clock {
+        font-size: 56px;
+      }
+    }
+  }
+
+  @media (max-height: 720px) {
+    .streak-value .dl-display-clock {
+      font-size: 44px;
+    }
+  }
+}

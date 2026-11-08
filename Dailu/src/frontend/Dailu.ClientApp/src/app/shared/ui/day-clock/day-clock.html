@@ -60,7 +60,7 @@
   }
 </div>
 
-@if ($compact()) {
+@if ($compact() && $showList()) {
   <ul class="today-list" aria-label="Today's habits">
     @for (row of $listRows(); track row.id) {
       <li class="today-row" [class.today-row--next]="row.state === 'next'">
