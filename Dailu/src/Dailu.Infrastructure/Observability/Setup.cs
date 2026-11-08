@@ -39,7 +39,7 @@ public static class Setup
                     {
                         // probes run every few seconds — tracing them only buries real requests
                         options.Filter = context =>
-                            !context.Request.Path.StartsWithSegments("/health");
+                            !context.Request.Path.StartsWithSegments("/api/health");
                         options.EnrichWithHttpRequest = (activity, request) =>
                         {
                             activity.SetTag(
