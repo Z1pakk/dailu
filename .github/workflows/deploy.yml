@@ -179,12 +179,12 @@ jobs:
     permissions: {}
     timeout-minutes: 15
     env:
-      API: ${{ secrets.SMOKE_API_URL }}
-      WEB: ${{ secrets.SMOKE_FRONTEND_URL }}
+      # Frontend and API share one host; the API is everything under /api
+      BASE_URL: ${{ secrets.SMOKE_BASE_URL }}
       EXPECTED_VERSION: ${{ github.sha }}
 
     steps:
-      # Only needed if the URLs are reachable only over the tailnet
+      # Only needed if the URL is reachable only over the tailnet
       # - name: Connect to Tailscale
       #   uses: tailscale/github-action@v3
       #   with:
@@ -192,12 +192,25 @@ jobs:
       #     oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
       #     tags: tag:ci
 
+      # Tolerates a trailing slash in the secret; later steps read API/WEB from GITHUB_ENV
+      - name: Resolve URLs
+        run: |
+          base="${BASE_URL%/}"
+          [ -n "$base" ] || { echo "::error::SMOKE_BASE_URL secret is not set"; exit 1; }
+          echo "WEB=$base" >> "$GITHUB_ENV"
+          echo "API=$base/api" >> "$GITHUB_ENV"
+
       # The Dokploy webhook returns before the new containers are up,
-      # so wait until /version reports this commit.
+      # so wait until /api/version reports this commit.
       - name: Wait for new version to go live
         run: |
           for i in $(seq 1 40); do
-            v=$(curl -fsS --max-time 5 "$API/version" | jq -r .version 2>/dev/null || true)
+            body=$(curl -sS --max-time 5 "$API/version" || true)
+            # HTML means the proxy sent /api to the frontend's nginx; waiting won't fix that
+            case "$body" in
+              "<"*) echo "::error::$API/version returned HTML - /api is not routed to the API"; exit 1 ;;
+            esac
+            v=$(echo "$body" | jq -r .version 2>/dev/null || true)
             if [ "$v" = "$EXPECTED_VERSION" ]; then echo "Live: $v"; exit 0; fi
             echo "Attempt $i: serving '$v', waiting..."
             sleep 15
@@ -216,7 +229,7 @@ jobs:
           code=$(curl -sS --max-time 15 --retry 5 --retry-delay 5 --retry-all-errors \
             -o ready.json -w "%{http_code}" "$API/health/ready" || true)
           cat ready.json 2>/dev/null; echo
-          [ "$code" = "200" ] || { echo "::error::/health/ready returned $code"; exit 1; }
+          [ "$code" = "200" ] || { echo "::error::$API/health/ready returned $code"; exit 1; }
           jq -e '.status == "Healthy"' ready.json > /dev/null
 
       - name: Frontend serves the app
@@ -224,4 +237,4 @@ jobs:
           curl -fsS --max-time 10 "$WEB/" | grep -q "<app-root"
           # deep links must fall back to index.html via nginx
           code=$(curl -s -o /dev/null -w "%{http_code}" "$WEB/login")
-          [ "$code" = "200" ] || { echo "::error::/login returned $code"; exit 1; }
+          [ "$code" = "200" ] || { echo "::error::$WEB/login returned $code"; exit 1; }
