@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Store } from '@ngxs/store';
 import { UserProfileGetProfile } from '@user-profile/state/user-profile.action';
+import { HabitGetHabits } from '@habits/state/habit.action';
+import { HabitEntryGetHabitEntries } from '@habit-entries/state/habit-entry.action';
 import { RouterOutlet } from '@angular/router';
 import { MainSidebar } from '@layout/main-layout/main-sidebar/main-sidebar';
 import { MainMobileBar } from '@layout/main-layout/main-mobile-bar/main-mobile-bar';
@@ -16,7 +18,8 @@ import { MainTabbar } from '@layout/main-layout/main-tabbar/main-tabbar';
 })
 export class MainLayout {
   constructor() {
-    // The sidebar and mobile bar show the user's name and initials.
-    inject(Store).dispatch(new UserProfileGetProfile());
+    // The sidebar and mobile bar show the user's name and initials; the streak chips in the
+    // page headers and the mobile bar read habits and entries, loaded once here.
+    inject(Store).dispatch([new UserProfileGetProfile(), new HabitGetHabits(), new HabitEntryGetHabitEntries()]);
   }
 }

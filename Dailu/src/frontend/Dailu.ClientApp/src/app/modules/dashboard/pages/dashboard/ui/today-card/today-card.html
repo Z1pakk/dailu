@@ -7,7 +7,13 @@
 
 <div class="today-body" [class.has-clock]="$habits().length > 0">
   @if ($habits().length > 0) {
-    <app-day-clock class="today-clock" [habits]="$clockHabits()" [compact]="true" [showList]="false" />
+    <div class="today-side">
+      <!-- Habits have no time of day yet: the dial shows a sample day (dummy data). -->
+      <span class="sample-tag">Sample schedule</span>
+      <app-day-clock class="today-clock" [habits]="clockHabits" [compact]="true" [showList]="false"
+                     pTooltip="Sample schedule — habit times are coming soon" tooltipPosition="top" />
+      <app-any-time-lane [lane]="$lane()" />
+    </div>
   }
 
   <div class="today-main">

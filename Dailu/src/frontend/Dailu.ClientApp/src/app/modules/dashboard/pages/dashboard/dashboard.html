@@ -13,6 +13,7 @@
       </p-iconfield>
       <kbd class="dl-mono-sm dash-kbd">⌘K</kbd>
     </span>
+    <app-streak-chip />
     <span pTooltip="Coming soon" tooltipPosition="bottom">
       <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
                 ariaLabel="Notifications" [disabled]="true" />
@@ -25,6 +26,7 @@
   <app-today-card class="dash-today"
                   [habits]="$today()"
                   [pendingIds]="$pendingIds()"
+                  [lane]="$lane()"
                   (check)="checkOff($event)" />
   <app-streak-card class="dash-streak" [streak]="$streak()" [week]="$week()" />
   <app-consistency-card class="dash-consistency"

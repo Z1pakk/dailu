@@ -3,10 +3,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { MenubarDesignTokens } from '@primeuix/themes/types/menubar';
 import { Button } from 'primeng/button';
+import { StreakChip } from '@habits/ui/streak-chip/streak-chip';
 
 @Component({
   selector: 'app-profile-container',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Button],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Button, StreakChip],
   templateUrl: './profile-container.html',
   styleUrl: './profile-container.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,7 +1,10 @@
 <div>
   <div class="flex justify-between">
     <h2 class="text-3xl font-bold">My Tags</h2>
-    <p-button (click)="addTag()" label="Create New Tag" />
+    <div class="flex items-center gap-3">
+      <app-streak-chip class="hidden lg:inline-flex" />
+      <p-button (click)="addTag()" label="Create New Tag" />
+    </div>
   </div>
   <p-data-view [value]="$tags()" layout="list" class="mt-4">
     <ng-template #list let-tags>

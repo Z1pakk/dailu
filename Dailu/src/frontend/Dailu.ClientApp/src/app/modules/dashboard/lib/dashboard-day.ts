@@ -1,5 +1,4 @@
 import { addDays } from 'date-fns/addDays';
-import { format } from 'date-fns/format';
 import { parseISO } from 'date-fns/parseISO';
 import { startOfWeek } from 'date-fns/startOfWeek';
 import { HabitModel } from '@habits/models/habit.model';
@@ -9,6 +8,8 @@ import { habitStatuses } from '@habits/enums/habit-status.enum';
 import { AutomationSource, automationSources } from '@habits/enums/automation-source.enum';
 import { habitEntrySources } from '@habit-entries/enums/habit-entry-source.enum';
 import { ClockHabit, HabitSource, SOURCE_NAMES } from '@shared/ui/day-clock/day-clock.model';
+import { localDay } from '@shared/lib/date/local-day';
+import { milestoneProgress } from '@habits/lib/habit-progress';
 
 /*
  * Dashboard day maths. Only daily habits are "tracked": weekly / monthly habits
@@ -24,7 +25,7 @@ export interface TodayHabit {
   isDone: boolean;
   isAutomated: boolean;
   source: HabitSource;
-  /** "auto · Strava", "by you" once checked manually, or "" while still open. */
+  /** "Strava", "by you" once checked manually, or "" while still open. */
   sourceLabel: string;
 }
 
@@ -67,10 +68,7 @@ const SEGMENT_FILL = 0.7;
 
 const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-export function localDay(value: string | Date): string {
-  const date = typeof value === 'string' ? parseISO(value) : value;
-  return format(date, 'yyyy-MM-dd');
-}
+export { localDay };
 
 export function greeting(now: Date): Greeting {
   const hour = now.getHours();
@@ -148,7 +146,7 @@ export function todayHabits(
     const auto = automation(habit);
     let sourceLabel = '';
     if (auto) {
-      sourceLabel = `auto · ${auto.name}`;
+      sourceLabel = auto.name;
     } else if (isDone) {
       sourceLabel = 'by you';
     }
@@ -275,17 +273,22 @@ export function currentWeek(
   });
 }
 
-export function milestones(habits: readonly HabitModel[]): MilestoneView[] {
+export function milestones(
+  habits: readonly HabitModel[],
+  entries: readonly HabitEntryModel[],
+): MilestoneView[] {
   return habits
-    .filter((h) => !h.isArchived && h.milestone && h.milestone.target > 0)
-    .map((h) => {
-      const { current, target } = h.milestone!;
+    .filter((h) => !h.isArchived)
+    .map((h) => ({ habit: h, progress: milestoneProgress(h, entries) }))
+    .filter((m) => m.progress !== null)
+    .map(({ habit, progress }) => {
+      const { current, target, percent } = progress!;
       return {
-        habitId: h.id,
-        name: h.name,
+        habitId: habit.id,
+        name: habit.name,
         current,
         target,
-        percent: Math.min(100, Math.round((current / target) * 100)),
+        percent,
         isUnlocked: current >= target,
       };
     })

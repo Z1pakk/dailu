@@ -17,9 +17,27 @@
 }
 
 // Today's habits spread evenly on the dial (no time of day yet), coloured by completion.
+.today-side {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(16);
+  min-width: 0;
+}
+
+.sample-tag {
+  align-self: center;
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: var(--dl-bg-subtle);
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+}
+
 .today-clock {
   max-width: 335px;
-  justify-self: center;
+  align-self: center;
 }
 
 .today-main {

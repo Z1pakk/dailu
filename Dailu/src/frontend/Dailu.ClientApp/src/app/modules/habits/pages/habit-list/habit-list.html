@@ -1,19 +1,91 @@
-<div>
-  <div class="flex justify-between">
-    <h2 class="text-3xl font-bold">My Habits</h2>
-    <p-button (click)="addHabit()" label="Create New Habit" />
+@let counts = $counts();
+<header class="page-header">
+  <div class="page-title">
+    <h1>Habits</h1>
+    <p class="dl-body">
+      {{ counts.all }} habits · {{ counts.auto }} auto-checked<span class="by-you"> · {{ counts.manual }} by you</span>
+    </p>
   </div>
-  <p-data-view [value]="$habits()" layout="list" class="mt-4">
-    <ng-template #list let-habits>
-      <div class="flex flex-col gap-4">
-        @for (habit of habits; track habit.id) {
-          <app-habit-list-item
-            [habit]="habit"
-            [habitEntries]="$habitEntries()"
-            (edit)="editHabit(habit)"
-          />
-        }
-      </div>
-    </ng-template>
-  </p-data-view>
+
+  <div class="page-actions">
+    <!-- Search and notifications have no backend yet: placeholders. -->
+    <span class="page-search" pTooltip="Coming soon" tooltipPosition="bottom">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="search" placeholder="Search habits…" aria-label="Search habits" [disabled]="true" />
+      </p-iconfield>
+      <kbd class="dl-mono-sm page-kbd">⌘K</kbd>
+    </span>
+    <app-streak-chip />
+    <span pTooltip="Coming soon" tooltipPosition="bottom">
+      <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
+                ariaLabel="Notifications" [disabled]="true" />
+    </span>
+    <p-button icon="pi pi-plus" label="New habit" (onClick)="openDrawer(null)" />
+  </div>
+</header>
+
+<div class="toolbar">
+  <p-selectbutton [options]="$filterOptions()" optionLabel="label" optionValue="value" [allowEmpty]="false"
+                  [ngModel]="$filter()" (ngModelChange)="$filter.set($event)" ariaLabelledBy="Filter habits" />
+  <!-- Habits have no time of day yet, so there's nothing to sort by. -->
+  <span class="sort" pTooltip="Coming soon" tooltipPosition="left">
+    Sort: <span class="sort-value">By time of day <i class="pi pi-chevron-down" aria-hidden="true"></i></span>
+  </span>
 </div>
+
+<!-- Habits have no time of day yet: the clock lane shows a sample day (dummy data);
+     the any-time lane is real. -->
+<section class="clock-card" aria-label="Your day">
+  <div class="lane lane-clock" pTooltip="Sample schedule — habit times are coming soon" tooltipPosition="top">
+    <div class="lane-head">
+      <h2>Your day on the clock <span class="sample-tag">Sample</span></h2>
+      <span class="dl-mono-sm lane-meta">06:00 → 24:00 · {{ $timeline().planned }} planned</span>
+    </div>
+    <div #clockTrack class="track clock-track" aria-hidden="true">
+      <span class="rail"></span>
+      @for (slot of $timeline().slots; track slot.name) {
+        <span class="slot" [class]="'slot is-' + slot.state" [appPercentLeft]="slot.left" [appPercentWidth]="slot.width"></span>
+      }
+      @for (label of $labels(); track label.name) {
+        <span class="slot-label" [class.is-second]="label.row === 1" [appPercentLeft]="label.left">{{ label.name }}</span>
+      }
+      <span class="now" [appPercentLeft]="$lane().nowPosition"></span>
+      <span class="tick tick-06">06</span>
+      <span class="tick tick-12">12</span>
+      <span class="tick tick-18">18</span>
+      <span class="tick tick-00">00</span>
+    </div>
+  </div>
+
+  <app-any-time-lane class="lane" [lane]="$lane()" />
+</section>
+
+@if (counts.all === 0) {
+  <section class="empty">
+    <h2>No habits yet</h2>
+    <p-button icon="pi pi-plus" label="Create your first habit" (onClick)="openDrawer(null)" />
+  </section>
+} @else {
+  <div class="list">
+    <div class="list-header dl-mono-sm" aria-hidden="true">
+      <span class="col-habit">ANY TIME</span>
+      <span class="col-spacer"></span>
+      <span class="col-week">THIS WEEK</span>
+      <span class="col-streak">STREAK</span>
+      <span class="col-milestone">MILESTONE</span>
+      <span class="col-more"></span>
+    </div>
+    @for (row of $rows(); track row.habit.id) {
+      <app-habit-row [row]="row" (edit)="openDrawer(row.habit)" />
+    } @empty {
+      <p class="dl-body list-empty">No habits match this filter.</p>
+    }
+  </div>
+}
+
+<app-coach-button />
+
+@if ($drawer(); as drawer) {
+  <app-habit-drawer [habit]="drawer.habit" (closed)="closeDrawer()" />
+}

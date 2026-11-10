@@ -1,0 +1,51 @@
+@use 'dailu' as dl;
+
+:host {
+  display: inline-flex;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: dl.radius(lg);
+  background: var(--p-content-background);
+  font: inherit;
+  cursor: pointer;
+
+  &.is-compact {
+    padding: 8px 10px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.chip-value {
+  color: var(--p-text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.chip-label {
+  color: var(--p-text-muted-color);
+}
+
+// Popover content is declared in this template, so these styles reach it.
+.popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(12);
+  width: 312px;
+  box-sizing: content-box;
+  padding: dl.space(16);
+}
+
+.popover-title {
+  margin: 0;
+  color: var(--p-text-color);
+}

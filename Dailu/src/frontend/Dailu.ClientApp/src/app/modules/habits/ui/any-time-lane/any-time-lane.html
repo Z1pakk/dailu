@@ -1,0 +1,26 @@
+<div class="lane-head">
+  <h2>Any time today</h2>
+  @if ($lane().total > 0) {
+    <span class="dl-mono-sm lane-meta">{{ $lane().done }} of {{ $lane().total }} done · {{ $timeLeft() }} left</span>
+  }
+</div>
+@if ($lane().total === 0) {
+  <p class="dl-body lane-empty">Nothing due today.</p>
+} @else {
+  <div class="track anytime-track">
+    <span class="dl-mono-sm due">24:00</span>
+    <span class="rail"></span>
+    <span class="elapsed" [appPercentLeft]="0" [appPercentWidth]="$lane().nowPosition"></span>
+    <span class="now" [appPercentLeft]="$lane().nowPosition"></span>
+  </div>
+  <ul class="pills" aria-label="Due today">
+    @for (item of $lane().items; track item.id) {
+      <li class="pill" [class.is-done]="item.isDone">
+        @if (item.isDone) {
+          <i class="pi pi-check" aria-hidden="true"></i>
+        }
+        {{ item.name }}
+      </li>
+    }
+  </ul>
+}

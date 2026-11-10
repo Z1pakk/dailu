@@ -1,0 +1,17 @@
+<button type="button"
+        class="chip"
+        [class.is-compact]="$compact()"
+        [attr.aria-label]="'Streak: ' + $days() + ' days. Show details'"
+        (pointerenter)="onPointerEnter($event)"
+        (pointerleave)="onPointerLeave($event)"
+        (click)="onClick($any($event))">
+  <span class="chip-value">{{ $days() }}</span>
+  <span class="dl-mono-sm chip-label">{{ $days() === 1 ? 'day' : 'days' }}</span>
+</button>
+
+<p-popover appendTo="body" [dt]="popoverTokens">
+  <div class="popover-body" (pointerenter)="onPopoverEnter($event)" (pointerleave)="onPointerLeave($event)">
+    <h2 class="dl-h3 popover-title">Streak</h2>
+    <app-streak-details [summary]="$summary()" [week]="$week()" />
+  </div>
+</p-popover>

@@ -49,6 +49,9 @@ export const HabitTargetValueSchema = v.pipe(
   v.maxValue(9999, 'Target value must be less than 9999'),
 );
 
+/** The drawer's "At least": empty means a binary habit. */
+export const HabitTargetValueOptionalSchema = v.nullable(HabitTargetValueSchema);
+
 export const HabitTargetUnitSchema = v.pipe(
   v.string(),
   v.nonEmpty('Unit is required'),

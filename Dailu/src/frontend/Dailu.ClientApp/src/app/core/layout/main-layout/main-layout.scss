@@ -35,6 +35,8 @@
 .layout-content {
   width: 100%;
   max-width: 1176px;
+  // Wider than the Figma frame: keep the 1096px content column centred next to the sidebar.
+  margin-inline: auto;
   padding: dl.space(32) dl.space(40);
 
   @include dl.down(lg) {

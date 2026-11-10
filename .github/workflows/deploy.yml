@@ -182,6 +182,8 @@ jobs:
       # Frontend and API share one host; the API is everything under /api
       BASE_URL: ${{ secrets.SMOKE_BASE_URL }}
       EXPECTED_VERSION: ${{ github.sha }}
+      # Optional: a Cloudflare WAF "Skip" rule matching this header lets the runner past bot checks.
+      SMOKE_TOKEN: ${{ secrets.SMOKE_BYPASS_TOKEN }}
 
     steps:
       # Only needed if the URL is reachable only over the tailnet
@@ -194,6 +196,7 @@ jobs:
 
       # Strips whitespace/CR (easy to paste into a secret) and a trailing slash, then
       # validates, so a bad secret fails here instead of as curl errors in later steps.
+      # Also writes the shared request helper every later step sources.
       - name: Resolve URLs
         run: |
           base=$(printf '%s' "$BASE_URL" | tr -d '[:space:]')
@@ -210,22 +213,56 @@ jobs:
           fi
           echo "WEB=$base" >> "$GITHUB_ENV"
           echo "API=$base/api" >> "$GITHUB_ENV"
+          [ -n "$SMOKE_TOKEN" ] || echo "::notice::SMOKE_BYPASS_TOKEN not set - requests carry no Cloudflare bypass header"
+
+          cat > "$RUNNER_TEMP/smoke.sh" <<'SH'
+          # fetch URL -> sets CODE, BODY, KIND (json | spa | cloudflare | html | other) and logs on anything unexpected.
+          fetch() {
+            local url="$1" hdr="$RUNNER_TEMP/headers.txt"
+            local args=(-sS --max-time 10 -A "dailu-smoke-test (+github-actions)" -D "$hdr" -o "$RUNNER_TEMP/body.txt" -w "%{http_code}")
+            [ -n "$SMOKE_TOKEN" ] && args+=(-H "X-Smoke-Token: $SMOKE_TOKEN")
+            CODE=$(curl "${args[@]}" "$url") || CODE="curl-$?"
+            BODY=$(cat "$RUNNER_TEMP/body.txt" 2>/dev/null || true)
+            local server mitigated
+            server=$(grep -i '^server:' "$hdr" 2>/dev/null | tr -d '\r' | cut -d' ' -f2- || true)
+            mitigated=$(grep -i '^cf-mitigated:' "$hdr" 2>/dev/null | tr -d '\r' | cut -d' ' -f2- || true)
+            case "$BODY" in
+              "{"*|"["*) KIND=json ;;
+              *"<app-root"*) KIND=spa ;;
+              "<"*)
+                if [ -n "$mitigated" ] || { [ "${server,,}" = "cloudflare" ] && [[ "$CODE" =~ ^(403|429|503)$ ]]; }; then KIND=cloudflare; else KIND=html; fi ;;
+              *) KIND=other ;;
+            esac
+            if [ "$KIND" != json ]; then
+              echo "  $url -> status=$CODE server=${server:-?} cf-mitigated=${mitigated:-none} kind=$KIND"
+              echo "  body: $(printf '%s' "$BODY" | tr -d '\n' | head -c 200)"
+            fi
+          }
+          explain() {
+            case "$KIND" in
+              cloudflare) echo "::error::Cloudflare blocked or challenged the runner ($CODE). Add a WAF Skip rule for header X-Smoke-Token and set SMOKE_BYPASS_TOKEN, or run the smoke test over Tailscale." ;;
+              spa) echo "::error::$1 returned the frontend's index.html - /api is not routed to the API" ;;
+              *) echo "::error::$1 returned $CODE ($KIND), expected JSON" ;;
+            esac
+          }
+          SH
 
       # The Dokploy webhook returns before the new containers are up,
       # so wait until /api/version reports this commit.
       - name: Wait for new version to go live
         run: |
+          source "$RUNNER_TEMP/smoke.sh"
           for i in $(seq 1 40); do
-            rc=0; body=$(curl -sS --max-time 5 "$API/version") || rc=$?
+            fetch "$API/version"
             # 3 = malformed URL: retrying can't help
-            [ "$rc" -ne 3 ] || { echo "::error::curl rejected the URL - check SMOKE_BASE_URL"; exit 1; }
-            # HTML means the proxy sent /api to the frontend's nginx; waiting won't fix that
-            case "$body" in
-              "<"*) echo "::error::$API/version returned HTML - /api is not routed to the API"; exit 1 ;;
+            [ "$CODE" != "curl-3" ] || { echo "::error::curl rejected the URL - check SMOKE_BASE_URL"; exit 1; }
+            # A challenge page won't go away by waiting; a mis-route won't either
+            case "$KIND" in
+              cloudflare|spa) explain "$API/version"; exit 1 ;;
             esac
-            v=$(echo "$body" | jq -r .version 2>/dev/null || true)
+            v=$(printf '%s' "$BODY" | jq -r .version 2>/dev/null || true)
             if [ "$v" = "$EXPECTED_VERSION" ]; then echo "Live: $v"; exit 0; fi
-            echo "Attempt $i: serving '$v', waiting..."
+            echo "Attempt $i: serving '${v:-?}' ($CODE), waiting..."
             sleep 15
           done
           echo "::error::Version $EXPECTED_VERSION never went live"
@@ -233,21 +270,30 @@ jobs:
 
       # check the body, not just the status: a mis-routed path gets the SPA's index.html with a 200
       - name: API is live
-        run: curl -fsS --max-time 5 "$API/health/live" | jq -e '.status == "Healthy"'
+        run: |
+          source "$RUNNER_TEMP/smoke.sh"
+          fetch "$API/health/live"
+          [ "$KIND" = json ] || { explain "$API/health/live"; exit 1; }
+          printf '%s' "$BODY" | jq -e '.status == "Healthy"'
 
-      # postgres + rabbitmq + identity (roles seeded, JWT signing works);
-      # no -f so a 503 body still shows which check failed
+      # postgres + rabbitmq + identity (roles seeded, JWT signing works); a 503 body still shows which check failed
       - name: API is ready
         run: |
-          code=$(curl -sS --max-time 15 --retry 5 --retry-delay 5 --retry-all-errors \
-            -o ready.json -w "%{http_code}" "$API/health/ready" || true)
-          cat ready.json 2>/dev/null; echo
-          [ "$code" = "200" ] || { echo "::error::$API/health/ready returned $code"; exit 1; }
-          jq -e '.status == "Healthy"' ready.json > /dev/null
+          source "$RUNNER_TEMP/smoke.sh"
+          for i in $(seq 1 5); do
+            fetch "$API/health/ready"
+            [ "$CODE" = "200" ] && break
+            sleep 5
+          done
+          printf '%s\n' "$BODY"
+          [ "$KIND" = json ] || { explain "$API/health/ready"; exit 1; }
+          [ "$CODE" = "200" ] || { echo "::error::$API/health/ready returned $CODE"; exit 1; }
+          printf '%s' "$BODY" | jq -e '.status == "Healthy"' > /dev/null
 
       - name: Frontend serves the app
         run: |
-          curl -fsS --max-time 10 "$WEB/" | grep -q "<app-root"
-          # deep links must fall back to index.html via nginx
-          code=$(curl -s -o /dev/null -w "%{http_code}" "$WEB/login")
-          [ "$code" = "200" ] || { echo "::error::$WEB/login returned $code"; exit 1; }
+          source "$RUNNER_TEMP/smoke.sh"
+          for path in / /login; do  # deep links must fall back to index.html via nginx
+            fetch "$WEB$path"
+            [ "$CODE" = "200" ] && [ "$KIND" = spa ] || { [ "$KIND" = cloudflare ] && explain "$WEB$path" || echo "::error::$WEB$path returned $CODE ($KIND)"; exit 1; }
+          done

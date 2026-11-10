@@ -10,7 +10,7 @@ export interface ClockHabit {
   startMinutes: number;
   endMinutes: number;
   source: HabitSource;
-  /** Shown once the habit is done, e.g. "auto · Strava 06:52". */
+  /** Shown once the habit is done, e.g. "Strava 06:52". */
   doneLabel: string;
   /** Shown before it is done, e.g. "at 18:00". */
   waitingLabel: string;
@@ -40,9 +40,9 @@ export const SOURCE_NAMES: Record<HabitSource, string> = {
   manual: 'you',
 };
 
-/** Short provenance label: "auto · Strava" or "by you". */
+/** Short provenance label: "Strava" or "by you". */
 export function sourceLabel(source: HabitSource): string {
-  return source === 'manual' ? 'by you' : `auto · ${SOURCE_NAMES[source]}`;
+  return source === 'manual' ? 'by you' : SOURCE_NAMES[source];
 }
 
 /**

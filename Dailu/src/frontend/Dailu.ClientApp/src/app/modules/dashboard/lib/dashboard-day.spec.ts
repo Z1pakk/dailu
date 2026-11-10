@@ -106,9 +106,9 @@ describe('dashboard-day', () => {
       ];
       const result = todayHabits(habits, [entry('done', today)], today);
       expect(result.map((h) => h.sourceLabel)).toEqual([
-        'auto · GitHub',
-        'auto · Strava',
-        'auto · Google Health',
+        'GitHub',
+        'Strava',
+        'Google Health',
         'by you',
         '',
       ]);
@@ -180,19 +180,25 @@ describe('dashboard-day', () => {
   describe('milestones', () => {
     it('should round progress, flag unlocked ones and cap at three', () => {
       const habits = [
-        habit({ id: 'u', name: 'Unlocked', milestone: { target: 50, current: 50 } }),
-        habit({ id: 'a', name: 'A', milestone: { target: 3, current: 1 } }),
-        habit({ id: 'b', name: 'B', milestone: { target: 100, current: 67 } }),
-        habit({ id: 'c', name: 'C', milestone: { target: 30, current: 21 } }),
+        habit({ id: 'u', name: 'Unlocked', milestone: { target: 2, current: 0 } }),
+        habit({ id: 'a', name: 'A', milestone: { target: 3, current: 0 } }),
+        habit({ id: 'b', name: 'B', milestone: { target: 100, current: 0 } }),
+        habit({ id: 'c', name: 'C', milestone: { target: 30, current: 0 } }),
         habit({ id: 'none' }),
       ];
-      const result = milestones(habits);
+      const entries = [entry('u', '2026-11-01'), entry('u', '2026-11-02'), entry('a', '2026-11-01')];
+      const result = milestones(habits, entries);
       expect(result.length).toBe(3);
       expect(result.map((m) => m.habitId)).toEqual(['a', 'b', 'c']);
       expect(result[0]!.percent).toBe(33);
-      expect(milestones([habits[0]!])[0]).toEqual(
-        jasmine.objectContaining({ percent: 100, isUnlocked: true }),
+      expect(milestones([habits[0]!], entries)[0]).toEqual(
+        jasmine.objectContaining({ current: 2, percent: 100, isUnlocked: true }),
       );
+    });
+
+    it('should count entries instead of the stored current', () => {
+      const result = milestones([habit({ milestone: { target: 10, current: 7 } })], []);
+      expect(result[0]).toEqual(jasmine.objectContaining({ current: 0, percent: 0 }));
     });
   });
 
