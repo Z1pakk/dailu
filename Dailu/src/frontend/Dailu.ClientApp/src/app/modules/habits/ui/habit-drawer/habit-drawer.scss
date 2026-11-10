@@ -1,0 +1,403 @@
+// New / Edit habit drawer (Figma `70:4165`). The panel is a headless p-drawer, so every
+// element below is declared in this component's template and these styles reach it.
+@use 'dailu' as dl;
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--p-content-background);
+}
+
+// ---- Header / footer -------------------------------------------------------
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+  padding: dl.space(20) dl.space(20) dl.space(20) 28px; // Figma: 28px left edge
+  border-bottom: 1px solid var(--dl-border-subtle);
+}
+
+.panel-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: 13px;
+  }
+}
+
+.panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: dl.space(16) 28px dl.space(20);
+  border-top: 1px solid var(--dl-border-subtle);
+  background: var(--p-content-background);
+}
+
+.panel-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 0;
+  padding: dl.space(24) 28px dl.space(32);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+// ---- "On your clock" placeholder --------------------------------------------
+.clock-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px dl.space(16);
+  border-radius: dl.radius(xl);
+  background: var(--dl-bg-subtle);
+}
+
+.is-placeholder {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clock-head {
+  display: flex;
+  justify-content: space-between;
+  gap: dl.space(8);
+}
+
+.clock-title {
+  color: var(--p-text-color);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clock-meta {
+  color: var(--p-primary-color);
+}
+
+.clock-track {
+  position: relative;
+  height: 26px;
+}
+
+.clock-rail,
+.clock-busy {
+  position: absolute;
+  top: 4px;
+  height: 8px;
+  border-radius: 99px;
+}
+
+.clock-rail {
+  inset-inline: 0;
+  background: var(--dl-dial-track);
+}
+
+.clock-busy {
+  background: var(--dl-dial-scheduled);
+}
+
+
+.clock-tick {
+  position: absolute;
+  top: 15px;
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+}
+
+.clock-tick-end {
+  right: 0;
+}
+
+// Sample segments from the Figma timeline (06:00 → 24:00 over 432px).
+.busy-1 { left: 19.4%; width: 8.3%; }
+.busy-2 { left: 36.1%; width: 2.8%; }
+.busy-3 { left: 44.4%; width: 4.4%; }
+.busy-4 { left: 66.7%; width: 2.8%; }
+.busy-5 { left: 91.7%; width: 7.8%; }
+.tick-06 { left: 0; }
+.tick-12 { left: 33.3%; }
+.tick-18 { left: 66.7%; }
+
+// ---- Sections and fields ---------------------------------------------------
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--p-text-color);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+.section-num {
+  padding: 2px dl.space(8);
+  border-radius: dl.radius(full);
+  background: var(--dl-bg-inverse);
+  color: var(--dl-text-inverse);
+  font-family: var(--dl-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: 0;
+}
+
+.section-lead {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.row {
+  display: flex;
+  gap: dl.space(12);
+
+  > .field {
+    flex: 1 1 0;
+  }
+
+  @include dl.down(sm) {
+    flex-direction: column;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  label {
+    color: var(--p-text-muted-color);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  input,
+  p-select,
+  p-multiselect {
+    width: 100%;
+  }
+}
+
+.field-error {
+  color: var(--dl-danger-text);
+  font-size: 12px;
+}
+
+.field-hint {
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+}
+
+.mono {
+  font-family: var(--dl-font-mono);
+}
+
+.amount {
+  display: flex;
+  gap: dl.space(8);
+
+  p-inputnumber {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  input {
+    flex: 0 0 96px;
+    width: 96px;
+  }
+}
+
+// ---- Weekday chips (placeholder) ---------------------------------------------
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: dl.space(8);
+}
+
+.day {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: dl.radius(lg);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: not-allowed;
+
+  &.is-selected {
+    border-color: var(--p-primary-color);
+    background: var(--p-primary-color);
+    color: var(--p-primary-contrast-color);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+// ---- Source picker -----------------------------------------------------------
+.sources {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: dl.space(8);
+
+  @include dl.down(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.source {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px dl.space(12);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 14px; // Figma card radius, between lg and xl
+  background: var(--p-content-background);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include dl.motion {
+    transition:
+      border-color 120ms ease,
+      background-color 120ms ease;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--p-primary-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+
+  &.is-selected {
+    padding: 9.5px 11.5px; // keeps the size with the 1.5px selected border
+    border: 1.5px solid var(--p-primary-color);
+    background: var(--p-highlight-background);
+
+    .source-name {
+      color: var(--p-primary-color);
+    }
+
+    .source-hint {
+      color: var(--p-text-color);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.source-name {
+  color: var(--p-text-color);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.source-hint {
+  color: var(--p-text-muted-color);
+  font-size: 11px;
+}
+
+.sources-hint {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+
+  a {
+    color: var(--p-primary-color);
+    font-weight: 500;
+  }
+}
+
+// ---- Tags ----------------------------------------------------------------------
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: dl.space(8);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(8);
+  padding: 10px 10px 10px dl.space(16);
+  border-radius: dl.radius(full);
+  background: var(--dl-bg-subtle);
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--p-primary-color);
+}
+
+.tag-remove {
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  background: none;
+  color: var(--p-text-muted-color);
+  cursor: pointer;
+
+  i {
+    font-size: 10px;
+  }
+}
+
+.add-tag {
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: var(--p-primary-color);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--p-primary-hover-color);
+    text-decoration: underline;
+  }
+}

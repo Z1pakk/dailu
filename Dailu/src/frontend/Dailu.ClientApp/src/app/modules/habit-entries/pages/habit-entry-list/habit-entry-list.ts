@@ -14,10 +14,11 @@ import { Button } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 import { HabitEntryAdd } from '@habit-entries/pages/habit-entry-add/habit-entry-add';
 import { HabitEntryAddModalFooter } from '@habit-entries/pages/habit-entry-add/habit-entry-add-modal-footer';
+import { StreakChip } from '@habits/ui/streak-chip/streak-chip';
 
 @Component({
   selector: 'app-habit-entry-list',
-  imports: [DataView, Button, HabitEntryListItem],
+  imports: [DataView, Button, HabitEntryListItem, StreakChip],
   templateUrl: './habit-entry-list.html',
   styleUrl: './habit-entry-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

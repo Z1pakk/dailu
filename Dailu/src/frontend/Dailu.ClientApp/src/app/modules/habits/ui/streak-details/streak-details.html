@@ -1,0 +1,29 @@
+@let summary = $summary();
+<div class="partial">
+  <p class="partial-value">
+    <span class="dl-display-clock">{{ summary.partial.current }}</span>
+    <span class="partial-unit">{{ unit(summary.partial.current) }}</span>
+  </p>
+  <p class="partial-caption">at least one habit</p>
+</div>
+
+<div class="full">
+  <span class="dl-mono-sm full-label">Full streak</span>
+  <span class="full-value">{{ summary.full.current }} {{ unit(summary.full.current) }}</span>
+  <span class="dl-mono-sm full-label">every habit</span>
+</div>
+
+<div class="week">
+  @for (day of $week(); track day.day) {
+    <app-week-day-dial [class.is-today]="day.isToday"
+                       [day]="day.label"
+                       [segments]="segments(day)"
+                       [future]="day.isFuture"
+                       [size]="36" />
+  }
+</div>
+
+<p class="dl-mono-sm foot">
+  <span>Best: {{ summary.partial.best }} {{ unit(summary.partial.best) }}</span>
+  <span class="foot-full">Best full: {{ summary.full.best }} {{ unit(summary.full.best) }}</span>
+</p>

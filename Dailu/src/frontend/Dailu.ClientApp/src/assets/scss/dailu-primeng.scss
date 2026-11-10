@@ -27,3 +27,10 @@
 .p-inputtext {
   font-size: 15px;
 }
+
+// Habit drawer — Figma `69:3615`. Drawer has no width token; the panel is 520px on desktop
+// (mobile uses `[fullScreen]`). The content is headless, so the drawer adds no padding.
+.p-drawer.habit-drawer:not(.p-drawer-full) {
+  width: 520px;
+  max-width: 100vw;
+}

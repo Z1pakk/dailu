@@ -1,0 +1,299 @@
+// Habits list (Figma `68:3394` desktop, `70:3718` mobile).
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(24);
+
+  @include dl.down(md) {
+    gap: dl.space(16);
+  }
+}
+
+// ---- Header (same rhythm as the dashboard header) ---------------------------------
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(16);
+}
+
+.page-title {
+  @include dl.stack(4);
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 34px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+
+    @include dl.down(md) {
+      font-size: 28px;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+  }
+}
+
+// Mobile subtitle stops at "auto-checked" (Figma `70:3718`).
+.by-you {
+  @include dl.down(md) {
+    display: none;
+  }
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.page-search {
+  position: relative;
+  width: 280px;
+
+  input {
+    width: 100%;
+  }
+}
+
+.page-kbd {
+  position: absolute;
+  top: 50%;
+  right: dl.space(12);
+  transform: translateY(-50%);
+  color: var(--p-text-muted-color);
+  pointer-events: none;
+}
+
+// ---- Toolbar -------------------------------------------------------------------------
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+}
+
+.sort {
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+  cursor: not-allowed;
+
+  @include dl.down(md) {
+    display: none;
+  }
+}
+
+.sort-value {
+  color: var(--p-text-color);
+  font-weight: 500;
+
+  i {
+    font-size: 10px;
+  }
+}
+
+// ---- Clock card: sample clock (left) + real any-time lane (right) -----------------------
+.clock-card {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: dl.space(32);
+  padding: 18px dl.space(24) dl.space(20);
+  border-radius: 20px; // Figma card radius
+  background: var(--p-content-background);
+
+  @include dl.down(lg) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: dl.space(20);
+  }
+}
+
+.lane {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(12);
+  min-width: 0;
+}
+
+.lane-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: dl.space(8);
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
+
+.sample-tag {
+  margin-left: dl.space(4);
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--dl-bg-subtle);
+  color: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.lane-meta {
+  color: var(--p-text-muted-color);
+}
+
+.track {
+  position: relative;
+  font-family: var(--dl-font-mono);
+  font-size: 10px;
+}
+
+.clock-track {
+  height: 54px;
+}
+
+.rail,
+.slot {
+  position: absolute;
+  top: 10px;
+  height: 10px;
+  border-radius: 99px;
+}
+
+.rail {
+  inset-inline: 0;
+  background: var(--dl-dial-track);
+}
+
+.slot {
+  min-width: 4px;
+
+  &.is-done {
+    background: var(--p-primary-color);
+  }
+
+  &.is-active {
+    background: var(--p-text-color);
+  }
+
+  &.is-later {
+    background: var(--dl-dial-scheduled);
+  }
+}
+
+.slot-label {
+  position: absolute;
+  top: 26px;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+
+  &.is-second {
+    top: 39px;
+  }
+
+  @include dl.down(md) {
+    display: none;
+  }
+}
+
+.now {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 30px;
+  background: var(--dl-accent-now);
+}
+
+.tick {
+  position: absolute;
+  top: -4px;
+  color: var(--p-text-muted-color);
+  opacity: 0.7;
+}
+
+.tick-06 { left: 0; }
+.tick-12 { left: 33.33%; }
+.tick-18 { left: 66.67%; }
+.tick-00 { right: 0; }
+
+// ---- List ------------------------------------------------------------------------------
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Column widths mirror habit-row.scss.
+.list-header {
+  display: flex;
+  gap: dl.space(20);
+  padding-inline: dl.space(20);
+  color: var(--p-text-muted-color);
+  font-size: 10px;
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.col-spacer {
+  flex: 1 1 0;
+}
+
+.col-week {
+  width: 94px;
+}
+
+.col-streak {
+  width: 72px;
+  text-align: right;
+}
+
+.col-milestone {
+  width: 150px;
+}
+
+.col-more {
+  width: 38px;
+}
+
+.list-empty {
+  margin: 0;
+  padding: dl.space(24);
+  color: var(--p-text-muted-color);
+  text-align: center;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: dl.space(16);
+  padding: dl.space(48) dl.space(24);
+  border-radius: 20px;
+  background: var(--p-content-background);
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 20px;
+    font-weight: 600;
+  }
+}

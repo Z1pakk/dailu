@@ -87,9 +87,9 @@ const TICK_MS = 15_000;
 interface ClockSegment {
   view: ClockHabitView;
   path: string;
-  /** Popup / aria detail: "auto · Strava 06:52" or "at 18:00". */
+  /** Popup / aria detail: "Strava 06:52" or "at 18:00". */
   detail: string;
-  /** Short outside label: "auto · Strava", "by you" or "at 18:00". */
+  /** Short outside label: "Strava", "by you" or "at 18:00". */
   caption: string;
   labelAt: Point;
   labelAnchor: 'start' | 'middle' | 'end';

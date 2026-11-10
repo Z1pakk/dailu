@@ -1,7 +1,10 @@
 <div>
   <div class="flex justify-between">
     <h2 class="text-3xl font-bold">My Entries</h2>
-    <p-button (click)="addHabitEntry()" label="Create New Entry" />
+    <div class="flex items-center gap-3">
+      <app-streak-chip class="hidden lg:inline-flex" />
+      <p-button (click)="addHabitEntry()" label="Create New Entry" />
+    </div>
   </div>
   <p-data-view [value]="$habitEntries()" layout="list" class="mt-4">
     <ng-template #list let-habitEntries>

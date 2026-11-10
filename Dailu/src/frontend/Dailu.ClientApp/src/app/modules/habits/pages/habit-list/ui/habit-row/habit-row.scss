@@ -1,0 +1,232 @@
+// Habit row (Figma `68:4119` desktop, `70:3957` mobile). Column widths match the list header
+// in habit-list.scss, so keep them in sync.
+@use 'dailu' as dl;
+
+:host {
+  display: block;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: dl.space(20);
+  padding: dl.space(16) dl.space(20);
+  border: 1px solid var(--dl-border-subtle);
+  border-radius: dl.radius(xl);
+  background: var(--p-content-background);
+
+  @include dl.down(md) {
+    gap: dl.space(12);
+    padding: dl.space(16);
+  }
+}
+
+.row-main {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: dl.space(20);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    border-radius: dl.radius(md);
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 4px;
+  }
+
+  @include dl.down(lg) {
+    flex: 1 1 auto;
+  }
+
+  @include dl.down(md) {
+    gap: dl.space(12);
+  }
+}
+
+// ---- Ring ------------------------------------------------------------------
+// Not ".ring": that is a Tailwind utility (a 1px box-shadow outline).
+.habit-ring {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.ring-track,
+.ring-fill {
+  fill: none;
+  stroke-width: 5;
+}
+
+.ring-track {
+  stroke: var(--dl-dial-track);
+}
+
+// Flat ends, like the Figma ring: round caps would leave a dot at 0% and overlap near 100%.
+.ring-fill {
+  stroke: var(--p-primary-color);
+  stroke-linecap: butt;
+}
+
+.ring-label {
+  fill: var(--p-text-muted-color);
+  font-family: var(--dl-font-mono);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+// ---- Name / schedule ---------------------------------------------------------
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 260px;
+  min-width: 0;
+
+  @include dl.down(lg) {
+    width: auto;
+  }
+}
+
+.name {
+  overflow: hidden;
+  color: var(--p-text-color);
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule {
+  color: var(--p-text-muted-color);
+}
+
+// ---- Source pill -------------------------------------------------------------
+.source {
+  flex: none;
+  padding: 6px dl.space(12);
+  border-radius: dl.radius(full);
+  background: var(--dl-bg-subtle);
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &.is-auto {
+    background: var(--p-highlight-background);
+    color: var(--p-primary-color);
+  }
+}
+
+.spacer {
+  flex: 1 1 0;
+}
+
+// ---- This week -------------------------------------------------------------
+.week {
+  display: flex;
+  flex: none;
+  gap: dl.space(4);
+  width: 94px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dl-bg-muted);
+
+  &.is-done {
+    background: var(--p-primary-color);
+  }
+
+  &.is-missed {
+    background: var(--dl-accent-now);
+  }
+
+  &.is-future {
+    border: 1px solid var(--p-content-border-color);
+    background: transparent;
+  }
+}
+
+// ---- Streak ------------------------------------------------------------------
+.streak {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  width: 72px;
+  white-space: nowrap;
+}
+
+.streak-count {
+  color: var(--p-text-color);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.streak-label {
+  color: var(--p-text-muted-color);
+}
+
+// ---- Milestone ---------------------------------------------------------------
+.milestone {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  width: 150px;
+  color: var(--p-text-muted-color);
+}
+
+.milestone-head {
+  display: flex;
+  justify-content: space-between;
+  gap: dl.space(8);
+  white-space: nowrap;
+}
+
+.milestone-label {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.bar {
+  display: block;
+}
+
+.bar-track {
+  fill: var(--dl-bg-muted);
+}
+
+.bar-fill {
+  fill: var(--p-primary-color);
+}
+
+// ---- Responsive: tablet drops the milestone, mobile keeps ring + name + streak --------
+.source,
+.week,
+.milestone,
+.spacer {
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.row > p-button {
+  @include dl.down(md) {
+    display: none;
+  }
+}

@@ -31,7 +31,6 @@ import {
   isFullyDone,
   localDay,
   milestones,
-  streaks,
   todayHabits,
   trackedHabits,
 } from '@dashboard/lib/dashboard-day';
@@ -43,7 +42,10 @@ import { IntegrationsCard } from './ui/integrations-card/integrations-card';
 import { MilestonesCard } from './ui/milestones-card/milestones-card';
 import { RecentActivityCard } from './ui/recent-activity-card/recent-activity-card';
 import { AiInsightsCard } from './ui/ai-insights-card/ai-insights-card';
-import { CoachButton } from './ui/coach-button/coach-button';
+import { CoachButton } from '@shared/ui/coach-button/coach-button';
+import { StreakChip } from '@habits/ui/streak-chip/streak-chip';
+import { streakSummary } from '@habits/lib/habit-streaks';
+import { anyTimeLane } from '@habits/lib/habit-today';
 
 const MOBILE_QUERY = '(max-width: 767.98px)';
 
@@ -66,6 +68,7 @@ const MOBILE_QUERY = '(max-width: 767.98px)';
     RecentActivityCard,
     AiInsightsCard,
     CoachButton,
+    StreakChip,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -106,7 +109,8 @@ export class Dashboard {
     return `${date} · ${done} of ${habits.length} habits done`;
   });
 
-  protected readonly $streak = computed(() => streaks(this._$habits(), this._$entries(), this._today));
+  protected readonly $streak = computed(() => streakSummary(this._$habits(), this._$entries(), this._today));
+  protected readonly $lane = computed(() => anyTimeLane(this._$habits(), this._$entries(), this._now));
   protected readonly $week = computed(() => currentWeek(this._$habits(), this._$entries(), this._today));
 
   protected readonly $heatWeeks = computed(() =>
@@ -133,7 +137,7 @@ export class Dashboard {
     (this._$summaries() ?? []).map((summary) => integrationView(summary, this._now)),
   );
 
-  protected readonly $milestones = computed(() => milestones(this._$habits()));
+  protected readonly $milestones = computed(() => milestones(this._$habits(), this._$entries()));
 
   constructor() {
     this._store.dispatch([

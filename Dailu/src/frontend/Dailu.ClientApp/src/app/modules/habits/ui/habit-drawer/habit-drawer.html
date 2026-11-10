@@ -1,0 +1,238 @@
+<p-drawer [visible]="$visible()" (onHide)="close()" position="right" [modal]="true" [blockScroll]="true"
+          [dismissible]="true" [closeOnEscape]="true" appendTo="body"
+          styleClass="habit-drawer" [fullScreen]="$isMobile()"
+          [ariaLabel]="$isEdit() ? 'Edit habit' : 'New habit'">
+  <ng-template #headless>
+    <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <header class="panel-header">
+        <div class="panel-title">
+          <h2>{{ $isEdit() ? 'Edit habit' : 'New habit' }}</h2>
+          <p>Give it a time — Dailu does the ticking.</p>
+        </div>
+        <p-button icon="pi pi-times" severity="secondary" [text]="true" ariaLabel="Close" styleClass="panel-close"
+                  (onClick)="close()" />
+      </header>
+
+      <div class="panel-body">
+        <!-- Habits have no time of day yet: every habit is an any-time habit, so it isn't placed
+             on the clock. The busy segments are the sample day (dummy data). -->
+        <div class="clock-preview" pTooltip="Sample schedule — habit times are coming soon" tooltipPosition="bottom">
+          <div class="clock-head">
+            <span class="clock-title">Any time today</span>
+            <span class="dl-mono-sm clock-meta">due by 24:00 · not on your clock</span>
+          </div>
+          <div class="clock-track" aria-hidden="true">
+            <span class="clock-rail"></span>
+            <span class="clock-busy busy-1"></span>
+            <span class="clock-busy busy-2"></span>
+            <span class="clock-busy busy-3"></span>
+            <span class="clock-busy busy-4"></span>
+            <span class="clock-busy busy-5"></span>
+            <span class="clock-tick tick-06">06</span>
+            <span class="clock-tick tick-12">12</span>
+            <span class="clock-tick tick-18">18</span>
+            <span class="clock-tick clock-tick-end">00</span>
+          </div>
+        </div>
+
+        <!-- 1 Basics -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">1</span>Basics</h3>
+          <div class="field">
+            <label for="habit-name">Name</label>
+            <input pInputText id="habit-name" formControlName="name" placeholder="Morning run"
+                   [invalid]="!!errorOf('name')" />
+            @if (errorOf('name'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </div>
+          <div class="field">
+            <label for="habit-description">Description (optional)</label>
+            <input pInputText id="habit-description" formControlName="description" placeholder="Easy pace, at least 3 km"
+                   [invalid]="!!errorOf('description')" />
+            @if (errorOf('description'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </div>
+        </section>
+
+        <!-- 2 Schedule -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">2</span>Schedule</h3>
+          <p-selectbutton formControlName="scheduleMode" [options]="scheduleOptions" optionLabel="label"
+                          optionValue="value" [allowEmpty]="false" ariaLabelledBy="Schedule" />
+
+          @if ($scheduleMode() === 'custom') {
+            <div class="row">
+              <div class="field">
+                <label for="habit-period">Repeat</label>
+                <p-select inputId="habit-period" formControlName="customFrequencyType" [options]="periodOptions"
+                          optionLabel="label" optionValue="value" />
+              </div>
+              <div class="field">
+                <label for="habit-times">Times</label>
+                <p-inputnumber [fluid]="true" inputId="habit-times" formControlName="customTimesPerPeriod" [min]="1" [max]="999"
+                               [showButtons]="true" [invalid]="!!errorOf('customTimesPerPeriod')" />
+                @if (errorOf('customTimesPerPeriod'); as error) {
+                  <small class="field-error">{{ error }}</small>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Specific weekdays aren't stored yet. -->
+          <div class="days" pTooltip="Coming soon" tooltipPosition="top">
+            @for (day of weekdays; track $index) {
+              <button type="button" class="day" [class.is-selected]="$scheduleMode() === 'weekdays' && $index < 5"
+                      [disabled]="true" [attr.aria-label]="day">{{ day }}</button>
+            }
+          </div>
+
+          <!-- Only "Any time" can be saved until habits get a time of day. -->
+          <span class="time-mode" pTooltip="&quot;At a time&quot; is coming soon" tooltipPosition="top">
+            <p-selectbutton [options]="timeModes" optionLabel="label" optionValue="value" optionDisabled="disabled"
+                            [ngModel]="'any'" [ngModelOptions]="{ standalone: true }" [allowEmpty]="false"
+                            ariaLabelledBy="Time of day" />
+          </span>
+          <p class="field-hint">Due by midnight · not on your clock</p>
+          <div class="row">
+            <div class="field" pTooltip="Coming soon" tooltipPosition="top">
+              <label for="habit-duration">Duration (optional)</label>
+              <p-select inputId="habit-duration" placeholder="No duration" [options]="[]" [disabled]="true" />
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 Auto-check -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">3</span>Auto-check</h3>
+          <p class="section-lead">Pick where proof comes from. Dailu ticks the habit off when matching activity shows up.</p>
+
+          <div class="sources" role="radiogroup" aria-label="Auto-check source">
+            @for (card of sourceCards; track card.value) {
+              <button type="button" role="radio" class="source"
+                      [class.is-selected]="facade.$automationSource() === card.value"
+                      [attr.aria-checked]="facade.$automationSource() === card.value"
+                      [disabled]="isSourceDisabled(card.value)"
+                      (click)="selectSource(card.value)">
+                <span class="source-name">{{ card.name }}</span>
+                <span class="source-hint">{{ card.hint }}</span>
+                @if (isDisconnectedOwnSource(card.value)) {
+                  <p-tag value="Disconnected" severity="warn" styleClass="source-tag" />
+                }
+              </button>
+            }
+          </div>
+          @if ($hasUnconnected()) {
+            <p class="sources-hint">
+              Not seeing a source? <a routerLink="/app/profile/integrations" (click)="close()">Connect in Integrations</a>
+            </p>
+          }
+
+          <div class="row">
+            @switch (facade.$automationSource()) {
+              @case (sources.github) {
+                <div class="field">
+                  <label for="habit-repo">Repository</label>
+                  <p-select inputId="habit-repo" formControlName="githubRepositoryId"
+                            [options]="facade.$githubRepoSelectItems()" optionLabel="label" optionValue="value"
+                            [loading]="facade.$githubReposLoading()" [filter]="true" placeholder="Pick a repository"
+                            [invalid]="!!errorOf('githubRepositoryId')" (onChange)="selectRepository($event)" />
+                  @if (errorOf('githubRepositoryId'); as error) {
+                    <small class="field-error">{{ error }}</small>
+                  }
+                </div>
+                <div class="field">
+                  <label for="habit-events">Activity type</label>
+                  <p-multiselect inputId="habit-events" formControlName="githubEventTypes" [options]="githubEventItems"
+                                 optionLabel="label" optionValue="value" placeholder="Any event" display="comma" />
+                </div>
+              }
+              @case (sources.strava) {
+                <div class="field">
+                  <label for="habit-activities">Activity type</label>
+                  <p-multiselect inputId="habit-activities" formControlName="stravaActivityTypes"
+                                 [options]="stravaActivityItems" optionLabel="label" optionValue="value"
+                                 placeholder="Any activity" display="comma" />
+                </div>
+              }
+              @case (sources.googleHealth) {
+                <div class="field">
+                  <label for="habit-metrics">Activity type</label>
+                  <p-multiselect inputId="habit-metrics" formControlName="googleHealthMetrics"
+                                 [options]="googleHealthMetricItems" optionLabel="label" optionValue="value"
+                                 placeholder="Any activity" display="comma" />
+                </div>
+              }
+            }
+
+            <div class="field">
+              <label for="habit-amount">At least</label>
+              <div class="amount">
+                <p-inputnumber [fluid]="true" inputId="habit-amount" formControlName="targetValue" [min]="0" [max]="9999"
+                               [maxFractionDigits]="2" placeholder="3" [invalid]="!!errorOf('targetValue')" />
+                <input pInputText formControlName="targetUnit" placeholder="km" aria-label="Unit"
+                       [invalid]="!!errorOf('targetUnit')" />
+              </div>
+              @if (errorOf('targetValue') ?? errorOf('targetUnit'); as error) {
+                <small class="field-error">{{ error }}</small>
+              } @else if (facade.$automationSource() !== sources.none) {
+                <small class="field-hint">Minimum check coming soon</small>
+              }
+            </div>
+          </div>
+
+          @if (facade.$summary(); as summary) {
+            <p-message severity="info" icon="pi pi-info-circle" styleClass="summary">{{ summary }}</p-message>
+          }
+        </section>
+
+        <!-- 4 Goal & tags -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">4</span>Goal &amp; tags</h3>
+          <div class="row">
+            <div class="field">
+              <label for="habit-milestone">Milestone</label>
+              <p-inputnumber [fluid]="true" inputId="habit-milestone" formControlName="milestoneTarget" [min]="1" [max]="9999"
+                             placeholder="50" [invalid]="!!errorOf('milestoneTarget')" />
+              @if (errorOf('milestoneTarget'); as error) {
+                <small class="field-error">{{ error }}</small>
+              }
+            </div>
+            <div class="field">
+              <label for="habit-end">End date</label>
+              <p-datepicker [fluid]="true" inputId="habit-end" formControlName="endDate" placeholder="No end date" [showClear]="true"
+                            dateFormat="d M yy" appendTo="body" [invalid]="!!errorOf('endDate')" />
+              @if (errorOf('endDate'); as error) {
+                <small class="field-error">{{ error }}</small>
+              }
+            </div>
+          </div>
+
+          <div class="tags">
+            @for (tag of $selectedTags(); track tag.value) {
+              <span class="tag-chip">
+                <span class="tag-dot" aria-hidden="true"></span>{{ tag.label }}
+                <button type="button" class="tag-remove" [attr.aria-label]="'Remove ' + tag.label"
+                        (click)="removeTag($any(tag.value))"><i class="pi pi-times" aria-hidden="true"></i></button>
+              </span>
+            }
+            <button type="button" class="add-tag" (click)="tagPicker.toggle($event)">+ Add tag</button>
+            <p-popover #tagPicker appendTo="body">
+              <p-listbox formControlName="tagIds" [options]="facade.$tagSelectItems()" optionLabel="label"
+                         optionValue="value" [multiple]="true" [checkbox]="true" [filter]="true"
+                         emptyMessage="No tags yet" ariaLabel="Tags" />
+            </p-popover>
+          </div>
+        </section>
+      </div>
+
+      <footer class="panel-footer">
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="close()" />
+        <p-button type="submit" [label]="$isEdit() ? 'Save changes' : 'Create habit'"
+                  [loading]="facade.$isSubmitting()"
+                  [disabled]="!facade.$isFormValid() || facade.$isSubmitting()" />
+      </footer>
+    </form>
+  </ng-template>
+</p-drawer>

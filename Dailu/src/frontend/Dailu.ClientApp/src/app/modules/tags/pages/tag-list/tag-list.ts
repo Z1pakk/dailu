@@ -14,10 +14,11 @@ import { TagStateSelectors } from '../../state/tag.selector';
 import { TagAdd } from '../tag-add/tag-add';
 import { TagAddModalFooter } from '../tag-add/tag-add-modal-footer';
 import { TagAddModelData } from '../tag-add/type/tag-add-modal.type';
+import { StreakChip } from '@habits/ui/streak-chip/streak-chip';
 
 @Component({
   selector: 'app-tag-list',
-  imports: [Button, DataView],
+  imports: [Button, DataView, StreakChip],
   templateUrl: './tag-list.html',
   styleUrl: './tag-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
