@@ -33,6 +33,7 @@
 }
 
 .layout-content {
+  flex: 1 0 auto; // pushes the footer to the bottom on short pages
   width: 100%;
   max-width: 1176px;
   // Wider than the Figma frame: keep the 1096px content column centred next to the sidebar.
@@ -40,7 +41,56 @@
   padding: dl.space(32) dl.space(40);
 
   @include dl.down(lg) {
-    padding: dl.space(8) dl.space(20) calc(var(--main-tabbar-height) + env(safe-area-inset-bottom) + #{dl.space(24)});
+    padding: dl.space(8) dl.space(20) dl.space(24);
+  }
+}
+
+// Same links as the landing footer; centred in the content column like the page.
+.layout-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(12);
+  width: 100%;
+  max-width: 1176px;
+  margin-inline: auto;
+  padding: dl.space(16) dl.space(40) dl.space(24);
+  border-top: 1px solid var(--dl-border-subtle);
+
+  // Clear the fixed bottom tab bar on mobile.
+  @include dl.down(lg) {
+    padding: dl.space(16) dl.space(20) calc(var(--main-tabbar-height) + env(safe-area-inset-bottom) + #{dl.space(16)});
+  }
+}
+
+.footer-copy {
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+}
+
+.footer-links {
+  display: flex;
+  gap: dl.space(8);
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(4);
+  min-height: 44px;
+  padding-inline: dl.space(8);
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+  text-decoration: none;
+
+  @include dl.motion {
+    transition: color 150ms ease-out;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--p-text-color);
   }
 }
 

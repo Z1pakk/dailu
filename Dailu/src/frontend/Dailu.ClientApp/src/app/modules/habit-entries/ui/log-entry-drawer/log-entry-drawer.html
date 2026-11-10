@@ -1,0 +1,119 @@
+<p-drawer [visible]="$visible()" (onHide)="close()" position="right" [modal]="true" [blockScroll]="true"
+          [dismissible]="true" [closeOnEscape]="true" appendTo="body"
+          styleClass="habit-drawer" [fullScreen]="$isMobile()" [ariaLabel]="facade.$isEditing() ? 'Edit entry' : 'Log entry'">
+  <ng-template #headless>
+    <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <header class="panel-header">
+        <div class="panel-title">
+          <h2>{{ facade.$isEditing() ? 'Edit entry' : 'Log entry' }}</h2>
+          <p>{{ facade.$isEditing() ? 'Change when it happened, the amount or the note.' : 'Tick a habit off, or note what you did.' }}</p>
+        </div>
+        <p-button icon="pi pi-times" severity="secondary" [text]="true" ariaLabel="Close" (onClick)="close()" />
+      </header>
+
+      <div class="panel-body">
+        <!-- Today so far: the same counts as the "Any time today" lane. -->
+        @let today = facade.$today();
+        <div class="today">
+          <div class="today-head">
+            <span class="today-title">Today so far</span>
+            @if (today.total > 0) {
+              <span class="dl-mono-sm today-meta">{{ today.done }} of {{ today.total }} done · {{ facade.$timeLeft() }} left</span>
+            }
+          </div>
+          <div class="today-track" aria-hidden="true">
+            <span class="rail"></span>
+            <span class="elapsed" [appPercentLeft]="0" [appPercentWidth]="today.nowPosition"></span>
+            <span class="now" [appPercentLeft]="today.nowPosition"></span>
+            <span class="tick tick-06">06</span>
+            <span class="tick tick-12">12</span>
+            <span class="tick tick-18">18</span>
+            <span class="tick tick-00">00</span>
+          </div>
+        </div>
+
+        <!-- 1 Habit -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">1</span>Habit</h3>
+          @if (facade.$options().length === 0) {
+            <p class="section-lead">No habits yet — create one on the Habits page first.</p>
+          } @else {
+            <div class="habits" role="radiogroup" aria-label="Habit">
+              @for (option of facade.$options(); track option.id) {
+                <button type="button" role="radio" class="habit-card"
+                        [class.is-selected]="facade.$habit()?.id === option.id"
+                        [class.is-done]="option.state === 'done'"
+                        [attr.aria-checked]="facade.$habit()?.id === option.id"
+                        (click)="pick(option.id)">
+                  <span class="habit-name">{{ option.name }}</span>
+                  <span class="habit-hint">{{ option.hint }}</span>
+                </button>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- 2 When -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">2</span>When</h3>
+          <p-selectbutton formControlName="dayMode" [options]="dayOptions" optionLabel="label" optionValue="value"
+                          [allowEmpty]="false" ariaLabel="Day" />
+          <div class="row">
+            <div class="field">
+              <label for="entry-time">Time</label>
+              <p-datepicker inputId="entry-time" formControlName="time" [timeOnly]="true" hourFormat="24"
+                            [fluid]="true" appendTo="body" />
+            </div>
+            @if ($dayMode() === 'pick') {
+              <div class="field">
+                <label for="entry-date">Date</label>
+                <p-datepicker inputId="entry-date" formControlName="pickedDate" [maxDate]="maxDate" dateFormat="D, d M"
+                              placeholder="Pick a date" [fluid]="true" appendTo="body" />
+              </div>
+            }
+          </div>
+          @if (!facade.$isMeasurable() && facade.$summary(); as summary) {
+            <p-message severity="info" icon="pi pi-info-circle" styleClass="summary">{{ summary }}</p-message>
+          }
+        </section>
+
+        <!-- 3 Amount — measurable habits only -->
+        @if (facade.$isMeasurable()) {
+          <section class="section">
+            <h3 class="section-title"><span class="section-num">3</span>Amount</h3>
+            <p class="section-lead">{{ $amountLead() }}</p>
+            <div class="field">
+              <label for="entry-value">{{ $amountLabel() }}</label>
+              <p-inputnumber inputId="entry-value" formControlName="value" [min]="0" [max]="99999" [fluid]="true"
+                             [invalid]="controls.value.invalid && controls.value.touched" />
+              @if (controls.value.invalid && controls.value.touched) {
+                <small class="field-error">{{ controls.value.getError('issue') }}</small>
+              }
+            </div>
+            @if (facade.$summary(); as summary) {
+              <p-message severity="info" icon="pi pi-info-circle" styleClass="summary">{{ summary }}</p-message>
+            }
+          </section>
+        }
+
+        <!-- Note -->
+        <section class="section">
+          <h3 class="section-title"><span class="section-num">{{ $noteNumber() }}</span>Note (optional)</h3>
+          <div class="field">
+            <label for="entry-note">Note</label>
+            <input pInputText id="entry-note" formControlName="notes" placeholder="Finished chapter 7 — great ending" />
+            @if (controls.notes.invalid && controls.notes.touched) {
+              <small class="field-error">{{ controls.notes.getError('issue') }}</small>
+            }
+          </div>
+        </section>
+      </div>
+
+      <footer class="panel-footer">
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="close()" />
+        <p-button type="submit" [label]="facade.$isEditing() ? 'Save changes' : 'Log entry'" [loading]="facade.$isSubmitting()"
+                  [disabled]="!facade.$isFormValid() || facade.$isSubmitting()" />
+      </footer>
+    </form>
+  </ng-template>
+</p-drawer>

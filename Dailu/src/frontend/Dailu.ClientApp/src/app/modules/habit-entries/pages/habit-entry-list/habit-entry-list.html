@@ -1,18 +1,88 @@
-<div>
-  <div class="flex justify-between">
-    <h2 class="text-3xl font-bold">My Entries</h2>
-    <div class="flex items-center gap-3">
-      <app-streak-chip class="hidden lg:inline-flex" />
-      <p-button (click)="addHabitEntry()" label="Create New Entry" />
-    </div>
+@let feed = $feed();
+<header class="page-header">
+  <div class="page-title">
+    <h1>Entries</h1>
+    <p class="dl-body subtitle-desktop">Every check-in, automatic or by hand</p>
+    <p class="dl-body subtitle-mobile">{{ feed.counts.total }} entries · {{ feed.counts.auto }} auto · {{ feed.counts.manual }} by you</p>
   </div>
-  <p-data-view [value]="$habitEntries()" layout="list" class="mt-4">
-    <ng-template #list let-habitEntries>
-      <div class="flex flex-col gap-4">
-        @for (habitEntry of habitEntries; track habitEntry.id) {
-          <app-habit-entry-list-item [habitEntry]="habitEntry" />
-        }
-      </div>
-    </ng-template>
-  </p-data-view>
+
+  <div class="page-actions">
+    <span class="page-search">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="search" placeholder="Search entries…" aria-label="Search entries"
+               [ngModel]="$query()" (ngModelChange)="$query.set($event)" />
+      </p-iconfield>
+    </span>
+    <app-streak-chip />
+    <!-- Notifications have no backend yet. -->
+    <span pTooltip="Coming soon" tooltipPosition="bottom">
+      <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
+                ariaLabel="Notifications" [disabled]="true" />
+    </span>
+    <p-button icon="pi pi-plus" label="Log entry" (onClick)="logEntry()" />
+  </div>
+</header>
+
+<div class="toolbar">
+  <p-select class="filter filter-period" [options]="periodOptions" optionLabel="label" optionValue="value"
+            [ngModel]="$period()" (ngModelChange)="setPeriod($event)" ariaLabel="Period" />
+  <p-select class="filter filter-habit" [options]="$habitOptions()" optionLabel="label" optionValue="value"
+            [ngModel]="$habitId()" (ngModelChange)="$habitId.set($event)" ariaLabel="Habit" />
+  <p-selectbutton [options]="sourceOptions" optionLabel="label" optionValue="value" [allowEmpty]="false"
+                  [ngModel]="$source()" (ngModelChange)="$source.set($event)" ariaLabel="Source" />
+  <span class="dl-mono-sm counts">{{ feed.counts.total }} entries · {{ feed.counts.auto }} auto · {{ feed.counts.manual }} by you</span>
 </div>
+
+@for (day of feed.days; track day.day) {
+  <section class="day-card" [attr.aria-label]="day.label">
+    <header class="day-head">
+      <h2>{{ day.label }}</h2>
+      @if (day.total > 0) {
+        <span class="dl-mono-sm day-progress">{{ day.done }} of {{ day.total }} done</span>
+      }
+    </header>
+    <ul class="rows">
+      @for (row of day.rows; track row.key) {
+        <li class="row" [class.is-missed]="row.kind === 'missed'">
+          <span class="dl-mono-sm time">{{ row.time ?? '–' }}</span>
+          @if (row.kind === 'entry') {
+            <button type="button" class="name name-button" [attr.aria-label]="'Edit ' + row.habitName + ' at ' + row.time"
+                    (click)="editEntry(row)">{{ row.habitName }}</button>
+          } @else {
+            <span class="name">{{ row.habitName }}</span>
+          }
+          <span class="tag" [class.is-auto]="row.isAuto && row.kind === 'entry'" [class.is-missed]="row.kind === 'missed'">
+            {{ row.sourceLabel }}
+          </span>
+          <span class="detail">{{ row.detail }}</span>
+          @if (row.kind === 'missed') {
+            <button type="button" class="action" (click)="logEntry(row)">Log manually</button>
+          } @else {
+            <!-- Entries can't be removed yet: no delete / archive endpoint. -->
+            <span class="action-wrap" pTooltip="Coming soon" tooltipPosition="left">
+              <button type="button" class="action" [disabled]="true">Undo</button>
+            </span>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+} @empty {
+  <section class="empty">
+    <h2>No entries yet</h2>
+    <p-button icon="pi pi-plus" label="Log entry" (onClick)="logEntry()" />
+  </section>
+}
+
+@if (feed.hasEarlier) {
+  <div class="more">
+    <p-button label="Show earlier entries" severity="secondary" [outlined]="true" (onClick)="showEarlier()" />
+  </div>
+}
+
+<app-coach-button />
+
+@if ($logDrawer(); as prefill) {
+  <app-log-entry-drawer [prefill]="prefill" (closed)="$logDrawer.set(null)" />
+}
