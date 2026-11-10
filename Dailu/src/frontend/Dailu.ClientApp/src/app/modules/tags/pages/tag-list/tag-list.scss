@@ -1,0 +1,226 @@
+// Tags (Figma `76:4750` desktop, `78:4786` mobile).
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(24);
+
+  @include dl.down(md) {
+    gap: dl.space(16);
+  }
+}
+
+// ---- Header (same rhythm as the Entries and Habits headers) --------------------------------
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(16);
+}
+
+.page-title {
+  @include dl.stack(4);
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 34px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+
+    @include dl.down(md) {
+      font-size: 28px;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+  }
+}
+
+.subtitle-mobile {
+  display: none;
+}
+
+@include dl.down(md) {
+  .subtitle-desktop {
+    display: none;
+  }
+
+  .subtitle-mobile {
+    display: block;
+  }
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.page-search {
+  width: 280px;
+
+  input {
+    width: 100%;
+  }
+}
+
+// ---- Tag grid ----------------------------------------------------------------------------------
+.tag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: dl.space(20);
+
+  @include dl.down(md) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: dl.space(16);
+  }
+}
+
+// The four dial colours; tags have no stored colour.
+.tone-primary { --tag-color: var(--p-primary-color); }
+.tone-ink { --tag-color: var(--p-text-color); }
+.tone-coral { --tag-color: var(--dl-accent-now); }
+.tone-gray { --tag-color: var(--dl-dial-scheduled); }
+
+.tag-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: dl.space(20) dl.space(24);
+  border-radius: 20px; // Figma card radius
+  background: var(--p-content-background);
+
+  @include dl.down(md) {
+    padding: dl.space(16) dl.space(20);
+  }
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  h2 {
+    overflow: hidden;
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 18px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.dot {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--tag-color);
+}
+
+.muted {
+  flex: 0 0 auto;
+  color: var(--p-text-muted-color);
+}
+
+.more {
+  margin-left: auto;
+}
+
+.card-body {
+  display: flex;
+  align-items: center;
+  gap: dl.space(20);
+}
+
+// Not `.ring`: that's a Tailwind utility (box-shadow).
+.tag-ring {
+  flex: 0 0 72px;
+}
+
+.ring-track,
+.ring-fill {
+  fill: none;
+  stroke-width: 8;
+}
+
+.ring-track {
+  stroke: var(--dl-dial-track);
+}
+
+.ring-fill {
+  stroke: var(--tag-color);
+}
+
+.ring-label {
+  fill: var(--p-text-color);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(8);
+  min-width: 0;
+}
+
+.habits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: dl.space(8) dl.space(24);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include dl.down(md) {
+    flex-direction: column;
+  }
+}
+
+// Green dot once the habit is done today, grey until then.
+.habit {
+  display: inline-flex;
+  align-items: center;
+  gap: dl.space(8);
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--dl-dial-track);
+  }
+
+  &.is-done::before {
+    background: var(--p-primary-color);
+  }
+}
+
+.empty-habits,
+.no-results {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+}
+
+.no-results {
+  grid-column: 1 / -1;
+}
