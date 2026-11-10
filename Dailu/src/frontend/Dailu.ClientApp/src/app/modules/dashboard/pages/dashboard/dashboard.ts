@@ -21,7 +21,8 @@ import {
   HabitEntryGetHabitEntries,
 } from '@habit-entries/state/habit-entry.action';
 import { HabitEntryStateSelectors } from '@habit-entries/state/habit-entry.selector';
-import { UserProfileGetIntegrationConfigs } from '@user-profile/state/user-profile.action';
+import { IntegrationGetSummaries } from '@integrations/state/integration.action';
+import { IntegrationStateSelectors } from '@integrations/state/integration.selector';
 import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
 import { buildRecentWeeks } from '@shared/ui/heatmap/heatmap.grid';
 import {
@@ -34,7 +35,7 @@ import {
   todayHabits,
   trackedHabits,
 } from '@dashboard/lib/dashboard-day';
-import { integrationView } from '@dashboard/lib/dashboard-integrations';
+import { integrationView } from '@integrations/lib/integration-status';
 import { TodayCard } from './ui/today-card/today-card';
 import { StreakCard } from './ui/streak-card/streak-card';
 import { ConsistencyCard } from './ui/consistency-card/consistency-card';
@@ -83,7 +84,7 @@ export class Dashboard {
   );
   private readonly _$profile = this._store.selectSignal(UserProfileStateSelectors.getSlices.profile);
   private readonly _$summaries = this._store.selectSignal(
-    UserProfileStateSelectors.getSlices.integrationSummaries,
+    IntegrationStateSelectors.getSlices.summaries,
   );
 
   /** Snapshot of "now"; the dashboard doesn't need to tick. */
@@ -143,7 +144,7 @@ export class Dashboard {
     this._store.dispatch([
       new HabitGetHabits(),
       new HabitEntryGetHabitEntries(),
-      new UserProfileGetIntegrationConfigs(),
+      new IntegrationGetSummaries(),
     ]);
 
     const media = window.matchMedia(MOBILE_QUERY);

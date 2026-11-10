@@ -92,5 +92,9 @@ jobs:
           level: error
           fail_level: error
 
+      # Karma on the runner's preinstalled Chrome; one run, no watching.
+      - name: Test
+        run: npm test -- --watch=false --browsers=ChromeHeadless --no-progress
+
       - name: Build
         run: npm run build -- --configuration production

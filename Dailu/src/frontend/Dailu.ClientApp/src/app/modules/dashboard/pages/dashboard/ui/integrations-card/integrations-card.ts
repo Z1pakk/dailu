@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { IntegrationView } from '@dashboard/lib/dashboard-integrations';
+import { IntegrationView } from '@integrations/lib/integration-status';
 
 /** Integrations card (Figma `54:2963`). */
 @Component({

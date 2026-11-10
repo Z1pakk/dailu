@@ -29,10 +29,5 @@ export class ProfileContainer {
       icon: 'pi pi-user',
       routerLink: 'main',
     },
-    {
-      label: 'Integrations',
-      icon: 'pi pi-share-alt',
-      routerLink: 'integrations',
-    },
   ];
 }

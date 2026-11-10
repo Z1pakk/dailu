@@ -1,0 +1,74 @@
+@if ($isCallback()) {
+  <p class="callback">Connected — you can close this window.</p>
+} @else {
+  <header class="page-header">
+    <div class="page-title">
+      <h1>Integrations</h1>
+      <p class="dl-body subtitle-desktop">Connect the apps that prove your habits happened</p>
+      <p class="dl-body subtitle-mobile">{{ facade.$subtitle() }}</p>
+    </div>
+
+    <div class="page-actions">
+      <app-streak-chip />
+      <!-- Notifications have no backend yet. -->
+      <span pTooltip="Coming soon" tooltipPosition="bottom">
+        <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
+                  ariaLabel="Notifications" [disabled]="true" />
+      </span>
+      <!-- Syncs run on the backend's schedule; there's no endpoint to trigger one. -->
+      <span pTooltip="Coming soon" tooltipPosition="bottom">
+        <p-button label="Sync all now" [disabled]="true" />
+      </span>
+    </div>
+  </header>
+
+  @if (facade.$isLoading()) {
+    <div class="loading" role="status"><i class="pi pi-spin pi-spinner" aria-hidden="true"></i> Loading integrations…</div>
+  } @else {
+    <div class="cards">
+      @for (card of facade.$cards(); track card.type) {
+        <app-integration-card [card]="card"
+                              [isConnecting]="facade.$connecting() === card.type"
+                              [isDisconnecting]="facade.$disconnecting() === card.type"
+                              (connect)="facade.connect(card.type)"
+                              (disconnect)="facade.disconnect(card.type)" />
+      }
+    </div>
+  }
+
+  <section class="more">
+    <div class="more-text">
+      <h2>More integrations are on the way</h2>
+      <p>Dailu is a one-person study project, so new sources arrive gradually.</p>
+    </div>
+    <a class="more-link" [href]="suggestUrl" target="_blank" rel="noopener noreferrer">Suggest one</a>
+  </section>
+
+  <section class="log" aria-labelledby="sync-log-title">
+    <header class="log-head">
+      <h2 id="sync-log-title">Sync log</h2>
+      <span class="dl-mono-sm muted">Kept for 30 days</span>
+    </header>
+    @if (facade.$isLoadingLogs() && facade.$logRows().length === 0) {
+      <p class="log-empty"><i class="pi pi-spin pi-spinner" aria-hidden="true"></i> Loading…</p>
+    } @else {
+      <ul class="log-rows">
+        @for (row of facade.$logRows(); track row.key) {
+          <li class="log-row">
+            <span class="dl-mono-sm time">{{ row.time }}</span>
+            <span class="provider">{{ row.provider }}</span>
+            <span class="badge" [class]="'is-' + row.tone">{{ row.badge }}</span>
+            <span class="detail">{{ row.detail }}</span>
+          </li>
+        } @empty {
+          <li class="log-empty">Nothing synced yet — connect a source above.</li>
+        }
+      </ul>
+      @if (facade.$logsFailed()) {
+        <p class="log-error">Some sync history couldn't load. Refresh to try again.</p>
+      }
+    }
+  </section>
+
+  <app-coach-button />
+}

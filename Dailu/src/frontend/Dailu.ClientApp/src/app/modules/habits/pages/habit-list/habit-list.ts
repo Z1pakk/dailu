@@ -24,7 +24,7 @@ import { HabitStateSelectors } from '@habits/state/habit.selector';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryGetHabitEntries } from '@habit-entries/state/habit-entry.action';
 import { HabitEntryStateSelectors } from '@habit-entries/state/habit-entry.selector';
-import { UserProfileGetIntegrationConfigs } from '@user-profile/state/user-profile.action';
+import { IntegrationGetSummaries } from '@integrations/state/integration.action';
 import { TagGetTags } from '@tags/state/tag.action';
 import {
   filterHabits,
@@ -149,7 +149,7 @@ export class HabitList implements OnInit {
     this._store.dispatch([
       new HabitFetchHabits(),
       new HabitEntryGetHabitEntries(),
-      new UserProfileGetIntegrationConfigs(),
+      new IntegrationGetSummaries(),
       new TagGetTags(),
     ]);
 

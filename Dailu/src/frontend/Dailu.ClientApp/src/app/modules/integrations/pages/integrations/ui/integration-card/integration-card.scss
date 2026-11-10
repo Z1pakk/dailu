@@ -1,0 +1,187 @@
+// Provider card (Figma `integration / GitHub`).
+@use 'dailu' as dl;
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  padding: dl.space(20) dl.space(24) 22px;
+  border-radius: 20px; // Figma card radius
+  background: var(--p-content-background);
+
+  @include dl.down(md) {
+    padding: dl.space(16) dl.space(20);
+  }
+
+  // Not connected: same card, dashed and unfilled like the other "add" cards.
+  &.is-off {
+    border: 1px dashed var(--p-content-border-color);
+    background: transparent;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+}
+
+.avatar {
+  display: inline-flex;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--dl-bg-subtle);
+  color: var(--p-text-color);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+.account {
+  overflow: hidden;
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: dl.space(8);
+  margin: 0;
+  color: var(--p-text-muted-color);
+
+  &.is-live {
+    color: var(--p-primary-color);
+  }
+
+  &.is-failed {
+    color: var(--dl-accent-now-text);
+  }
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dl-dial-scheduled);
+
+  .is-live > & {
+    background: var(--p-primary-color);
+  }
+
+  .is-failed > & {
+    background: var(--dl-accent-now);
+  }
+}
+
+.warning {
+  margin: 0;
+  color: var(--dl-accent-now-text);
+  font-size: 13px;
+}
+
+.pitch {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(8);
+  margin: 0;
+  padding: dl.space(12) 14px;
+  border-radius: 12px;
+  background: var(--dl-bg-subtle);
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: dl.space(12);
+  }
+
+  dt {
+    color: var(--p-text-muted-color);
+    font-size: 12px;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--p-text-color);
+    font-family: var(--dl-font-mono);
+    font-size: 11px;
+    text-align: right;
+  }
+}
+
+.used-by {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.label {
+  color: var(--p-text-muted-color);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.habits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.habit-tag {
+  padding: 6px dl.space(12);
+  border-radius: dl.radius(full);
+  background: var(--p-highlight-background);
+  color: var(--p-primary-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.none {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: dl.space(8);
+  margin-top: auto;
+  padding-top: dl.space(4);
+}

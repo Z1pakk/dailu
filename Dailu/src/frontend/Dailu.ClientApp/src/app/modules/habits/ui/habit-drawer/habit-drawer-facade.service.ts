@@ -27,9 +27,9 @@ import {
 } from '@habits/lib/habit-form-mapping';
 import { HabitDrawerFormGroup } from '@habits/ui/habit-drawer/habit-drawer-form.type';
 import { TagStateSelectors } from '@tags/state/tag.selector';
-import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
-import { UserProfileApi } from '@user-profile/api/user-profile.api';
-import { IntegrationProviderType } from '@user-profile/models/integration-summary.model';
+import { IntegrationStateSelectors } from '@integrations/state/integration.selector';
+import { IntegrationApi } from '@integrations/api/integration.api';
+import { IntegrationProviderType } from '@integrations/models/integration-summary.model';
 import { SelectItem } from '@shared/lib/select-item/select-item.type';
 import { valibotCrossFieldValidator, valibotValidator } from '@shared/lib/form/valibot.validator';
 import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
@@ -46,7 +46,7 @@ export class HabitDrawerFacadeService {
   private readonly _fb = inject(NonNullableFormBuilder);
   private readonly _store = inject(Store);
   private readonly _messageService = inject(MessageService);
-  private readonly _userProfileApi = inject(UserProfileApi);
+  private readonly _integrationApi = inject(IntegrationApi);
 
   private _existing: HabitModel | null = null;
   private readonly _$isSubmitting = signal(false);
@@ -71,7 +71,7 @@ export class HabitDrawerFacadeService {
 
   public readonly $automationSource: Signal<AutomationSource> = computed(() => this._$value().automationSource);
 
-  private readonly _$summaries = this._store.selectSignal(UserProfileStateSelectors.getSlices.integrationSummaries);
+  private readonly _$summaries = this._store.selectSignal(IntegrationStateSelectors.getSlices.summaries);
 
   public readonly $connectedSources: Signal<ReadonlySet<AutomationSource>> = computed(
     () => new Set((this._$summaries() ?? []).map((s) => PROVIDER_SOURCES[s.type])),
@@ -89,7 +89,7 @@ export class HabitDrawerFacadeService {
       this.$connectedSources().has(automationSources.github)
         ? {}
         : undefined,
-    loader: () => firstValueFrom(this._userProfileApi.getGithubRepos()),
+    loader: () => firstValueFrom(this._integrationApi.getGithubRepos()),
   });
 
   /** The connected account's repositories, or just the stored one when GitHub was disconnected. */

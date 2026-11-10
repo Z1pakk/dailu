@@ -1,0 +1,63 @@
+@let card = $card();
+<p-confirmpopup [key]="card.type" />
+<article class="card" [class.is-off]="!card.isConnected" [attr.aria-label]="card.name">
+  <header class="head">
+    <span class="avatar" aria-hidden="true">{{ card.initial }}</span>
+    <span class="title">
+      <h2>{{ card.name }}</h2>
+      <span class="account">{{ card.account }}</span>
+    </span>
+    @if (card.isConnected) {
+      <!-- Pausing a source has no backend yet. -->
+      <span pTooltip="Pausing is coming soon" tooltipPosition="left">
+        <p-toggleswitch [ngModel]="true" [disabled]="true" [ariaLabel]="'Sync ' + card.name" />
+      </span>
+    }
+  </header>
+
+  @if (card.isConnected) {
+    <p class="dl-mono-sm status" [class]="'is-' + card.state">
+      <span class="status-dot" aria-hidden="true"></span>{{ card.status }}
+    </p>
+    @if (card.warning) {
+      <p class="warning"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ card.warning }}</p>
+    }
+  } @else {
+    <p class="pitch">{{ card.pitch }}</p>
+  }
+
+  <dl class="details">
+    <div><dt>Tracks</dt><dd>{{ card.tracks }}</dd></div>
+    <div><dt>Checks</dt><dd>{{ card.checks }}</dd></div>
+    <div><dt>Permissions</dt><dd>{{ card.permissions }}</dd></div>
+  </dl>
+
+  @if (card.isConnected) {
+    <div class="used-by">
+      <span class="label">Used by</span>
+      @if (card.usedBy.length) {
+        <ul class="habits">
+          @for (name of card.usedBy; track name) {
+            <li class="habit-tag">{{ name }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="none">No habits yet — pick {{ card.name }} as the source when you create one.</p>
+      }
+    </div>
+  }
+
+  <footer class="actions">
+    @if (card.isConnected) {
+      <!-- Syncs run on the backend's schedule; there's no endpoint to trigger one. -->
+      <span pTooltip="Coming soon" tooltipPosition="top">
+        <p-button label="Sync now" severity="secondary" [outlined]="true" [disabled]="true" />
+      </span>
+      <p-button label="Disconnect" severity="secondary" [text]="true" [loading]="$isDisconnecting()"
+                (onClick)="confirmDisconnect($event)" />
+    } @else {
+      <p-button [label]="'Connect ' + card.name" icon="pi pi-link" [loading]="$isConnecting()"
+                (onClick)="connect.emit()" />
+    }
+  </footer>
+</article>

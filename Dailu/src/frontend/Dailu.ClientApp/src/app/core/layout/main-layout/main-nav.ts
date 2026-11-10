@@ -21,7 +21,7 @@ export const MAIN_NAV: readonly MainNavItem[] = [
   { label: 'Entries', icon: 'pi pi-list', route: 'entries' },
   { label: 'Insights', icon: 'pi pi-sparkles', route: null },
   { label: 'Tags', icon: 'pi pi-tag', route: 'tags' },
-  { label: 'Integrations', icon: 'pi pi-link', route: 'profile/integrations' },
+  { label: 'Integrations', icon: 'pi pi-link', route: 'integrations' },
 ];
 
 /** Avatar initials, full name and the Profile / Log out menu — shared by the sidebar and mobile bar. */
