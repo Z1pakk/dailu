@@ -1,0 +1,15 @@
+<form class="card" [formGroup]="facade.form" (ngSubmit)="submit()" novalidate>
+  <h2>Create a tag</h2>
+  <p class="lead">Tags group habits — e.g. #health, #work — and get their own ring.</p>
+  <div class="row">
+    <div class="field">
+      <label for="tag-name">Tag name</label>
+      <input #nameInput pInputText id="tag-name" formControlName="name" placeholder="e.g. health" autocomplete="off"
+             [invalid]="name.invalid && name.touched" />
+      @if (name.touched && (name.getError('serverError') ?? name.getError('issue')); as error) {
+        <small class="field-error">{{ error }}</small>
+      }
+    </div>
+    <p-button type="submit" label="Add" [loading]="facade.$isSubmitting()" [disabled]="facade.$isSubmitting()" />
+  </div>
+</form>
