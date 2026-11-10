@@ -1,25 +1,82 @@
-<div>
-  <div class="flex justify-between">
-    <h2 class="text-3xl font-bold">My Tags</h2>
-    <div class="flex items-center gap-3">
-      <app-streak-chip class="hidden lg:inline-flex" />
-      <p-button (click)="addTag()" label="Create New Tag" />
-    </div>
+@let summary = $summary();
+<header class="page-header">
+  <div class="page-title">
+    <h1>Tags</h1>
+    <p class="dl-body subtitle-desktop">Group habits and see how each area of life is going</p>
+    <p class="dl-body subtitle-mobile">
+      {{ summary.tags }} {{ summary.tags === 1 ? 'tag' : 'tags' }} · {{ summary.habits }} {{ summary.habits === 1 ? 'habit' : 'habits' }}
+    </p>
   </div>
-  <p-data-view [value]="$tags()" layout="list" class="mt-4">
-    <ng-template #list let-tags>
-      <div class="flex flex-col gap-4">
-        @for (tag of tags; track tag.id) {
-          <div
-            class="border border-(--surface-border) rounded-lg p-4 flex flex-col gap-2 shadow-sm hover:shadow-md cursor-pointer transition-shadow">
-            <div>
-              <p class="text-2xl font-semibold">{{ tag.name }}</p>
-              <span class="text-surface-400">{{ tag.description }}</span>
-            </div>
-            <div></div>
-          </div>
-        }
+
+  <div class="page-actions">
+    <span class="page-search">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="search" placeholder="Search tags…" aria-label="Search tags"
+               [ngModel]="$query()" (ngModelChange)="$query.set($event)" />
+      </p-iconfield>
+    </span>
+    <app-streak-chip />
+    <!-- Notifications have no backend yet. -->
+    <span pTooltip="Coming soon" tooltipPosition="bottom">
+      <p-button icon="pi pi-bell" [rounded]="true" [outlined]="true" severity="secondary"
+                ariaLabel="Notifications" [disabled]="true" />
+    </span>
+    <p-button icon="pi pi-plus" label="New tag" (onClick)="newTag()" />
+  </div>
+</header>
+
+<div class="tag-grid">
+  @for (card of $cards(); track card.id) {
+    <article class="tag-card" [class]="'tone-' + card.tone" [attr.aria-label]="tagLabel(card.name)">
+      <header class="card-head">
+        <span class="dot" aria-hidden="true"></span>
+        <h2 [title]="card.description">{{ tagLabel(card.name) }}</h2>
+        <span class="dl-mono-sm muted">{{ card.habits.length }} {{ card.habits.length === 1 ? 'habit' : 'habits' }}</span>
+        <!-- Tags can't be edited or removed yet: no update / delete endpoint. -->
+        <span class="more" pTooltip="Coming soon" tooltipPosition="left">
+          <p-button icon="pi pi-ellipsis-h" [text]="true" severity="secondary" ariaLabel="Tag actions" [disabled]="true" />
+        </span>
+      </header>
+
+      <div class="card-body">
+        <svg class="tag-ring" width="72" height="72" viewBox="0 0 72 72" role="img"
+             [attr.aria-label]="card.percent === null ? 'Nothing due this week' : card.percent + '% this week'">
+          <circle class="ring-track" cx="36" cy="36" [attr.r]="ringRadius" />
+          @if (card.percent) {
+            <!-- Starts at 12 o'clock and runs clockwise. -->
+            <circle class="ring-fill" cx="36" cy="36" [attr.r]="ringRadius" transform="rotate(-90 36 36)"
+                    [attr.stroke-dasharray]="ringLength" [attr.stroke-dashoffset]="ringOffset(card.percent)" />
+          }
+          <text class="ring-label" x="36" y="36" text-anchor="middle" dominant-baseline="central">
+            {{ card.percent === null ? '–' : card.percent + '%' }}
+          </text>
+        </svg>
+
+        <div class="card-info">
+          <span class="dl-mono-sm muted">
+            {{ card.expected > 0 ? card.done + ' / ' + card.expected + ' this week' : 'Nothing due this week' }}
+          </span>
+          @if (card.habits.length) {
+            <ul class="habits">
+              @for (habit of card.habits; track habit.id) {
+                <li class="habit" [class.is-done]="habit.isDoneToday"
+                    [attr.title]="habit.isDoneToday ? 'Done today' : 'Not done today'">{{ habit.name }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="empty-habits">No habits yet — add this tag to a habit on the Habits page.</p>
+          }
+        </div>
       </div>
-    </ng-template>
-  </p-data-view>
+    </article>
+  } @empty {
+    @if ($query()) {
+      <p class="no-results">No tags match “{{ $query() }}”.</p>
+    }
+  }
+
+  <app-tag-create-card />
 </div>
+
+<app-coach-button />
