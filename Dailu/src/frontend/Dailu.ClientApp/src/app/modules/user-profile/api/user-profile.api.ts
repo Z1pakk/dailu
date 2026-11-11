@@ -3,14 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@environment';
 import { Observable } from 'rxjs';
 import { GetUserProfileResponseModel } from '@user-profile/models/responses/get-user-profile.response';
-import { GetIntegrationConfigsResponseModel } from '@user-profile/models/responses/get-integration-configs.response';
 import { UpdateUserProfileRequestModel } from '@user-profile/models/requests/update-user-profile.request';
-import { IntegrationConfig } from '@user-profile/models/integration-config.model';
-import { GitHubUserProfileModel } from '@user-profile/models/github-user-profile.model';
-import { GitHubRepositoryModel } from '@user-profile/models/github-repository.model';
-import { GoogleHealthUserProfileModel } from '@user-profile/models/google-health-user-profile.model';
-import { GetIntegrationSyncLogsResponseModel } from '@user-profile/models/responses/get-integration-sync-logs.response';
-import { IntegrationProviderType } from '@user-profile/models/integration-summary.model';
 
 @Injectable({
   providedIn: 'root',
@@ -29,65 +22,4 @@ export class UserProfileApi {
   public update(payload: UpdateUserProfileRequestModel): Observable<void> {
     return this._http.put<void>(`${this.baseUrl}/habit-user/profile`, payload);
   }
-
-  public getIntegrationConfigs(): Observable<GetIntegrationConfigsResponseModel> {
-    return this._http.get<GetIntegrationConfigsResponseModel>(
-      `${this.baseUrl}/habit-user/integrations`,
-    );
-  }
-
-  public saveIntegrationConfig(config: IntegrationConfig): Observable<void> {
-    return this._http.put<void>(`${this.baseUrl}/habit-user/integrations`, config);
-  }
-
-  public revokeIntegrationConfig(provider: string): Observable<void> {
-    return this._http.delete<void>(`${this.baseUrl}/habit-user/integrations/${provider}`);
-  }
-
-  public getIntegrationSyncLogs(
-    provider: IntegrationProviderType,
-    take: number,
-  ): Observable<GetIntegrationSyncLogsResponseModel> {
-    return this._http.get<GetIntegrationSyncLogsResponseModel>(
-      `${this.baseUrl}/habit-user/integrations/${provider}/sync-logs`,
-      { params: { take } },
-    );
-  }
-
-  public getStravaConnectUrl(): Observable<{ authUrl: string }> {
-    return this._http.get<{ authUrl: string }>(
-      `${this.baseUrl}/habit-user/integrations/strava/connect`,
-    );
-  }
-
-  public getGithubConnectUrl(): Observable<{ authUrl: string }> {
-    return this._http.get<{ authUrl: string }>(
-      `${this.baseUrl}/habit-user/integrations/github/connect`,
-    );
-  }
-
-  public getGithubProfile(): Observable<{ profile: GitHubUserProfileModel }> {
-    return this._http.get<{ profile: GitHubUserProfileModel }>(
-      `${this.baseUrl}/habit-user/integrations/github/profile`,
-    );
-  }
-
-  public getGithubRepos(): Observable<{ repositories: GitHubRepositoryModel[] }> {
-    return this._http.get<{ repositories: GitHubRepositoryModel[] }>(
-      `${this.baseUrl}/habit-user/integrations/github/repos`,
-    );
-  }
-
-  public getGoogleHealthConnectUrl(): Observable<{ authUrl: string }> {
-    return this._http.get<{ authUrl: string }>(
-      `${this.baseUrl}/habit-user/integrations/google-health/connect`,
-    );
-  }
-
-  public getGoogleHealthProfile(): Observable<{ profile: GoogleHealthUserProfileModel }> {
-    return this._http.get<{ profile: GoogleHealthUserProfileModel }>(
-      `${this.baseUrl}/habit-user/integrations/google-health/profile`,
-    );
-  }
-
 }

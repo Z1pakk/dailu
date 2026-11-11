@@ -1,0 +1,256 @@
+// Integrations (Figma `77:4462` desktop, `78:4949` mobile).
+@use 'dailu' as dl;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: dl.space(24);
+
+  @include dl.down(md) {
+    gap: dl.space(16);
+  }
+}
+
+// ---- Header (same rhythm as the other app pages) ---------------------------------------------
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: dl.space(16);
+}
+
+.page-title {
+  @include dl.stack(4);
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 34px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+
+    @include dl.down(md) {
+      font-size: 28px;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+  }
+}
+
+.subtitle-mobile {
+  display: none;
+}
+
+@include dl.down(md) {
+  .subtitle-desktop {
+    display: none;
+  }
+
+  .subtitle-mobile {
+    display: block;
+  }
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+
+  @include dl.down(lg) {
+    display: none;
+  }
+}
+
+.loading,
+.callback {
+  display: flex;
+  align-items: center;
+  gap: dl.space(8);
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+// ---- Provider cards -----------------------------------------------------------------------------
+.cards {
+  display: grid;
+  // Three across at the Figma width; fewer when the content column is narrower.
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: dl.space(20);
+
+  @include dl.down(md) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: dl.space(16);
+  }
+}
+
+// ---- "More on the way" ----------------------------------------------------------------------------
+.more {
+  display: flex;
+  align-items: center;
+  gap: dl.space(16);
+  padding: 18px dl.space(24);
+  border: 1px dashed var(--p-content-border-color);
+  border-radius: 20px;
+
+  @include dl.down(md) {
+    padding: dl.space(16) dl.space(20);
+  }
+}
+
+.more-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: 13px;
+  }
+}
+
+.more-link {
+  flex: 0 0 auto;
+  color: var(--p-primary-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+// ---- Sync log -------------------------------------------------------------------------------------
+.log {
+  padding: dl.space(20) dl.space(24) 22px;
+  border-radius: 20px;
+  background: var(--p-content-background);
+
+  @include dl.down(md) {
+    padding: dl.space(16) dl.space(16) dl.space(8);
+  }
+}
+
+.log-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: dl.space(12);
+  padding-bottom: 10px;
+
+  h2 {
+    margin: 0;
+    color: var(--p-text-color);
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.muted {
+  color: var(--p-text-muted-color);
+}
+
+.log-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-row {
+  display: grid;
+  grid-template-columns: 88px 140px auto minmax(0, 1fr);
+  align-items: center;
+  gap: dl.space(20);
+  min-height: 52px;
+  padding-block: 11px;
+  border-top: 1px solid var(--dl-border-subtle);
+
+  @include dl.down(md) {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: dl.space(12);
+
+    .detail {
+      display: none;
+    }
+  }
+}
+
+.time {
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+}
+
+.provider {
+  overflow: hidden;
+  color: var(--p-text-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  justify-self: start;
+  padding: 6px dl.space(12);
+  border-radius: dl.radius(full);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &.is-success {
+    background: var(--p-highlight-background);
+    color: var(--p-primary-color);
+  }
+
+  &.is-muted {
+    background: var(--dl-bg-subtle);
+    color: var(--p-text-muted-color);
+  }
+
+  &.is-danger {
+    background: var(--dl-accent-now-tint);
+    color: var(--dl-accent-now-text);
+  }
+}
+
+.detail {
+  overflow: hidden;
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-empty,
+.log-error {
+  display: flex;
+  align-items: center;
+  gap: dl.space(8);
+  margin: 0;
+  padding: dl.space(16) 0 dl.space(4);
+  border-top: 1px solid var(--dl-border-subtle);
+  color: var(--p-text-muted-color);
+  font-size: 14px;
+}
+
+.log-error {
+  border-top: 0;
+  color: var(--dl-accent-now-text);
+}

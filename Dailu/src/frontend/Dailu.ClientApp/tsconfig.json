@@ -31,7 +31,8 @@
       "@habits/*": ["./src/app/modules/habits/*"],
       "@tags/*": ["./src/app/modules/tags/*"],
       "@habit-entries/*": ["./src/app/modules/habit-entries/*"],
-      "@user-profile/*": ["./src/app/modules/user-profile/*"]
+      "@user-profile/*": ["./src/app/modules/user-profile/*"],
+      "@integrations/*": ["./src/app/modules/integrations/*"]
     }
   },
   "angularCompilerOptions": {

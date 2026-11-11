@@ -2,55 +2,21 @@ import { inject, Injectable } from '@angular/core';
 import { Action, State, StateContext } from '@ngxs/store';
 import { UserProfileModel } from '@user-profile/models/user-profile.model';
 import {
-  GithubIntegrationSummary,
-  GoogleHealthIntegrationSummary,
-  IntegrationSummary,
-  StravaIntegrationSummary,
-} from '@user-profile/models/integration-summary.model';
-import {
-  UserProfileFetchGithubProfile,
-  UserProfileFetchGoogleHealthProfile,
-  UserProfileFetchIntegrationConfigs,
   UserProfileFetchProfile,
-  UserProfileGetGithubProfile,
-  UserProfileGetGoogleHealthProfile,
-  UserProfileGetIntegrationConfigs,
   UserProfileGetProfile,
-  UserProfileRevokeIntegrationConfig,
-  UserProfileSaveIntegrationConfig,
   UserProfileUpdateProfile,
 } from '@user-profile/state/user-profile.action';
-import { GitHubUserProfileModel } from '@user-profile/models/github-user-profile.model';
-import { GoogleHealthUserProfileModel } from '@user-profile/models/google-health-user-profile.model';
 import { UserProfileApi } from '@user-profile/api/user-profile.api';
-import { catchError, EMPTY, finalize, of, tap } from 'rxjs';
+import { finalize, of, tap } from 'rxjs';
 
 export interface UserProfileStateModel {
   isLoading: boolean;
-  isLoadingIntegrations: boolean;
-  isSavingIntegration: boolean;
-  isLoadingGithubProfile: boolean;
-  githubProfileError: boolean;
-  isLoadingGoogleHealthProfile: boolean;
-  googleHealthProfileError: boolean;
   profile: UserProfileModel | null;
-  integrationSummaries: IntegrationSummary[] | null;
-  githubProfile: GitHubUserProfileModel | null;
-  googleHealthProfile: GoogleHealthUserProfileModel | null;
 }
 
 const defaultState: UserProfileStateModel = {
   isLoading: false,
-  isLoadingIntegrations: false,
-  isSavingIntegration: false,
-  isLoadingGithubProfile: false,
-  githubProfileError: false,
-  isLoadingGoogleHealthProfile: false,
-  googleHealthProfileError: false,
   profile: null,
-  integrationSummaries: null,
-  githubProfile: null,
-  googleHealthProfile: null,
 };
 
 @Injectable()
@@ -106,163 +72,4 @@ export class UserProfileState {
       finalize(() => ctx.patchState({ isLoading: false })),
     );
   }
-
-  @Action(UserProfileGetIntegrationConfigs)
-  public getIntegrationConfigs(ctx: StateContext<UserProfileStateModel>) {
-    const { integrationSummaries } = ctx.getState();
-    if (integrationSummaries !== null) {
-      return of(integrationSummaries);
-    }
-
-    return ctx.dispatch(new UserProfileFetchIntegrationConfigs());
-  }
-
-  @Action(UserProfileFetchIntegrationConfigs)
-  public fetchIntegrationConfigs(ctx: StateContext<UserProfileStateModel>) {
-    ctx.patchState({ isLoadingIntegrations: true });
-
-    return this._api.getIntegrationConfigs().pipe(
-      tap({
-        next: (response) => {
-          ctx.patchState({ integrationSummaries: response.summaries });
-        },
-      }),
-      finalize(() => ctx.patchState({ isLoadingIntegrations: false })),
-    );
-  }
-
-  @Action(UserProfileRevokeIntegrationConfig)
-  public revokeIntegrationConfig(
-    ctx: StateContext<UserProfileStateModel>,
-    action: UserProfileRevokeIntegrationConfig,
-  ) {
-    return this._api.revokeIntegrationConfig(action.provider).pipe(
-      tap({
-        next: () => {
-          const { integrationSummaries } = ctx.getState();
-          if (integrationSummaries !== null) {
-            ctx.patchState({
-              integrationSummaries: integrationSummaries.filter(
-                (s) => s.type !== action.provider,
-              ),
-              ...(action.provider === 'github'
-                ? { githubProfile: null, githubProfileError: false }
-                : {}),
-              ...(action.provider === 'google-health'
-                ? { googleHealthProfile: null, googleHealthProfileError: false }
-                : {}),
-            });
-          }
-        },
-      }),
-    );
-  }
-
-  @Action(UserProfileSaveIntegrationConfig)
-  public saveIntegrationConfig(
-    ctx: StateContext<UserProfileStateModel>,
-    action: UserProfileSaveIntegrationConfig,
-  ) {
-    ctx.patchState({ isSavingIntegration: true });
-
-    return this._api.saveIntegrationConfig(action.payload).pipe(
-      tap({
-        next: () => {
-          const { integrationSummaries } = ctx.getState();
-          if (integrationSummaries !== null) {
-            const summary = buildSummary(action.payload);
-            const rest = integrationSummaries.filter(
-              (s) => s.type !== action.payload.type,
-            );
-            ctx.patchState({
-              integrationSummaries: [...rest, summary],
-              ...(action.payload.type === 'github'
-                ? { githubProfile: null, githubProfileError: false }
-                : {}),
-            });
-          }
-        },
-      }),
-      finalize(() => ctx.patchState({ isSavingIntegration: false })),
-    );
-  }
-
-  @Action(UserProfileGetGithubProfile)
-  public getGithubProfile(ctx: StateContext<UserProfileStateModel>) {
-    const { githubProfile } = ctx.getState();
-    if (githubProfile !== null) {
-      return of(githubProfile);
-    }
-    return ctx.dispatch(new UserProfileFetchGithubProfile());
-  }
-
-  @Action(UserProfileFetchGithubProfile)
-  public fetchGithubProfile(ctx: StateContext<UserProfileStateModel>) {
-    ctx.patchState({ isLoadingGithubProfile: true, githubProfileError: false });
-
-    return this._api.getGithubProfile().pipe(
-      tap({
-        next: (response) => {
-          ctx.patchState({ githubProfile: response.profile });
-        },
-      }),
-      catchError(() => {
-        ctx.patchState({ githubProfileError: true });
-        return EMPTY;
-      }),
-      finalize(() => ctx.patchState({ isLoadingGithubProfile: false })),
-    );
-  }
-
-  @Action(UserProfileGetGoogleHealthProfile)
-  public getGoogleHealthProfile(ctx: StateContext<UserProfileStateModel>) {
-    const { googleHealthProfile } = ctx.getState();
-    if (googleHealthProfile !== null) {
-      return of(googleHealthProfile);
-    }
-    return ctx.dispatch(new UserProfileFetchGoogleHealthProfile());
-  }
-
-  @Action(UserProfileFetchGoogleHealthProfile)
-  public fetchGoogleHealthProfile(ctx: StateContext<UserProfileStateModel>) {
-    ctx.patchState({ isLoadingGoogleHealthProfile: true, googleHealthProfileError: false });
-
-    return this._api.getGoogleHealthProfile().pipe(
-      tap({
-        next: (response) => {
-          ctx.patchState({ googleHealthProfile: response.profile });
-        },
-      }),
-      catchError(() => {
-        ctx.patchState({ googleHealthProfileError: true });
-        return EMPTY;
-      }),
-      finalize(() => ctx.patchState({ isLoadingGoogleHealthProfile: false })),
-    );
-  }
-}
-
-function buildSummary(
-  config: UserProfileSaveIntegrationConfig['payload'],
-): IntegrationSummary {
-  if (config.type === 'strava') {
-    return {
-      type: 'strava',
-      expiresAtUtc: config.expiresAtUtc,
-      athlete: null,
-      lastSync: null,
-    } satisfies StravaIntegrationSummary;
-  }
-  if (config.type === 'google-health') {
-    return {
-      type: 'google-health',
-      expiresAtUtc: config.expiresAtUtc,
-      lastSync: null,
-    } satisfies GoogleHealthIntegrationSummary;
-  }
-  return {
-    type: 'github',
-    expiresAtUtc: config.expiresAtUtc,
-    lastSync: null,
-  } satisfies GithubIntegrationSummary;
 }

@@ -35,7 +35,7 @@ import { ScheduleMode } from '@habits/lib/habit-schedule';
 import { HabitDrawerFacadeService } from '@habits/ui/habit-drawer/habit-drawer-facade.service';
 import { HabitDrawerFormControls } from '@habits/ui/habit-drawer/habit-drawer-form.type';
 import { TagGetTags } from '@tags/state/tag.action';
-import { UserProfileGetIntegrationConfigs } from '@user-profile/state/user-profile.action';
+import { IntegrationGetSummaries } from '@integrations/state/integration.action';
 
 interface SourceCard {
   value: AutomationSource;
@@ -130,7 +130,7 @@ export class HabitDrawer implements OnInit {
   );
 
   constructor() {
-    this._store.dispatch([new TagGetTags(), new UserProfileGetIntegrationConfigs()]);
+    this._store.dispatch([new TagGetTags(), new IntegrationGetSummaries()]);
 
     const media = window.matchMedia(MOBILE_QUERY);
     const onChange = (event: MediaQueryListEvent) => this.$isMobile.set(event.matches);

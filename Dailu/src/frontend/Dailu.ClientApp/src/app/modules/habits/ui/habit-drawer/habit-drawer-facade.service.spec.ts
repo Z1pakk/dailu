@@ -9,9 +9,9 @@ import { habitStatuses } from '@habits/enums/habit-status.enum';
 import { habitTypes } from '@habits/enums/habit-type.enum';
 import { HabitCreateHabit, HabitFetchHabits, HabitUpdateHabit } from '@habits/state/habit.action';
 import { drawerValueFromHabit, toHabitRequest } from '@habits/lib/habit-form-mapping';
-import { UserProfileApi } from '@user-profile/api/user-profile.api';
-import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
-import { IntegrationSummary } from '@user-profile/models/integration-summary.model';
+import { IntegrationApi } from '@integrations/api/integration.api';
+import { IntegrationStateSelectors } from '@integrations/state/integration.selector';
+import { IntegrationSummary } from '@integrations/models/integration-summary.model';
 import { automationSources } from '@habits/enums/automation-source.enum';
 import { githubEventTypes } from '@habits/enums/github-event-type.enum';
 import { HabitDrawerFacadeService } from './habit-drawer-facade.service';
@@ -35,7 +35,7 @@ describe('HabitDrawerFacadeService', () => {
   let messages: jasmine.SpyObj<MessageService>;
   let saveResult: Subject<void>;
   let facade: HabitDrawerFacadeService;
-  let userProfileApi: jasmine.SpyObj<UserProfileApi>;
+  let integrationApi: jasmine.SpyObj<IntegrationApi>;
   const summaries = signal<IntegrationSummary[] | null>([]);
 
   const saveCalls = () =>
@@ -49,19 +49,19 @@ describe('HabitDrawerFacadeService', () => {
     store = jasmine.createSpyObj<Store>('Store', ['dispatch', 'selectSignal']);
     summaries.set([]);
     store.selectSignal.and.callFake(((selector: unknown) =>
-      selector === UserProfileStateSelectors.getSlices.integrationSummaries ? summaries : signal([])) as never);
+      selector === IntegrationStateSelectors.getSlices.summaries ? summaries : signal([])) as never);
     store.dispatch.and.callFake((action: unknown) =>
       action instanceof HabitCreateHabit || action instanceof HabitUpdateHabit ? saveResult : of(undefined),
     );
     messages = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
-    userProfileApi = jasmine.createSpyObj<UserProfileApi>('UserProfileApi', ['getGithubRepos']);
+    integrationApi = jasmine.createSpyObj<IntegrationApi>('IntegrationApi', ['getGithubRepos']);
 
     TestBed.configureTestingModule({
       providers: [
         HabitDrawerFacadeService,
         { provide: Store, useValue: store },
         { provide: MessageService, useValue: messages },
-        { provide: UserProfileApi, useValue: userProfileApi },
+        { provide: IntegrationApi, useValue: integrationApi },
       ],
     });
     facade = TestBed.inject(HabitDrawerFacadeService);
@@ -137,7 +137,7 @@ describe('HabitDrawerFacadeService', () => {
   });
 
   it('should fall back to the stored repository when loading repositories fails', async () => {
-    userProfileApi.getGithubRepos.and.returnValue(throwError(() => new Error('401')));
+    integrationApi.getGithubRepos.and.returnValue(throwError(() => new Error('401')));
     summaries.set([{ type: 'github', expiresAtUtc: null, lastSync: null }]);
     facade.init(
       habit({

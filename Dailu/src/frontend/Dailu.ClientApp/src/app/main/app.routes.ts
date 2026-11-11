@@ -8,6 +8,7 @@ import { dashboardRoutes } from '@dashboard/dashboard.routes';
 import { tagRoutes } from '@tags/tag.routes';
 import { habitEntryRoutes } from '@habit-entries/habit-entry.routes';
 import { userProfileRoutes } from '../modules/user-profile/user-profile.routes';
+import { integrationRoutes } from '@integrations/integration.routes';
 
 export const routes: Routes = [
   {
@@ -37,6 +38,8 @@ export const routes: Routes = [
       ...habitRoutes,
       ...tagRoutes,
       ...habitEntryRoutes,
+      // Before the profile routes: it owns the old `profile/integrations` redirects.
+      ...integrationRoutes,
       ...userProfileRoutes,
     ],
   },
