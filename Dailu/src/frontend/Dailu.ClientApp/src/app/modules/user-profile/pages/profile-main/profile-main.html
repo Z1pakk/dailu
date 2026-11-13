@@ -1,108 +1,245 @@
-<div
-  class="flex-1 self-stretch xl:rounded-tr-3xl xl:rounded-br-3xl flex flex-col overflow-hidden">
-  <div
-    class="self-stretch px-4 sm:px-6 xl:pl-8 xl:pr-6 pt-6 pb-4 flex items-center gap-4">
-    <div
-      class="flex-1 text-surface-950 dark:text-surface-0 text-xl font-medium leading-7">
-      Main Information
+<form class="profile-page"
+      [formGroup]="profileForm"
+      (ngSubmit)="save()"
+      autocomplete="off"
+      novalidate>
+  <header class="page-header">
+    <div class="page-title">
+      <h1>Profile</h1>
+      <p class="dl-body">Your account and preferences</p>
     </div>
-  </div>
-  <div class="self-stretch px-4 sm:px-6 flex flex-col gap-[9.14px]">
-    <div
-      class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
-  </div>
-  <form [formGroup]="profileForm"
-        class="self-stretch p-4 sm:p-6 xl:p-8 flex flex-col items-end gap-6"
-        autocomplete="off"
-        novalidate>
-    <div class="self-stretch flex flex-col items-end gap-6">
-      <div
-        class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
-        <div class="w-full md:w-[283px] flex flex-col gap-2">
-          <div
-            class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
-            Email
-          </div>
+
+    <div class="page-actions">
+      <app-streak-chip />
+      <span pTooltip="Coming soon" tooltipPosition="bottom">
+        <p-button icon="pi pi-bell"
+                  [rounded]="true"
+                  [outlined]="true"
+                  severity="secondary"
+                  ariaLabel="Notifications"
+                  [disabled]="true" />
+      </span>
+      <p-button label="Cancel"
+                type="button"
+                variant="text"
+                severity="secondary"
+                [disabled]="$isLoading() || profileForm.pristine"
+                (onClick)="cancelEdit()" />
+      <p-button label="Save changes"
+                icon="pi pi-check"
+                type="submit"
+                [loading]="$isLoading()"
+                [disabled]="$isLoading() || profileForm.pristine" />
+    </div>
+  </header>
+
+  <div class="profile-grid">
+    <section class="profile-card account-card" aria-labelledby="account-heading">
+      <header class="card-heading">
+        <div>
+          <h2 id="account-heading">Account</h2>
+          <p>Manage your personal information</p>
         </div>
-        <div class="flex-1 w-full flex flex-col gap-2">
-          <input [value]="$profile()?.email ?? ''"
-                 class="w-full !rounded-[6px]"
-                 autocomplete="off"
-                 pInputText
-                 disabled />
+      </header>
+
+      <div class="account-summary">
+        <p-avatar [label]="$avatarLabel()" size="xlarge" shape="circle" />
+        <div class="account-summary-copy">
+          <strong>{{ $displayName() }}</strong>
+          <span>{{ $profile()?.email }}</span>
         </div>
+        <span pTooltip="Coming soon" tooltipPosition="top">
+          <p-button label="Change photo"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    type="button"
+                    [disabled]="true" />
+        </span>
       </div>
-      <div
-        class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
-    </div>
-    <div class="self-stretch flex flex-col items-end gap-6">
-      <div
-        class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
-        <div class="w-full md:w-[283px] flex flex-col gap-2">
-          <div
-            class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
-            First Name
-          </div>
+
+      <div class="form-fields">
+        <div class="profile-field">
+          <label for="profile-email">Email address</label>
+          <input id="profile-email"
+                 [value]="$profile()?.email ?? ''"
+                 pInputText
+                 autocomplete="off"
+                 disabled />
+          <small class="field-hint">Your email address can’t be changed here.</small>
         </div>
-        <div class="flex-1 w-full flex flex-col gap-2">
-          <input [formControl]="profileForm.controls.firstName"
+
+        <div class="profile-field">
+          <label for="profile-first-name">First name</label>
+          <input id="profile-first-name"
+                 [formControl]="profileForm.controls.firstName"
                  [invalid]="!!profileForm.controls.firstName.getError('serverError') || (!!profileForm.controls.firstName.errors && profileForm.controls.firstName.dirty)"
                  [maxLength]="100"
-                 class="w-full !rounded-[6px]"
                  pInputText />
           @if (profileForm.controls.firstName.getError('serverError'); as serverError) {
-            <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+            <small class="field-error">{{ serverError }}</small>
           }
           @if (profileForm.controls.firstName.getError('issue') && profileForm.controls.firstName.dirty) {
-            <small class="text-sm text-red-500 mt-1">
-              {{ profileForm.controls.firstName.getError('issue') }}
-            </small>
+            <small class="field-error">{{ profileForm.controls.firstName.getError('issue') }}</small>
           }
         </div>
-      </div>
-      <div
-        class="self-stretch h-0 border-t border-dashed border-surface-200 dark:border-surface-700"></div>
-    </div>
-    <div class="self-stretch flex flex-col items-end gap-6">
-      <div
-        class="self-stretch flex flex-col md:flex-row items-start gap-4 md:gap-8">
-        <div class="w-full md:w-[283px] flex flex-col gap-2">
-          <div
-            class="self-stretch text-surface-950 dark:text-surface-0 text-lg font-medium leading-7">
-            Last Name
-          </div>
-        </div>
-        <div class="flex-1 w-full flex flex-col gap-2">
-          <input [formControl]="profileForm.controls.lastName"
+
+        <div class="profile-field">
+          <label for="profile-last-name">Last name</label>
+          <input id="profile-last-name"
+                 [formControl]="profileForm.controls.lastName"
                  [invalid]="!!profileForm.controls.lastName.getError('serverError') || (!!profileForm.controls.lastName.errors && profileForm.controls.lastName.dirty)"
                  [maxLength]="100"
-                 class="w-full !rounded-[6px]"
                  pInputText />
           @if (profileForm.controls.lastName.getError('serverError'); as serverError) {
-            <small class="text-sm text-red-500 mt-1">{{ serverError }}</small>
+            <small class="field-error">{{ serverError }}</small>
           }
           @if (profileForm.controls.lastName.getError('issue') && profileForm.controls.lastName.dirty) {
-            <small class="text-sm text-red-500 mt-1">
-              {{ profileForm.controls.lastName.getError('issue') }}
-            </small>
+            <small class="field-error">{{ profileForm.controls.lastName.getError('issue') }}</small>
           }
         </div>
       </div>
-    </div>
-    <div
-      class="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4 w-full sm:w-auto">
-      <p-button [disabled]="$isLoading()"
-                (click)="cancelEdit()"
-                label="Cancel"
-                type="button"
-                variant="outlined"
-                severity="secondary"
-                class="w-full sm:w-auto" />
-      <p-button [loading]="$isLoading()"
-                (click)="save()"
-                label="Save"
-                class="w-full sm:w-auto"
-                type="submit" />
-    </div>
-  </form>
-</div>
+    </section>
+
+    <section class="profile-card preferences-card" aria-labelledby="preferences-heading">
+      <header class="card-heading">
+        <div>
+          <h2 id="preferences-heading">Preferences</h2>
+          <p>Make Dailu work the way you do</p>
+        </div>
+      </header>
+
+      <div class="preference-row theme-row">
+        <div class="preference-copy">
+          <strong>Appearance</strong>
+          <span>Choose your colour theme</span>
+        </div>
+        <app-theme-toggle />
+      </div>
+
+      <div class="preference-row">
+        <div class="preference-copy">
+          <strong>Week starts on</strong>
+          <span>Set the first day of your week</span>
+        </div>
+        <div class="segmented-control" role="group" aria-label="Week starts on">
+          <button type="button"
+                  [class.is-selected]="$weekStart() === 'monday'"
+                  [attr.aria-pressed]="$weekStart() === 'monday'"
+                  (click)="setWeekStart('monday')">Monday</button>
+          <button type="button"
+                  [class.is-selected]="$weekStart() === 'sunday'"
+                  [attr.aria-pressed]="$weekStart() === 'sunday'"
+                  (click)="setWeekStart('sunday')">Sunday</button>
+        </div>
+      </div>
+
+      <div class="preference-row">
+        <div class="preference-copy">
+          <strong>Time format</strong>
+          <span>Choose how time is displayed</span>
+        </div>
+        <div class="segmented-control" role="group" aria-label="Time format">
+          <button type="button"
+                  [class.is-selected]="$timeFormat() === '12-hour'"
+                  [attr.aria-pressed]="$timeFormat() === '12-hour'"
+                  (click)="setTimeFormat('12-hour')">12-hour</button>
+          <button type="button"
+                  [class.is-selected]="$timeFormat() === '24-hour'"
+                  [attr.aria-pressed]="$timeFormat() === '24-hour'"
+                  (click)="setTimeFormat('24-hour')">24-hour</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-card password-card" aria-labelledby="password-heading">
+      <header class="card-heading">
+        <div>
+          <h2 id="password-heading">Password</h2>
+          <p>Keep your account secure</p>
+        </div>
+      </header>
+
+      <div class="form-fields coming-soon-block" pTooltip="Coming soon" tooltipPosition="top">
+        <div class="profile-field">
+          <label for="profile-current-password">Current password</label>
+          <p-password inputId="profile-current-password"
+                      [feedback]="false"
+                      [toggleMask]="true"
+                      [disabled]="true"
+                      fluid />
+        </div>
+        <div class="profile-field">
+          <label for="profile-new-password">New password</label>
+          <p-password inputId="profile-new-password"
+                      [feedback]="false"
+                      [toggleMask]="true"
+                      [disabled]="true"
+                      fluid />
+        </div>
+        <div class="profile-field">
+          <label for="profile-confirm-password">Confirm password</label>
+          <p-password inputId="profile-confirm-password"
+                      [feedback]="false"
+                      [toggleMask]="true"
+                      [disabled]="true"
+                      fluid />
+        </div>
+        <p-button label="Update password"
+                  type="button"
+                  [disabled]="true" />
+      </div>
+    </section>
+
+    <section class="profile-card notifications-card" aria-labelledby="notifications-heading">
+      <header class="card-heading">
+        <div>
+          <h2 id="notifications-heading">Notifications</h2>
+          <p>Choose what you’d like to hear about</p>
+        </div>
+      </header>
+
+      <div class="notification-row coming-soon-block" pTooltip="Coming soon" tooltipPosition="left">
+        <div class="preference-copy">
+          <label for="habit-reminders">Habit reminders</label>
+          <span>Get a nudge when it’s time to check in</span>
+        </div>
+        <p-toggleswitch inputId="habit-reminders"
+                        [ngModel]="true"
+                        [ngModelOptions]="{ standalone: true }"
+                        [disabled]="true"
+                        [dt]="switchTokens" />
+      </div>
+      <div class="notification-row coming-soon-block" pTooltip="Coming soon" tooltipPosition="left">
+        <div class="preference-copy">
+          <label for="weekly-summary">Weekly summary</label>
+          <span>See how your habits are adding up</span>
+        </div>
+        <p-toggleswitch inputId="weekly-summary"
+                        [ngModel]="true"
+                        [ngModelOptions]="{ standalone: true }"
+                        [disabled]="true"
+                        [dt]="switchTokens" />
+      </div>
+    </section>
+
+    <section class="profile-card danger-card" aria-labelledby="danger-heading">
+      <div class="card-heading">
+        <div>
+          <h2 id="danger-heading">Danger zone</h2>
+          <p>Deleting your account permanently removes your personal data.</p>
+        </div>
+      </div>
+      <span pTooltip="Coming soon" tooltipPosition="top">
+        <p-button label="Delete account"
+                  icon="pi pi-trash"
+                  severity="danger"
+                  variant="outlined"
+                  type="button"
+                  [disabled]="true" />
+      </span>
+    </section>
+  </div>
+</form>
+
+<app-coach-button />
