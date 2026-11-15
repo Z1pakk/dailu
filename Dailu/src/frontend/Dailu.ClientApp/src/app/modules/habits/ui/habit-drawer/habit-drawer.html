@@ -24,10 +24,10 @@
           <div class="clock-track" aria-hidden="true">
             <span class="clock-rail"></span>
             @for (segment of preview.busy; track $index) {
-              <span class="clock-busy" [style.left.%]="segment.left" [style.width.%]="segment.width"></span>
+              <span class="clock-busy" [appPercentLeft]="segment.left" [appPercentWidth]="segment.width"></span>
             }
             @if (preview.own; as own) {
-              <span class="clock-own" [style.left.%]="own.left" [style.width.%]="own.width"></span>
+              <span class="clock-own" [appPercentLeft]="own.left" [appPercentWidth]="own.width"></span>
             }
             <span class="clock-tick tick-06">06</span>
             <span class="clock-tick tick-12">12</span>

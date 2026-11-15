@@ -263,9 +263,9 @@ describe('HabitDrawerFacadeService', () => {
       withHabits.form.controls.weekDays.setValue([0, 1, 2, 3, 4, 5, 6]);
       const preview = withHabits.$clockPreview();
       expect(preview.meta).toBe('07:00–07:45');
-      expect(preview.own?.left).toBeCloseTo((60 / 1080) * 100, 5);
+      expect(preview.own?.left).toBeCloseTo(60 / 1080, 5);
       expect(preview.busy.length).toBe(1);
-      expect(preview.busy[0]!.left).toBeCloseTo((360 / 1080) * 100, 5);
+      expect(preview.busy[0]!.left).toBeCloseTo(360 / 1080, 5);
     });
   });
 });

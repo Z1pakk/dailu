@@ -34,6 +34,7 @@ import { stravaActivityTypeSelectItems } from '@habits/enums/strava-activity-typ
 import { googleHealthMetricSelectItems } from '@habits/enums/google-health-metric.enum';
 import { TimeMode } from '@habits/lib/habit-form-mapping';
 import { formatDuration } from '@shared/lib/date/format-duration';
+import { PercentPositionDirective } from '@shared/directives/percent-position.directive';
 import { HabitDrawerFacadeService } from '@habits/ui/habit-drawer/habit-drawer-facade.service';
 import { HabitDrawerFormControls } from '@habits/ui/habit-drawer/habit-drawer-form.type';
 import { TagGetTags } from '@tags/state/tag.action';
@@ -69,6 +70,7 @@ const DURATION_CHOICES = [5, 10, 15, 20, 30, 45, 60, 75, 90, 120, 150, 180, 240,
     Listbox,
     Tag,
     Tooltip,
+    PercentPositionDirective,
   ],
   providers: [HabitDrawerFacadeService],
   templateUrl: './habit-drawer.html',

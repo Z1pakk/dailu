@@ -54,7 +54,7 @@ import { SelectItem } from '@shared/lib/select-item/select-item.type';
 import { valibotCrossFieldValidator, valibotValidator } from '@shared/lib/form/valibot.validator';
 import { applyServerErrors } from '@shared/lib/form/apply-server-errors';
 
-/** A segment on the drawer's 06:00 → 24:00 strip, in percent of its width. */
+/** A segment on the drawer's 06:00 → 24:00 strip, as 0..1 shares of its width. */
 export interface ClockStripSegment {
   left: number;
   width: number;
@@ -78,10 +78,9 @@ const PERIOD_NAMES: Partial<Record<FrequencyType, string>> = {
 };
 
 function stripSegment(span: { start: number; end: number }): ClockStripSegment | null {
-  const toPercent = (minutes: number) =>
-    Math.min(100, Math.max(0, ((minutes - STRIP_START) / STRIP_LENGTH) * 100));
-  const left = toPercent(span.start);
-  const width = toPercent(span.end) - left;
+  const toShare = (minutes: number) => Math.min(1, Math.max(0, (minutes - STRIP_START) / STRIP_LENGTH));
+  const left = toShare(span.start);
+  const width = toShare(span.end) - left;
   return width > 0 ? { left, width } : null;
 }
 
