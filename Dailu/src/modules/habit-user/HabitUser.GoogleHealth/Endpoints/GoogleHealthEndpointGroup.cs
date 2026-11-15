@@ -13,5 +13,6 @@ public sealed class GoogleHealthEndpointGroup : IEndpointGroup
         group.MapGoogleHealthConnectEndpoint();
         group.MapGoogleHealthCallbackEndpoint();
         group.MapGetGoogleHealthProfileEndpoint();
+        group.MapGoogleHealthSyncEndpoint();
     }
 }

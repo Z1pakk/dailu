@@ -12,5 +12,6 @@ public sealed class StravaEndpointGroup : IEndpointGroup
         var group = app.MapGroup("/habit-user").WithTags("HabitUser");
         group.MapStravaConnectEndpoint();
         group.MapStravaCallbackEndpoint();
+        group.MapStravaSyncEndpoint();
     }
 }

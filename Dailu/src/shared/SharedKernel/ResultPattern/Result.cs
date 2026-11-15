@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace SharedKernel.ResultPattern;
 
-public class Result
+public class Result : IResultBase
 {
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;

@@ -1,3 +1,4 @@
+import { automationSources } from '@habits/enums/automation-source.enum';
 import { FrequencyModel } from '@habits/models/frequency.model';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
@@ -132,6 +133,59 @@ describe('habit-today', () => {
       const habits = [habit({ id: 'a' }), habit({ id: 'b' }), habit({ id: 'c' })];
       const lane = anyTimeLane(habits, [entry('c', TODAY, '08:00'), entry('a', TODAY, '12:00')], now);
       expect(lane.items.map((i) => i.id)).toEqual(['c', 'a', 'b']);
+    });
+
+    describe('markers', () => {
+      const habits = [
+        habit({ id: 'read', name: 'Read' }),
+        habit({ id: 'write', name: 'Write' }),
+        habit({ id: 'walk', name: 'Walk' }),
+        habit({ id: 'gym', name: 'Gym' }),
+        habit({ id: 'study', name: 'Study' }),
+      ];
+
+      it('should put done habits where they were ticked and group the open ones at now', () => {
+        const lane = anyTimeLane(habits, [entry('read', TODAY, '08:00'), entry('walk', TODAY, '13:00')], now);
+        expect(lane.markers.map((m) => [m.kind, m.items.map((i) => i.id)])).toEqual([
+          ['done', ['read']],
+          ['done', ['walk']],
+          ['open', ['write', 'gym', 'study']],
+        ]);
+        expect(lane.markers[2]!.position).toBeCloseTo(lane.nowPosition, 5);
+        expect(lane.markers[0]!.position).toBeCloseTo((8 - 6) / 18, 5);
+      });
+
+      it('should group done habits ticked close together, at their average position', () => {
+        const lane = anyTimeLane(habits, [entry('read', TODAY, '10:00'), entry('write', TODAY, '10:30')], now);
+        const done = lane.markers.filter((m) => m.kind === 'done');
+        expect(done.length).toBe(1);
+        expect(done[0]!.items.map((i) => i.id)).toEqual(['read', 'write']);
+        expect(done[0]!.position).toBeCloseTo((10.25 - 6) / 18, 5);
+      });
+
+      it('should keep done habits apart when they are far enough', () => {
+        const lane = anyTimeLane(habits, [entry('read', TODAY, '10:00'), entry('write', TODAY, '11:00')], now);
+        expect(lane.markers.filter((m) => m.kind === 'done').length).toBe(2);
+      });
+
+      it('should say when and by whom a habit was done', () => {
+        const strava = habit({ id: 'run', name: 'Run', automationSource: automationSources.strava });
+        const lane = anyTimeLane(
+          [habit({ id: 'read', name: 'Read' }), strava],
+          [entry('read', TODAY, '08:15'), entry('run', TODAY, '12:00', { source: habitEntrySources.automation })],
+          now,
+        );
+        const items = lane.markers.flatMap((m) => m.items);
+        expect(items.map((i) => [i.doneAt, i.doneBy])).toEqual([
+          ['08:15', 'by you'],
+          ['12:00', 'Strava'],
+        ]);
+      });
+
+      it('should have no open marker when everything is done', () => {
+        const lane = anyTimeLane([habit({ id: 'read' })], [entry('read', TODAY, '08:00')], now);
+        expect(lane.markers.map((m) => m.kind)).toEqual(['done']);
+      });
     });
 
     it('should leave out timed habits, which are on the clock', () => {

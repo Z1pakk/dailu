@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { convertToParamMap } from '@angular/router';
@@ -45,7 +46,7 @@ describe('IntegrationsFacadeService', () => {
       return selector === HabitStateSelectors.getSlices.habits ? signal([]) : signal(null);
     }) as never);
     store.dispatch.and.returnValue(of(undefined));
-    api = jasmine.createSpyObj<IntegrationApi>('IntegrationApi', ['getSyncLogs', 'getConnectUrl']);
+    api = jasmine.createSpyObj<IntegrationApi>('IntegrationApi', ['getSyncLogs', 'getConnectUrl', 'sync']);
     popup = jasmine.createSpyObj<OAuthPopupService>('OAuthPopupService', ['open', 'handleCallbackIfInPopup']);
     messages = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     TestBed.configureTestingModule({
@@ -107,6 +108,43 @@ describe('IntegrationsFacadeService', () => {
     const revoke = dispatched().find((a) => a instanceof IntegrationRevoke) as IntegrationRevoke;
     expect(revoke.provider).toBe('google-health');
     expect(facade.$disconnecting()).toBeNull();
+  });
+
+  it('should sync a provider and refresh its summary and logs', () => {
+    summaries.set([{ type: 'github', expiresAtUtc: null, lastSync: null }]);
+    api.getSyncLogs.and.returnValue(of({ logs: [] }));
+    TestBed.tick();
+    api.getSyncLogs.calls.reset();
+    const result = new Subject<{ activitiesCount: number }>();
+    api.sync.and.returnValue(result);
+
+    facade.sync('github');
+    expect(api.sync).toHaveBeenCalledWith('github');
+    expect(facade.$syncing()).toBe('github');
+    result.next({ activitiesCount: 3 });
+    result.complete();
+
+    expect(facade.$syncing()).toBeNull();
+    expect(messages.add).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        severity: 'success',
+        detail: 'GitHub synced, 3 activities found. No habit uses GitHub yet, so nothing was logged.',
+      }),
+    );
+    expect(dispatched()).toContain(jasmine.any(IntegrationFetchSummaries));
+    expect(api.getSyncLogs).toHaveBeenCalledWith('github', jasmine.any(Number));
+  });
+
+  it('should show the backend reason when a sync is refused', () => {
+    const reason = 'This integration synced less than a minute ago. Please try again shortly.';
+    api.sync.and.returnValue(throwError(() => new HttpErrorResponse({ status: 400, error: reason })));
+
+    facade.sync('strava');
+
+    expect(messages.add).toHaveBeenCalledWith(
+      jasmine.objectContaining({ severity: 'error', summary: 'Sync failed', detail: reason }),
+    );
+    expect(facade.$syncing()).toBeNull();
   });
 
   it('should answer the OAuth callback with the provider channel', () => {

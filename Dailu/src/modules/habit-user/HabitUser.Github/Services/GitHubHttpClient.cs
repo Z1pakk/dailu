@@ -18,7 +18,7 @@ public sealed class GitHubHttpClient(
 {
     private readonly GithubOptions _options = options.Value;
 
-    public async Task<string?> ExchangeAuthorizationCodeAsync(
+    public async Task<Result<GitHubTokensModel>> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
     )
@@ -41,8 +41,9 @@ public sealed class GitHubHttpClient(
             var response = await httpclient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError("GitHub code exchange failed: {StatusCode}", response.StatusCode);
-                return null;
+                return Result<GitHubTokensModel>.Failure(
+                    $"GitHub code exchange failed: {response.StatusCode}"
+                );
             }
 
             var raw = await response.Content.ReadFromJsonAsync<GitHubTokenResponse>(
@@ -50,12 +51,36 @@ public sealed class GitHubHttpClient(
                 cancellationToken
             );
 
-            return raw?.AccessToken;
+            if (raw is null)
+            {
+                return Result<GitHubTokensModel>.Failure(
+                    "GitHub code exchange returned an empty response."
+                );
+            }
+
+            // GitHub reports exchange errors with a 200 and an `error` field instead of a token.
+            if (!string.IsNullOrEmpty(raw.Error))
+            {
+                return Result<GitHubTokensModel>.Failure(
+                    $"GitHub code exchange failed: {raw.Error} - {raw.ErrorDescription} ({raw.ErrorUri})"
+                );
+            }
+
+            if (string.IsNullOrEmpty(raw.AccessToken))
+            {
+                return Result<GitHubTokensModel>.Failure(
+                    "GitHub code exchange returned no access token."
+                );
+            }
+
+            return Result<GitHubTokensModel>.Success(new GitHubTokensModel(raw.AccessToken));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "GitHub code exchange failed unexpectedly");
-            return null;
+            return Result<GitHubTokensModel>.Failure(
+                "GitHub code exchange failed due to an unexpected error."
+            );
         }
     }
 

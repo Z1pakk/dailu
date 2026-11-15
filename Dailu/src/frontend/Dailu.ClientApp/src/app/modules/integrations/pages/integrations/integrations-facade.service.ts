@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ParamMap } from '@angular/router';
@@ -22,6 +23,7 @@ import {
   OAuthPopupBlockedError,
   OAuthPopupService,
 } from '@shared/lib/oauth-popup/oauth-popup.service';
+import { ProblemDetailsModel } from '@shared/lib/api/models/problem-details.model';
 
 /** Sync log entries fetched per provider. */
 const LOG_SIZE = 10;
@@ -34,6 +36,21 @@ const CALLBACK_KEYS: Record<IntegrationProviderType, string> = {
 };
 
 type SyncLogs = Partial<Record<IntegrationProviderType, IntegrationSyncLog[]>>;
+
+/**
+ * The backend's reason for a failed sync: a plain string for 400/404 (e.g. the cooldown),
+ * ProblemDetails `detail` for a failed sync.
+ */
+function syncErrorMessage(err: unknown): string | null {
+  if (!(err instanceof HttpErrorResponse)) {
+    return null;
+  }
+  if (typeof err.error === 'string' && err.error) {
+    return err.error;
+  }
+  const detail = (err.error as ProblemDetailsModel | null)?.detail;
+  return detail ? detail : null;
+}
 
 /** Everything the Integrations page shows and does. Provided per page. */
 @Injectable()
@@ -55,6 +72,8 @@ export class IntegrationsFacadeService {
   public readonly $connecting = this._$connecting.asReadonly();
   private readonly _$disconnecting = signal<IntegrationProviderType | null>(null);
   public readonly $disconnecting = this._$disconnecting.asReadonly();
+  private readonly _$syncing = signal<IntegrationProviderType | null>(null);
+  public readonly $syncing = this._$syncing.asReadonly();
 
   public readonly $cards = computed(() =>
     integrationCards(this._$summaries() ?? [], this._$habits(), new Date(), {
@@ -162,6 +181,47 @@ export class IntegrationsFacadeService {
           this._messageService.add({ severity: 'success', summary: 'Disconnected', detail: `${name} is disconnected.`, life: 3000 }),
         error: () =>
           this._messageService.add({ severity: 'error', summary: 'Error', detail: `Failed to disconnect ${name}.`, life: 3000 }),
+      });
+  }
+
+  public sync(type: IntegrationProviderType): void {
+    if (this._$syncing()) {
+      return;
+    }
+    const name = this._name(type);
+    this._$syncing.set(type);
+    this._api
+      .sync(type)
+      .pipe(
+        finalize(() => {
+          this._$syncing.set(null);
+          // Both outcomes can add a sync log row and change the card's status.
+          this._store.dispatch(new IntegrationFetchSummaries());
+          this.loadLogs(this._$connected().split(',').filter(Boolean) as IntegrationProviderType[]);
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe({
+        next: ({ activitiesCount }) => {
+          // The count is what the provider returned; habits match it later, and only if one uses the source.
+          const found = `${activitiesCount} ${activitiesCount === 1 ? 'activity' : 'activities'} found`;
+          const isUsed = this.$cards().find((c) => c.type === type)?.usedBy.length;
+          this._messageService.add({
+            severity: 'success',
+            summary: 'Synced',
+            detail: isUsed || activitiesCount === 0
+              ? `${name} synced, ${found}.`
+              : `${name} synced, ${found}. No habit uses ${name} yet, so nothing was logged.`,
+            life: 4000,
+          });
+        },
+        error: (err: unknown) =>
+          this._messageService.add({
+            severity: 'error',
+            summary: 'Sync failed',
+            detail: syncErrorMessage(err) ?? `Failed to sync ${name}. Please try again.`,
+            life: 5000,
+          }),
       });
   }
 

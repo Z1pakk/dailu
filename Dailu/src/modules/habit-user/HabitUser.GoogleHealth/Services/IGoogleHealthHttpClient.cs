@@ -28,7 +28,7 @@ public interface IGoogleHealthHttpClient
         CancellationToken cancellationToken = default
     );
 
-    Task<GoogleHealthTokensModel?> ExchangeAuthorizationCodeAsync(
+    Task<Result<GoogleHealthTokensModel>> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
     );

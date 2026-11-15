@@ -1,10 +1,13 @@
+import { format } from 'date-fns/format';
 import { parseISO } from 'date-fns/parseISO';
 import { startOfMonth } from 'date-fns/startOfMonth';
 import { startOfWeek } from 'date-fns/startOfWeek';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
 import { frequencyTypes } from '@habits/enums/frequency-type.enum';
+import { habitEntrySources } from '@habit-entries/enums/habit-entry-source.enum';
 import { hasFixedDays, hasTime, isScheduledOn, timesPerPeriod } from '@habits/lib/habit-schedule';
+import { sourceLabel } from '@habits/lib/habit-progress';
 import { localDay } from '@shared/lib/date/local-day';
 
 /*
@@ -18,10 +21,24 @@ export interface LaneItem {
   isDone: boolean;
   /** 0..1 on the 06:00 → 24:00 scale: when it was ticked, or "now" while open. */
   position: number;
+  /** "10:40" once done. */
+  doneAt: string | null;
+  /** Who ticked it: "by you", or the integration ("Strava"). */
+  doneBy: string | null;
+}
+
+/** A marker on the lane's track; hovering it lists its habits. */
+export interface LaneMarker {
+  kind: 'done' | 'open';
+  /** 0..1 on the 06:00 → 24:00 scale. */
+  position: number;
+  items: LaneItem[];
 }
 
 export interface AnyTimeLane {
   items: LaneItem[];
+  /** Done habits where they were ticked (close ones grouped), then all open ones at now. */
+  markers: LaneMarker[];
   done: number;
   total: number;
   minutesLeft: number;
@@ -30,6 +47,8 @@ export interface AnyTimeLane {
 
 const DAY_START_H = 6;
 const DAY_LENGTH_H = 18;
+/** Done markers closer than this share of the track (~45 min) are grouped into one. */
+const MARKER_GROUP_GAP = 0.04;
 
 export function dayPosition(date: Date): number {
   const hours = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
@@ -81,6 +100,24 @@ export function periodProgress(habit: HabitModel, entries: readonly HabitEntryMo
   return Math.min(needed, daysWithEntries(periodEntries(habit, entries, today)).size) / needed;
 }
 
+/** Groups done items ticked close together; each group sits at its average position. */
+function doneMarkers(done: readonly LaneItem[]): LaneMarker[] {
+  const groups: LaneItem[][] = [];
+  for (const item of done) {
+    const group = groups[groups.length - 1];
+    if (group && item.position - group[0]!.position < MARKER_GROUP_GAP) {
+      group.push(item);
+    } else {
+      groups.push([item]);
+    }
+  }
+  return groups.map((items) => ({
+    kind: 'done',
+    position: items.reduce((sum, i) => sum + i.position, 0) / items.length,
+    items,
+  }));
+}
+
 export function anyTimeLane(habits: readonly HabitModel[], entries: readonly HabitEntryModel[], now: Date): AnyTimeLane {
   const today = localDay(now);
   const nowPosition = dayPosition(now);
@@ -88,20 +125,40 @@ export function anyTimeLane(habits: readonly HabitModel[], entries: readonly Hab
   const done: (LaneItem & { at: number })[] = [];
   const open: LaneItem[] = [];
   for (const habit of due) {
-    const todays = entriesOn(habit, entries, today)
-      .map((e) => new Date(e.completedAtUtc))
-      .sort((a, b) => a.getTime() - b.getTime());
-    if (todays.length > 0) {
-      done.push({ id: habit.id, name: habit.name, isDone: true, position: dayPosition(todays[0]!), at: todays[0]!.getTime() });
+    const [first] = entriesOn(habit, entries, today).sort((a, b) => a.completedAtUtc.localeCompare(b.completedAtUtc));
+    if (first) {
+      const at = new Date(first.completedAtUtc);
+      done.push({
+        id: habit.id,
+        name: habit.name,
+        isDone: true,
+        position: dayPosition(at),
+        doneAt: format(at, 'HH:mm'),
+        doneBy: first.source === habitEntrySources.automation ? sourceLabel(habit) : 'by you',
+        at: at.getTime(),
+      });
     } else {
-      open.push({ id: habit.id, name: habit.name, isDone: false, position: nowPosition });
+      open.push({ id: habit.id, name: habit.name, isDone: false, position: nowPosition, doneAt: null, doneBy: null });
     }
   }
   done.sort((a, b) => a.at - b.at);
+  const doneItems: LaneItem[] = done.map(({ id, name, isDone, position, doneAt, doneBy }) => ({
+    id,
+    name,
+    isDone,
+    position,
+    doneAt,
+    doneBy,
+  }));
+  const markers = doneMarkers(doneItems);
+  if (open.length > 0) {
+    markers.push({ kind: 'open', position: nowPosition, items: open });
+  }
   const midnight = new Date(now);
   midnight.setHours(24, 0, 0, 0);
   return {
-    items: [...done.map(({ id, name, isDone, position }) => ({ id, name, isDone, position })), ...open],
+    items: [...doneItems, ...open],
+    markers,
     done: done.length,
     total: due.length,
     minutesLeft: Math.max(0, Math.floor((midnight.getTime() - now.getTime()) / 60_000)),

@@ -28,7 +28,7 @@ public interface IStravaHttpClient
     /// Exchange authorization code for an access token using OAuth2 in Strava.
     /// </summary>
     /// <returns></returns>
-    Task<StravaTokensModel?> ExchangeAuthorizationCodeAsync(
+    Task<Result<StravaTokensModel>> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
     );

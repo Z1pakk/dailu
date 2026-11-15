@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Mediator;
 using Microsoft.Extensions.Logging;
+using SharedKernel.ResultPattern;
 
 namespace Dailu.Infrastructure.CQRS.Pipelines;
 
@@ -32,6 +33,19 @@ public partial class LoggingBehavior<TMessage, TResponse>(
             LogSlowRequest(logger, prefix, typeof(TMessage).Name, timeTaken.Seconds);
         }
 
+        if (response is IResultBase { IsFailure: true } failure)
+        {
+            // Client errors (not found, bad request, ...) are expected; only unexpected failures are errors.
+            if (failure.Type == ResultType.Failure)
+            {
+                LogFailedResult(logger, prefix, typeof(TMessage).Name, failure.Type, failure.Error);
+            }
+            else
+            {
+                LogUnsuccessfulResult(logger, prefix, typeof(TMessage).Name, failure.Type, failure.Error);
+            }
+        }
+
         LogHandled(logger, prefix, typeof(TMessage).Name);
         return response;
     }
@@ -41,6 +55,12 @@ public partial class LoggingBehavior<TMessage, TResponse>(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "[{Prefix}] The request {Request} took {TimeTaken} seconds.")]
     private static partial void LogSlowRequest(ILogger logger, string prefix, string request, int timeTaken);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "[{Prefix}] The request {Request} failed with {ResultType}: {Error}")]
+    private static partial void LogFailedResult(ILogger logger, string prefix, string request, ResultType resultType, string error);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "[{Prefix}] The request {Request} returned {ResultType}: {Error}")]
+    private static partial void LogUnsuccessfulResult(ILogger logger, string prefix, string request, ResultType resultType, string error);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "[{Prefix}] Handled {Request}")]
     private static partial void LogHandled(ILogger logger, string prefix, string request);

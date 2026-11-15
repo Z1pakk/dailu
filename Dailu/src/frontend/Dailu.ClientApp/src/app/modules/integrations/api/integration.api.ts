@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '@environment';
 import { GetIntegrationConfigsResponseModel } from '@integrations/models/responses/get-integration-configs.response';
 import { GetIntegrationSyncLogsResponseModel } from '@integrations/models/responses/get-integration-sync-logs.response';
+import { SyncIntegrationResponseModel } from '@integrations/models/responses/sync-integration.response';
+import { httpContext } from '@shared/lib/api/context/http-request.context';
 import { IntegrationProviderType } from '@integrations/models/integration-summary.model';
 import { GitHubUserProfileModel } from '@integrations/models/github-user-profile.model';
 import { GitHubRepositoryModel } from '@integrations/models/github-repository.model';
@@ -29,6 +31,13 @@ export class IntegrationApi {
   public getSyncLogs(provider: IntegrationProviderType, take: number): Observable<GetIntegrationSyncLogsResponseModel> {
     return this._http.get<GetIntegrationSyncLogsResponseModel>(`${this.baseUrl}/${provider}/sync-logs`, {
       params: { take },
+    });
+  }
+
+  /** The facade explains failures (e.g. the cooldown) itself, so the global error toast is off. */
+  public sync(provider: IntegrationProviderType): Observable<SyncIntegrationResponseModel> {
+    return this._http.post<SyncIntegrationResponseModel>(`${this.baseUrl}/${provider}/sync`, null, {
+      context: httpContext().showErrorNotification(false).build(),
     });
   }
 

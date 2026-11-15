@@ -185,7 +185,10 @@ one session a day (7 a week, 31 a month).
 - no days → days with an entry in this week/month, capped at N, out of N (`1 / 2` for
   "2× a week" after one session).
 
-`anyTimeLane`: only habits **without** a time (`!hasTime`). Timed habits move to the clock in
+`anyTimeLane`: only habits **without** a time (`!hasTime`). It also returns `markers` for the
+lane's track (Figma `231:11011`): a ✓ marker where each done habit was ticked, with habits done
+within ~45 min of each other grouped into one, and one marker at now for all open habits. Each
+item carries `doneAt` and `doneBy` ("by you" or the integration) for the hover card. Timed habits move to the clock in
 step 3.4. Update the header comment, which currently says "every real habit is an any-time
 habit".
 

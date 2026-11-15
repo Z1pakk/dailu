@@ -14,5 +14,6 @@ public sealed class GithubEndpointGroup : IEndpointGroup
         group.MapGithubCallbackEndpoint();
         group.MapGetGithubProfileEndpoint();
         group.MapGetGithubReposEndpoint();
+        group.MapGithubSyncEndpoint();
     }
 }

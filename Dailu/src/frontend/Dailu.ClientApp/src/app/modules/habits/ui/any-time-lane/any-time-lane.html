@@ -12,6 +12,33 @@
     <span class="rail"></span>
     <span class="elapsed" [appPercentLeft]="0" [appPercentWidth]="$lane().nowPosition"></span>
     <span class="now" [appPercentLeft]="$lane().nowPosition"></span>
+    @for (marker of $lane().markers; track $index) {
+      <button type="button" class="marker" [class.is-open]="marker.kind === 'open'"
+              [class.is-start]="marker.position < 0.15" [class.is-end]="marker.position > 0.75"
+              [appPercentLeft]="marker.position" [attr.aria-label]="markerLabel(marker)">
+        @if (marker.kind === 'done' && marker.items.length === 1) {
+          <i class="pi pi-check" aria-hidden="true"></i>
+        } @else {
+          {{ marker.items.length }}
+        }
+        <span class="marker-card" role="tooltip">
+          <span class="dl-mono-sm card-head">{{ cardTitle(marker) }}</span>
+          @for (item of marker.items; track item.id) {
+            <span class="card-row">
+              @if (marker.kind === 'open') {
+                <span class="card-dot" aria-hidden="true"></span>
+              }
+              <span class="card-name">{{ item.name }}</span>
+              @if (marker.kind === 'done') {
+                <span class="dl-mono-sm card-meta">
+                  {{ marker.items.length > 1 ? item.doneAt + ' · ' + item.doneBy : item.doneBy }}
+                </span>
+              }
+            </span>
+          }
+        </span>
+      </button>
+    }
   </div>
   <ul class="pills" aria-label="Due today">
     @for (item of $lane().items; track item.id) {

@@ -23,7 +23,7 @@ public sealed class StravaHttpClient(
 
     private const string UnauthorizedError = "UNAUTHORIZED";
 
-    public async Task<StravaTokensModel?> ExchangeAuthorizationCodeAsync(
+    public async Task<Result<StravaTokensModel>> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
     )
@@ -40,8 +40,11 @@ public sealed class StravaHttpClient(
             var response = await httpClient.PostAsync("oauth/token", content, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError("Strava code exchange failed: {StatusCode}", response.StatusCode);
-                return null;
+                // Strava explains the failure in the body, e.g. {"message":"Bad Request","errors":[...]}.
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                return Result<StravaTokensModel>.Failure(
+                    $"Strava code exchange failed: {response.StatusCode} - {body}"
+                );
             }
 
             var raw = await response.Content.ReadFromJsonAsync<StravaTokenResponse>(
@@ -51,24 +54,30 @@ public sealed class StravaHttpClient(
 
             if (raw is null)
             {
-                return null;
+                return Result<StravaTokensModel>.Failure(
+                    "Strava code exchange returned an empty response."
+                );
             }
 
             var athlete = raw.Athlete is { } a
                 ? new StravaAthleteModel(a.Id, a.Username, a.FirstName, a.LastName, a.ProfileUrl)
                 : null;
 
-            return new StravaTokensModel(
-                AccessToken: raw.AccessToken,
-                RefreshToken: raw.RefreshToken,
-                ExpiresAtUtc: DateTimeOffset.FromUnixTimeSeconds(raw.ExpiresAt).UtcDateTime,
-                Athlete: athlete
+            return Result<StravaTokensModel>.Success(
+                new StravaTokensModel(
+                    AccessToken: raw.AccessToken,
+                    RefreshToken: raw.RefreshToken,
+                    ExpiresAtUtc: DateTimeOffset.FromUnixTimeSeconds(raw.ExpiresAt).UtcDateTime,
+                    Athlete: athlete
+                )
             );
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Strava code exchange failed unexpectedly");
-            return null;
+            return Result<StravaTokensModel>.Failure(
+                "Strava code exchange failed due to an unexpected error."
+            );
         }
     }
 

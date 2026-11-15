@@ -21,8 +21,10 @@ export class IntegrationCard {
   public readonly $card = input.required<IntegrationCardView>({ alias: 'card' });
   public readonly $isConnecting = input(false, { alias: 'isConnecting' });
   public readonly $isDisconnecting = input(false, { alias: 'isDisconnecting' });
+  public readonly $isSyncing = input(false, { alias: 'isSyncing' });
 
   public readonly connect = output<void>();
+  public readonly sync = output<void>();
   public readonly disconnect = output<void>();
 
   protected confirmDisconnect(event: Event): void {
