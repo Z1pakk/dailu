@@ -8,10 +8,7 @@
 <div class="today-body" [class.has-clock]="$habits().length > 0">
   @if ($habits().length > 0) {
     <div class="today-side">
-      <!-- Habits have no time of day yet: the dial shows a sample day (dummy data). -->
-      <span class="sample-tag">Sample schedule</span>
-      <app-day-clock class="today-clock" [habits]="clockHabits" [compact]="true" [showList]="false"
-                     pTooltip="Sample schedule — habit times are coming soon" tooltipPosition="top" />
+      <app-day-clock class="today-clock" [habits]="$clock()" [compact]="true" [showList]="false" />
       <app-any-time-lane [lane]="$lane()" />
     </div>
   }
@@ -19,7 +16,7 @@
   <div class="today-main">
     @if ($habits().length === 0) {
       <p class="card-empty">
-        No daily habits yet. <a routerLink="/app/habits" [queryParams]="{ new: 1 }" class="card-link">New habit</a>
+        Nothing scheduled today. <a routerLink="/app/habits" [queryParams]="{ new: 1 }" class="card-link">New habit</a>
       </p>
     } @else {
       <ul class="today-list">

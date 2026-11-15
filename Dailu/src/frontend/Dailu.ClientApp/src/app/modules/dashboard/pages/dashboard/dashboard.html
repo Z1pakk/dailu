@@ -27,6 +27,7 @@
                   [habits]="$today()"
                   [pendingIds]="$pendingIds()"
                   [lane]="$lane()"
+                  [clock]="$clock()"
                   (check)="checkOff($event)" />
   <app-streak-card class="dash-streak" [streak]="$streak()" [week]="$week()" />
   <app-consistency-card class="dash-consistency"

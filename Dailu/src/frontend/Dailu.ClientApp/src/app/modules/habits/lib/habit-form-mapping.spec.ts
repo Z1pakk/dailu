@@ -7,6 +7,7 @@ import { automationSources } from '@habits/enums/automation-source.enum';
 import { stravaActivityTypes } from '@habits/enums/strava-activity-type.enum';
 import { githubEventTypes } from '@habits/enums/github-event-type.enum';
 import { googleHealthMetrics } from '@habits/enums/google-health-metric.enum';
+import { FrequencyModel } from '@habits/models/frequency.model';
 import {
   autoCheckSummary,
   drawerValueFromHabit,
@@ -15,12 +16,21 @@ import {
   toHabitRequest,
 } from './habit-form-mapping';
 
+const frequency = (overrides: Partial<FrequencyModel> = {}): FrequencyModel => ({
+  type: frequencyTypes.daily,
+  weekDays: [],
+  monthDays: [],
+  timesPerPeriod: 1,
+  ...overrides,
+});
+
 const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'h1',
   name: 'Read',
   description: 'A chapter a day',
   type: habitTypes.binary,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: frequency(),
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: 'Session' },
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -36,6 +46,7 @@ const ownRequest = (h: HabitModel): CreateHabitRequestModel => ({
   description: h.description ?? null,
   type: h.type,
   frequency: h.frequency,
+  timing: h.timing,
   target: h.target,
   endDate: null,
   milestone: h.milestone ?? null,
@@ -54,9 +65,21 @@ describe('habit-form-mapping', () => {
   describe('round trip: saving an untouched habit', () => {
     const cases: [string, HabitModel][] = [
       ['daily × 1', habit()],
-      ['weekly × 5', habit({ frequency: { type: frequencyTypes.weekly, timesPerPeriod: 5 } })],
-      ['daily × 3', habit({ frequency: { type: frequencyTypes.daily, timesPerPeriod: 3 } })],
-      ['monthly × 2', habit({ frequency: { type: frequencyTypes.monthly, timesPerPeriod: 2 } })],
+      ['weekdays (Mon–Fri)', habit({ frequency: frequency({ type: frequencyTypes.weekly, weekDays: [1, 2, 3, 4, 5] }) })],
+      ['weekly × 2, any days', habit({ frequency: frequency({ type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 }) })],
+      ['monthly × 2, any days', habit({ frequency: frequency({ type: frequencyTypes.monthly, weekDays: [], monthDays: [], timesPerPeriod: 2 }) })],
+      [
+        'Mon, Wed, Fri at 07:00 for 45 min (set through the API)',
+        habit({
+          frequency: frequency({ type: frequencyTypes.weekly, weekDays: [1, 3, 5] }),
+          timing: { at: '07:00:00', durationMinutes: 45 },
+        }),
+      ],
+      [
+        'monthly on the 1st and 15th (set through the API)',
+        habit({ frequency: frequency({ type: frequencyTypes.monthly, monthDays: [1, 15] }) }),
+      ],
+      ['daily, any time, 30 min', habit({ timing: { at: null, durationMinutes: 30 } })],
       [
         'measurable Strava',
         habit({
@@ -89,11 +112,23 @@ describe('habit-form-mapping', () => {
   });
 
   describe('drawerValueFromHabit', () => {
-    it('should open daily × 3 on Custom with its own frequency', () => {
-      const v = drawerValueFromHabit(habit({ frequency: { type: frequencyTypes.daily, timesPerPeriod: 3 } }));
-      expect(v.scheduleMode).toBe('custom');
-      expect(v.customFrequencyType).toBe(frequencyTypes.daily);
-      expect(v.customTimesPerPeriod).toBe(3);
+    it('should copy the schedule', () => {
+      const v = drawerValueFromHabit(
+        habit({ frequency: frequency({ type: frequencyTypes.weekly, weekDays: [1, 3, 5] }) }),
+      );
+      expect([v.frequencyType, v.weekDays, v.monthDays, v.timesPerPeriod]).toEqual([frequencyTypes.weekly, [1, 3, 5], [], 1]);
+    });
+
+    it('should open a timed habit on "At a time" with the time on today', () => {
+      const v = drawerValueFromHabit(habit({ timing: { at: '07:30:00', durationMinutes: 45 } }));
+      expect(v.timeMode).toBe('at');
+      expect([v.at?.getHours(), v.at?.getMinutes()]).toEqual([7, 30]);
+      expect(v.durationMinutes).toBe(45);
+    });
+
+    it('should open an untimed habit on "Any time"', () => {
+      const v = drawerValueFromHabit(habit({ timing: { at: null, durationMinutes: 30 } }));
+      expect([v.timeMode, v.at, v.durationMinutes]).toEqual(['any', null, 30]);
     });
 
     it('should leave "At least" empty for a binary habit', () => {
@@ -116,7 +151,8 @@ describe('habit-form-mapping', () => {
           description: null,
           type: habitTypes.binary,
           target: { value: 1, unit: 'Session' },
-          frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+          frequency: frequency(),
+          timing: { at: null, durationMinutes: null },
           automationSource: null,
           automationFilter: null,
           milestone: null,
@@ -125,11 +161,50 @@ describe('habit-form-mapping', () => {
       );
     });
 
-    it('should save Weekdays as weekly × 5', () => {
-      expect(toHabitRequest(value({ scheduleMode: 'weekdays' }), null).frequency).toEqual({
-        type: frequencyTypes.weekly,
-        timesPerPeriod: 5,
-      });
+    it('should save Weekly with the picked days in order', () => {
+      const request = toHabitRequest(value({ frequencyType: frequencyTypes.weekly, weekDays: [5, 1, 3] }), null);
+      expect(request.frequency).toEqual(frequency({ type: frequencyTypes.weekly, weekDays: [1, 3, 5] }));
+    });
+
+    it('should save Monthly with the picked days of the month', () => {
+      const request = toHabitRequest(value({ frequencyType: frequencyTypes.monthly, monthDays: [15, 1] }), null);
+      expect(request.frequency).toEqual(frequency({ type: frequencyTypes.monthly, monthDays: [1, 15] }));
+    });
+
+    it('should never send days left over from another period', () => {
+      const request = toHabitRequest(
+        value({ frequencyType: frequencyTypes.weekly, weekDays: [2], monthDays: [1, 15] }),
+        null,
+      );
+      expect(request.frequency.monthDays).toEqual([]);
+    });
+
+    it('should send the count only without days', () => {
+      const flexible = toHabitRequest(value({ frequencyType: frequencyTypes.weekly, timesPerPeriod: 3 }), null);
+      const stale = toHabitRequest(value({ frequencyType: frequencyTypes.weekly, weekDays: [1], timesPerPeriod: 3 }), null);
+      expect(flexible.frequency.timesPerPeriod).toBe(3);
+      expect(stale.frequency.timesPerPeriod).toBe(1);
+    });
+
+    it('should send the time with "At a time" on fixed days', () => {
+      const request = toHabitRequest(
+        value({ frequencyType: frequencyTypes.weekly, weekDays: [1, 3, 5], timeMode: 'at', at: new Date(2026, 10, 16, 7, 0), durationMinutes: 45 }),
+        null,
+      );
+      expect(request.timing).toEqual({ at: '07:00:00', durationMinutes: 45 });
+    });
+
+    it('should not send a time without picked days, but keep the duration', () => {
+      const request = toHabitRequest(
+        value({ frequencyType: frequencyTypes.weekly, timeMode: 'at', at: new Date(2026, 10, 16, 7, 0), durationMinutes: 30 }),
+        null,
+      );
+      expect(request.timing).toEqual({ at: null, durationMinutes: 30 });
+    });
+
+    it('should not send a time with "Any time"', () => {
+      const request = toHabitRequest(value({ timeMode: 'any', at: new Date(2026, 10, 16, 7, 0) }), null);
+      expect(request.timing.at).toBeNull();
     });
 
     it('should make a habit measurable when "At least" has an amount', () => {

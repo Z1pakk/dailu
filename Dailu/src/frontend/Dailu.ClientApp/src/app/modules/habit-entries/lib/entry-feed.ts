@@ -7,6 +7,7 @@ import { habitTypes } from '@habits/enums/habit-type.enum';
 import { habitEntrySources } from '@habit-entries/enums/habit-entry-source.enum';
 import { trackedHabits } from '@dashboard/lib/dashboard-day';
 import { isAutomated, sourceLabel } from '@habits/lib/habit-progress';
+import { isScheduledOn } from '@habits/lib/habit-schedule';
 import { localDay } from '@shared/lib/date/local-day';
 
 /*
@@ -131,7 +132,7 @@ export function entryFeed(
     });
   }
 
-  // Missed: past days in the window where a tracked daily habit that already existed has no entry.
+  // Missed: past days in the window where a tracked (fixed-day) habit was scheduled and has no entry.
   const tracked = trackedHabits(habits);
   const createdDay = (h: HabitModel) => localDay(new Date(h.createdAtUtc));
   // Missed rows aren't auto or manual entries, so they only show with the "All" filter.
@@ -140,7 +141,7 @@ export function entryFeed(
     for (let d = parseISO(start); localDay(d) < today; d = addDays(d, 1)) {
       const day = localDay(d);
       for (const h of tracked) {
-        if (createdDay(h) > day || doneByDay.get(day)?.has(h.id)) {
+        if (!isScheduledOn(h, day) || doneByDay.get(day)?.has(h.id)) {
           continue;
         }
         if ((habitId !== null && h.id !== habitId) || !matchesText(h.name)) {
@@ -165,7 +166,7 @@ export function entryFeed(
   const feedDays: FeedDay[] = [...rowsByDay.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([day, rows]) => {
-      const expected = tracked.filter((h) => createdDay(h) <= day);
+      const expected = tracked.filter((h) => isScheduledOn(h, day));
       return {
         day,
         label: dayLabel(day, today),

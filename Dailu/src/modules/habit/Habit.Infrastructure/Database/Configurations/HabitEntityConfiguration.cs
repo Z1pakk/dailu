@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Habit.Domain.Entities;
+using Habit.Domain.ValueObjects;
 using Habit.Domain.ValueObjects.AutomationFilters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -17,7 +18,20 @@ internal sealed class HabitEntityConfiguration : BaseEntityTypedConfiguration<Ha
         builder.Property(h => h.Description).HasMaxLength(500);
         builder.Property(h => h.IsArchived).HasDefaultValue(false);
 
-        builder.OwnsOne(h => h.Frequency);
+        builder.OwnsOne(
+            h => h.Frequency,
+            frequencyBuilder =>
+            {
+                frequencyBuilder
+                    .Property(f => f.MonthDays)
+                    .HasConversion(v => v.Bits, bits => MonthDays.FromBits(bits))
+                    .HasDefaultValue(MonthDays.None);
+            }
+        );
+
+        builder.OwnsOne(h => h.Timing);
+        // timing should be required as if both fields are null the timing will be null as well
+        builder.Navigation(h => h.Timing).IsRequired();
 
         builder.OwnsOne(
             h => h.Target,

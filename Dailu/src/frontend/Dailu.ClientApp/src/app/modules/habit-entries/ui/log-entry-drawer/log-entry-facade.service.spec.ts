@@ -16,7 +16,8 @@ import { LogEntryFacadeService } from './log-entry-facade.service';
 
 const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'read', name: 'Read a book', type: habitTypes.measurable,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 }, target: { value: 2, unit: 'chapters' },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null }, target: { value: 2, unit: 'chapters' },
   status: habitStatuses.ongoing, isArchived: false, tags: [],
   createdAtUtc: new Date('2026-01-01T10:00:00Z'), lastCompletedAtUtc: new Date('2026-01-01T10:00:00Z'),
   ...overrides,

@@ -3,16 +3,19 @@ import { parseISO } from 'date-fns/parseISO';
 import { startOfWeek } from 'date-fns/startOfWeek';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
-import { frequencyTypes } from '@habits/enums/frequency-type.enum';
+import { TimingModel } from '@habits/models/timing.model';
 import { habitStatuses } from '@habits/enums/habit-status.enum';
 import { AutomationSource, automationSources } from '@habits/enums/automation-source.enum';
 import { habitEntrySources } from '@habit-entries/enums/habit-entry-source.enum';
 import { ClockHabit, HabitSource, SOURCE_NAMES } from '@shared/ui/day-clock/day-clock.model';
 import { localDay } from '@shared/lib/date/local-day';
+import { formatTimeOfDay } from '@shared/lib/date/time-of-day';
 import { milestoneProgress } from '@habits/lib/habit-progress';
+import { clockSpan, hasFixedDays, isScheduledOn } from '@habits/lib/habit-schedule';
 
 /*
- * Dashboard day maths. Only daily habits are "tracked": weekly / monthly habits
+ * Dashboard day maths. Only fixed-day habits are "tracked" (daily, or weekly / monthly with
+ * picked days), and only on the days they're scheduled on. Habits without days ("2× a week")
  * have no per-day expectation, so they never make a day incomplete.
  * Days are local calendar days as 'yyyy-MM-dd'.
  */
@@ -27,6 +30,7 @@ export interface TodayHabit {
   source: HabitSource;
   /** "Strava", "by you" once checked manually, or "" while still open. */
   sourceLabel: string;
+  timing: TimingModel;
 }
 
 export interface StreakSummary {
@@ -60,11 +64,6 @@ const SOURCES: Partial<Record<AutomationSource, { name: string; source: HabitSou
   [automationSources.googleHealth]: { name: 'Google Health', source: 'google-health' },
 };
 
-/** The dial runs 06:00 → 24:00; untimed habits are spread evenly over it. */
-const DIAL_START = 6 * 60;
-const DIAL_LENGTH = 18 * 60;
-/** Share of each habit's slot its segment fills; the rest is the gap. */
-const SEGMENT_FILL = 0.7;
 
 const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -86,7 +85,7 @@ export function trackedHabits(habits: readonly HabitModel[]): HabitModel[] {
     (h) =>
       !h.isArchived &&
       h.status === habitStatuses.ongoing &&
-      h.frequency.type === frequencyTypes.daily,
+      hasFixedDays(h.frequency),
   );
 }
 
@@ -118,20 +117,16 @@ function doneByDay(
   return byDay;
 }
 
-function existedOn(habit: HabitModel, day: string): boolean {
-  return localDay(new Date(habit.createdAtUtc)) <= day;
-}
-
 function dayProgress(
   day: string,
   habits: readonly HabitModel[],
   done: ReadonlyMap<string, Set<string>>,
 ): { done: number; total: number } {
   const ids = done.get(day);
-  const existing = habits.filter((h) => existedOn(h, day));
+  const scheduled = habits.filter((h) => isScheduledOn(h, day));
   return {
-    done: existing.filter((h) => ids?.has(h.id)).length,
-    total: existing.length,
+    done: scheduled.filter((h) => ids?.has(h.id)).length,
+    total: scheduled.length,
   };
 }
 
@@ -141,7 +136,9 @@ export function todayHabits(
   today: string,
 ): TodayHabit[] {
   const doneToday = doneByDay(entries).get(today);
-  return trackedHabits(habits).map((habit) => {
+  return trackedHabits(habits)
+    .filter((habit) => isScheduledOn(habit, today))
+    .map((habit) => {
     const isDone = doneToday?.has(habit.id) ?? false;
     const auto = automation(habit);
     let sourceLabel = '';
@@ -157,28 +154,35 @@ export function todayHabits(
       isAutomated: auto !== null,
       source: auto?.source ?? 'manual',
       sourceLabel,
+      timing: habit.timing,
     };
   });
 }
 
 /**
- * Today's habits as dial segments. Habits have no time of day yet, so they are
- * spread evenly from 06:00 to midnight and coloured by real completion.
+ * Today's timed habits as dial segments at their real time (clockSpan); untimed habits are in
+ * the any-time lane instead.
  */
 export function clockHabits(habits: readonly TodayHabit[]): ClockHabit[] {
-  const slot = DIAL_LENGTH / Math.max(1, habits.length);
-  return habits.map((habit, i) => {
-    const start = Math.round(DIAL_START + i * slot);
-    return {
-      id: habit.id,
-      name: habit.name,
-      startMinutes: start,
-      endMinutes: Math.round(start + slot * SEGMENT_FILL),
-      source: habit.source,
-      doneLabel: habit.sourceLabel || 'done',
-      waitingLabel: habit.source === 'manual' ? 'not done yet' : `waiting for ${SOURCE_NAMES[habit.source]}`,
-      isDone: habit.isDone,
-    };
+  return habits.flatMap((habit) => {
+    const span = clockSpan(habit.timing);
+    if (!span) {
+      return [];
+    }
+    const start = span.start;
+    return [
+      {
+        id: habit.id,
+        name: habit.name,
+        startMinutes: start,
+        endMinutes: span.end,
+        source: habit.source,
+        doneLabel: habit.sourceLabel || 'done',
+        waitingLabel:
+          habit.source === 'manual' ? `at ${formatTimeOfDay(start)}` : `waiting for ${SOURCE_NAMES[habit.source]}`,
+        isDone: habit.isDone,
+      },
+    ];
   });
 }
 
@@ -216,31 +220,41 @@ export function streaks(
     return { current: 0, best: 0 };
   }
   const done = doneByDay(entries);
-  const isDone = (day: string) => {
+  // A day with nothing scheduled (Tuesday for Mon/Wed/Fri habits) neither counts nor breaks a run.
+  const stateOf = (day: string): 'done' | 'missed' | 'free' => {
     const p = dayProgress(day, tracked, done);
-    return p.total > 0 && p.done === p.total;
+    if (p.total === 0) {
+      return 'free';
+    }
+    return p.done === p.total ? 'done' : 'missed';
   };
+  const firstDay = tracked.map((h) => localDay(new Date(h.createdAtUtc))).sort()[0]!;
 
   // Current: walk back from today; an unfinished today doesn't break the streak yet.
   let current = 0;
   let cursor = parseISO(today);
-  if (!isDone(today)) {
+  if (stateOf(today) !== 'done') {
     cursor = addDays(cursor, -1);
   }
-  while (isDone(localDay(cursor))) {
-    current++;
-    cursor = addDays(cursor, -1);
+  for (; localDay(cursor) >= firstDay; cursor = addDays(cursor, -1)) {
+    const state = stateOf(localDay(cursor));
+    if (state === 'missed') {
+      break;
+    }
+    if (state === 'done') {
+      current++;
+    }
   }
 
   // Best: longest run between the first tracked habit and today.
-  const firstDay = tracked.map((h) => localDay(new Date(h.createdAtUtc))).sort()[0]!;
   let best = 0;
   let run = 0;
   for (let day = parseISO(firstDay); localDay(day) <= today; day = addDays(day, 1)) {
-    if (isDone(localDay(day))) {
+    const state = stateOf(localDay(day));
+    if (state === 'done') {
       run++;
       best = Math.max(best, run);
-    } else {
+    } else if (state === 'missed') {
       run = 0;
     }
   }

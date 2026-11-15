@@ -59,7 +59,7 @@
   overflow-y: auto;
 }
 
-// ---- "On your clock" placeholder --------------------------------------------
+// ---- "On your clock" strip (06:00 → 24:00) ------------------------------------
 .clock-preview {
   display: flex;
   flex-direction: column;
@@ -67,11 +67,6 @@
   padding: 14px dl.space(16);
   border-radius: dl.radius(xl);
   background: var(--dl-bg-subtle);
-}
-
-.is-placeholder {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .clock-head {
@@ -96,7 +91,8 @@
 }
 
 .clock-rail,
-.clock-busy {
+.clock-busy,
+.clock-own {
   position: absolute;
   top: 4px;
   height: 8px;
@@ -108,8 +104,14 @@
   background: var(--dl-dial-track);
 }
 
+// Other timed habits today.
 .clock-busy {
   background: var(--dl-dial-scheduled);
+}
+
+// The habit being edited.
+.clock-own {
+  background: var(--p-primary-color);
 }
 
 
@@ -125,12 +127,6 @@
   right: 0;
 }
 
-// Sample segments from the Figma timeline (06:00 → 24:00 over 432px).
-.busy-1 { left: 19.4%; width: 8.3%; }
-.busy-2 { left: 36.1%; width: 2.8%; }
-.busy-3 { left: 44.4%; width: 4.4%; }
-.busy-4 { left: 66.7%; width: 2.8%; }
-.busy-5 { left: 91.7%; width: 7.8%; }
 .tick-06 { left: 0; }
 .tick-12 { left: 33.3%; }
 .tick-18 { left: 66.7%; }
@@ -234,11 +230,35 @@
   }
 }
 
-// ---- Weekday chips (placeholder) ---------------------------------------------
+// ---- Day pickers -------------------------------------------------------------
 .days {
   display: flex;
   flex-wrap: wrap;
   gap: dl.space(8);
+}
+
+// 1–31, seven per row (Figma).
+.month-days {
+  display: grid;
+  grid-template-columns: repeat(7, 44px);
+  gap: dl.space(8);
+}
+
+// "Times per week / month" stepper.
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: dl.space(12);
+
+  p-inputnumber {
+    flex: 0 0 auto;
+    width: 148px;
+  }
+}
+
+.stepper-suffix {
+  color: var(--p-text-muted-color);
+  font-size: 14px;
 }
 
 .day {
@@ -251,7 +271,17 @@
   font: inherit;
   font-size: 14px;
   font-weight: 500;
-  cursor: not-allowed;
+  cursor: pointer;
+
+  @include dl.motion {
+    transition:
+      border-color 120ms ease,
+      background-color 120ms ease;
+  }
+
+  &:hover:not(.is-selected) {
+    border-color: var(--p-primary-color);
+  }
 
   &.is-selected {
     border-color: var(--p-primary-color);
@@ -259,9 +289,6 @@
     color: var(--p-primary-contrast-color);
   }
 
-  &:disabled {
-    opacity: 0.6;
-  }
 }
 
 // ---- Source picker -----------------------------------------------------------

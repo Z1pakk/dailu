@@ -26,6 +26,7 @@ import { IntegrationStateSelectors } from '@integrations/state/integration.selec
 import { UserProfileStateSelectors } from '@user-profile/state/user-profile.selector';
 import { buildRecentWeeks } from '@shared/ui/heatmap/heatmap.grid';
 import {
+  clockHabits,
   currentWeek,
   dayCounts,
   greeting,
@@ -33,7 +34,6 @@ import {
   localDay,
   milestones,
   todayHabits,
-  trackedHabits,
 } from '@dashboard/lib/dashboard-day';
 import { integrationView } from '@integrations/lib/integration-status';
 import { TodayCard } from './ui/today-card/today-card';
@@ -112,6 +112,7 @@ export class Dashboard {
 
   protected readonly $streak = computed(() => streakSummary(this._$habits(), this._$entries(), this._today));
   protected readonly $lane = computed(() => anyTimeLane(this._$habits(), this._$entries(), this._now));
+  protected readonly $clock = computed(() => clockHabits(this.$today()));
   protected readonly $week = computed(() => currentWeek(this._$habits(), this._$entries(), this._today));
 
   protected readonly $heatWeeks = computed(() =>
@@ -122,7 +123,8 @@ export class Dashboard {
       Math.max(1, this.$habitsPerDay()),
     ),
   );
-  protected readonly $habitsPerDay = computed(() => trackedHabits(this._$habits()).length);
+  /** Habits scheduled today: the heatmap's "of N habits" and its full-day colour. */
+  protected readonly $habitsPerDay = computed(() => this.$today().length);
   /** 20 weeks on desktop need smaller cells than the 7-week mobile grid. */
   protected readonly $heatCellSize = computed(() => (this._$isMobile() ? 32 : 22));
   protected readonly $heatSummary = computed(() => {

@@ -3,76 +3,68 @@
 [![Build & Test](https://github.com/Z1pakk/dailu/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/Z1pakk/dailu/actions/workflows/build.yml)
 [![Deploy](https://github.com/Z1pakk/dailu/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/Z1pakk/dailu/actions/workflows/deploy.yml)
 
-**Live at [dailu.dev](https://dailu.dev)**
+**A habit tracker that checks your habits off for you.** Live at [dailu.dev](https://dailu.dev).
 
-Dailu is a habit tracker I built because checkbox apps never stuck for me — I'd forget to open them. Habits here can log themselves: connect Strava, GitHub, or Google Health and a matching activity fills in today's entry without you touching the app.
+Most habit apps fail the same way: you forget to open them. In Dailu you connect Strava, GitHub or
+Google Health once, and when a run, a commit or a workout shows up, the habit ticks itself.
 
-This is a study project — I used it to actually practice a modular monolith in .NET, CQRS, EF Core, and a modern Angular setup, rather than just reading about them. It's part of my portfolio, so expect the odd rough edge alongside things I cared enough about to get right.
+It's also my study project: a place to practise a modular .NET backend and a modern Angular app on
+something real.
 
-## What it does
+<p align="center"><img src="Dailu/docs/images/landing.png" alt="Dailu landing page" width="640"></p>
 
-- **Two kinds of habits** — binary ones you just check off ("meditated today") and measurable ones with a target ("run 20km this week")
-- **Daily, weekly, or monthly frequency**, each with its own target and milestones
-- **Automatic logging** through Strava, GitHub, or Google Health — a run, a commit, or a workout can complete a habit on its own
-- **Tags** to group and filter habits
-- **A heatmap view** of your history, in the same spirit as GitHub's contribution graph
-- **JWT-based auth**, one account per user
+## What you can do
 
-## How it's built
+- **Track any habit.** Tick it off ("meditate"), or set an amount ("read 20 pages").
+- **Plan it your way.** Every day, on picked weekdays, on days of the month, or just
+  "2× a week, any days".
+- **Give it a time.** Timed habits sit on a clock of your day; the rest wait in an "any time" lane
+  until midnight.
+- **Let apps do the logging.** Strava, GitHub and Google Health tick habits automatically.
+- **Keep the streak.** Streaks, a yearly heatmap and milestones show how far you've come.
+- **Group with tags.**
 
-It's a modular monolith — one deployable API, but the code underneath is split into independent vertical slices, one per domain: `Habit`, `HabitEntry`, `HabitUser`, `Tag`, `Identity`. Each slice has its own domain, application, infrastructure, and API layer, and its own EF Core `DbContext`. They only talk to each other through explicit integration contracts, so a slice could be pulled out into its own service later without a rewrite — that's the whole point of doing it this way instead of one tangled project.
+<table align="center">
+  <tr>
+    <td align="center"><img src="Dailu/docs/images/dashboard.png" alt="Dashboard page" width="420"><br><sub>Dashboard page</sub></td>
+    <td align="center"><img src="Dailu/docs/images/habits.png" alt="Habits page" width="420"><br><sub>Habits page</sub></td>
+  </tr>
+</table>
 
-**Backend** — .NET 10, ASP.NET Core minimal APIs, EF Core + PostgreSQL, a source-generated CQRS mediator (not MediatR), FluentValidation, JWT auth via ASP.NET Core Identity, OpenAPI docs through Scalar. Orchestrated locally with .NET Aspire.
+## Run it locally
 
-**Frontend** — Angular 21, built with signals rather than the old decorator APIs, NGXS for state, PrimeNG + Tailwind for UI, Valibot for validation.
-
-**Observability** — OpenTelemetry traces, metrics, and logs flow through an OTel Collector into Prometheus, Loki, and Tempo, with Grafana on top to actually look at any of it.
-
-## CI/CD & deployment
-
-The build badge up top isn't decorative — there's an actual pipeline behind it. GitHub Actions builds and tests every PR, and a push to `main` builds Docker images, runs EF Core migrations, and deploys to a real production environment: a Hetzner VPS running [Dokploy](https://dokploy.com/). Migrations run over SSH secured with short-lived certificates from a self-hosted `step-ca`, reached over Tailscale — no standing VPN keys or long-lived server credentials sitting in secrets.
-
-## Running it locally
+You need the .NET 10 SDK, Node.js and Docker.
 
 ```bash
-# Backend + Postgres — Aspire brings the database up for you
+# API + database (Aspire starts PostgreSQL for you)
 cd Dailu/src/aspire/Dailu.AppHost && dotnet run
 
-# Frontend
+# Web app
 cd Dailu/src/frontend/Dailu.ClientApp && npm install && npm start
 
-# Observability stack (optional)
+# Monitoring: Grafana, Prometheus, Loki, Tempo (optional)
 cd Dailu/observability && docker compose up
 ```
 
-## Project layout
+## How it's built
 
-The modular-monolith split from above, as actual folders — each module under `modules/` is a self-contained vertical slice:
+- **Backend:** .NET 10, ASP.NET Core minimal APIs, EF Core with PostgreSQL. It's a modular
+  monolith: one app, split into independent modules (habits, entries, users, tags, identity) that
+  only talk through clear contracts.
+- **Frontend:** Angular 21 with signals, NGXS, PrimeNG and Tailwind.
+- **Monitoring:** OpenTelemetry → Prometheus, Loki and Tempo, viewed in Grafana.
+- **Deployment:** GitHub Actions builds and tests every pull request; merging to `main` deploys to
+  a Hetzner server running [Dokploy](https://dokploy.com/).
 
-```
-Dailu/
-  src/
-    modules/           habit, habit-entry, habit-user, tag, identity — each its own
-                        domain / application / infrastructure / api slice
-    api/Dailu.Api/      composition root — wires every module together
-    aspire/             local orchestration (Aspire AppHost)
-    frontend/           Angular SPA
-    shared/             cross-cutting kernel + shared infrastructure
-    tests/              architecture tests + shared test helpers
-  observability/         OTel Collector, Prometheus, Loki, Tempo, Grafana
-```
+Design notes live in [`Dailu/docs`](Dailu/docs), for example the
+[habit schedule guide](Dailu/docs/habit-schedule/README.md).
 
-*Landing page.* <br />
-![Dailu landing page](Dailu/docs/images/landing.png)
+<details>
+<summary>Monitoring screenshots</summary>
 
-*Dashboard overview.*<br />
-![Dashboard](Dailu/docs/images/dashboard.png)
+<p align="center">
+  <img src="Dailu/docs/images/grafana-overview.png" alt="Grafana overview dashboard" width="420">
+  <img src="Dailu/docs/images/grafana-runtime.png" alt="Grafana runtime dashboard" width="420">
+</p>
 
-*Logging an entry.*<br />
-![Habit entries](Dailu/docs/images/habit-entries.png)
-
-*Grafana — service overview.*<br />
-![Grafana overview dashboard](Dailu/docs/images/grafana-overview.png)
-
-*Grafana — .NET runtime metrics.*<br />
-![Grafana runtime dashboard](Dailu/docs/images/grafana-runtime.png)
+</details>

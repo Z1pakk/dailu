@@ -36,6 +36,8 @@ public sealed class HabitEntryCreatedIntegrationEventHandler(IHabitDbContext dbC
                 entity.Description,
                 entity.Type,
                 entity.Frequency,
+                entity.Timing,
+                entity.CreatedAtUtc,
                 entity.Target,
                 entity.Status,
                 entity.IsArchived,

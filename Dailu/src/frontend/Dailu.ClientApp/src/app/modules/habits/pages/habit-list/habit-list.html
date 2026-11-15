@@ -28,26 +28,24 @@
 <div class="toolbar">
   <p-selectbutton [options]="$filterOptions()" optionLabel="label" optionValue="value" [allowEmpty]="false"
                   [ngModel]="$filter()" (ngModelChange)="$filter.set($event)" ariaLabelledBy="Filter habits" />
-  <!-- Habits have no time of day yet, so there's nothing to sort by. -->
-  <span class="sort" pTooltip="Coming soon" tooltipPosition="left">
-    Sort: <span class="sort-value">By time of day <i class="pi pi-chevron-down" aria-hidden="true"></i></span>
-  </span>
+  <span class="sort">Sort: <span class="sort-value">By time of day</span></span>
 </div>
 
-<!-- Habits have no time of day yet: the clock lane shows a sample day (dummy data);
-     the any-time lane is real. -->
+<!-- Timed habits on the clock, untimed ones in the any-time lane. -->
 <section class="clock-card" aria-label="Your day">
-  <div class="lane lane-clock" pTooltip="Sample schedule — habit times are coming soon" tooltipPosition="top">
+  <div class="lane lane-clock">
     <div class="lane-head">
-      <h2>Your day on the clock <span class="sample-tag">Sample</span></h2>
-      <span class="dl-mono-sm lane-meta">06:00 → 24:00 · {{ $timeline().planned }} planned</span>
+      <h2>Your day on the clock</h2>
+      <span class="dl-mono-sm lane-meta">
+        06:00 → 24:00 · {{ $timeline().planned ? $timeline().planned + ' planned' : 'no timed habits today' }}
+      </span>
     </div>
     <div #clockTrack class="track clock-track" aria-hidden="true">
       <span class="rail"></span>
-      @for (slot of $timeline().slots; track slot.name) {
+      @for (slot of $timeline().slots; track slot.id) {
         <span class="slot" [class]="'slot is-' + slot.state" [appPercentLeft]="slot.left" [appPercentWidth]="slot.width"></span>
       }
-      @for (label of $labels(); track label.name) {
+      @for (label of $labels(); track label.id) {
         <span class="slot-label" [class.is-second]="label.row === 1" [appPercentLeft]="label.left">{{ label.name }}</span>
       }
       <span class="now" [appPercentLeft]="$lane().nowPosition"></span>
@@ -69,7 +67,7 @@
 } @else {
   <div class="list">
     <div class="list-header dl-mono-sm" aria-hidden="true">
-      <span class="col-habit">ANY TIME</span>
+      <span class="col-habit">HABIT</span>
       <span class="col-spacer"></span>
       <span class="col-week">THIS WEEK</span>
       <span class="col-streak">STREAK</span>

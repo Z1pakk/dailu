@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { Drawer } from 'primeng/drawer';
@@ -27,11 +27,14 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { HabitModel } from '@habits/models/habit.model';
 import { AutomationSource, automationSources } from '@habits/enums/automation-source.enum';
-import { frequencyTypes } from '@habits/enums/frequency-type.enum';
+import { FrequencyType, frequencyTypes } from '@habits/enums/frequency-type.enum';
+import { DayOfWeek, dayOfWeekShortLabels, weekButtonOrder } from '@habits/enums/day-of-week.enum';
 import { githubEventTypeSelectItems } from '@habits/enums/github-event-type.enum';
 import { stravaActivityTypeSelectItems } from '@habits/enums/strava-activity-type.enum';
 import { googleHealthMetricSelectItems } from '@habits/enums/google-health-metric.enum';
-import { ScheduleMode } from '@habits/lib/habit-schedule';
+import { TimeMode } from '@habits/lib/habit-form-mapping';
+import { formatDuration } from '@shared/lib/date/format-duration';
+import { PercentPositionDirective } from '@shared/directives/percent-position.directive';
 import { HabitDrawerFacadeService } from '@habits/ui/habit-drawer/habit-drawer-facade.service';
 import { HabitDrawerFormControls } from '@habits/ui/habit-drawer/habit-drawer-form.type';
 import { TagGetTags } from '@tags/state/tag.action';
@@ -45,12 +48,14 @@ interface SourceCard {
 
 const MOBILE_QUERY = '(max-width: 767.98px)';
 
+/** Up to 12 h in growing steps; the domain allows 1 min – 24 h (and the habit must end by midnight). */
+const DURATION_CHOICES = [5, 10, 15, 20, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300, 360, 480, 600, 720];
+
 /** New / Edit habit drawer (Figma `69:3615`, full content `70:4165`, mobile `69:3757`). */
 @Component({
   selector: 'app-habit-drawer',
   imports: [
     ReactiveFormsModule,
-    FormsModule,
     RouterLink,
     Drawer,
     Button,
@@ -65,6 +70,7 @@ const MOBILE_QUERY = '(max-width: 767.98px)';
     Listbox,
     Tag,
     Tooltip,
+    PercentPositionDirective,
   ],
   providers: [HabitDrawerFacadeService],
   templateUrl: './habit-drawer.html',
@@ -87,22 +93,33 @@ export class HabitDrawer implements OnInit {
   protected readonly $isMobile = signal(window.matchMedia(MOBILE_QUERY).matches);
   protected readonly $isEdit = computed(() => this.$habit() !== null);
 
-  protected readonly scheduleOptions: { label: string; value: ScheduleMode }[] = [
-    { label: 'Daily', value: 'daily' },
-    { label: 'Weekdays', value: 'weekdays' },
-    { label: 'Custom', value: 'custom' },
+  protected readonly frequencyTypes = frequencyTypes;
+  protected readonly frequencyOptions: { label: string; value: FrequencyType }[] = [
+    { label: 'Daily', value: frequencyTypes.daily },
+    { label: 'Weekly', value: frequencyTypes.weekly },
+    { label: 'Monthly', value: frequencyTypes.monthly },
   ];
-  protected readonly periodOptions = [
-    { label: 'Per day', value: frequencyTypes.daily },
-    { label: 'Per week', value: frequencyTypes.weekly },
-    { label: 'Per month', value: frequencyTypes.monthly },
-  ];
-  protected readonly weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  /** "At a time" needs habit times in the backend; only "Any time" can be saved for now. */
-  protected readonly timeModes = [
-    { label: 'At a time', value: 'at', disabled: true },
+  /** Monday first; the button shows the first letter. */
+  protected readonly weekButtons: { day: DayOfWeek; letter: string; label: string }[] = weekButtonOrder.map((day) => ({
+    day,
+    letter: dayOfWeekShortLabels[day].charAt(0),
+    label: dayOfWeekShortLabels[day],
+  }));
+  protected readonly monthDayNumbers = Array.from({ length: 31 }, (_, i) => i + 1);
+  /** "At a time" needs known days; it's off for Weekly / Monthly with nothing picked. */
+  protected readonly $timeModeOptions = computed<{ label: string; value: TimeMode; disabled: boolean }[]>(() => [
+    { label: 'At a time', value: 'at', disabled: !this.facade.$hasFixedDays() },
     { label: 'Any time', value: 'any', disabled: false },
-  ];
+  ]);
+  /** The choices, plus the habit's own duration when it isn't one of them (e.g. set through the API). */
+  protected readonly $durationOptions = computed(() => {
+    const current = this.facade.$timing().durationMinutes;
+    const minutes =
+      current !== null && !DURATION_CHOICES.includes(current)
+        ? [...DURATION_CHOICES, current].sort((a, b) => a - b)
+        : DURATION_CHOICES;
+    return minutes.map((m) => ({ label: formatDuration(m), value: m }));
+  });
 
   protected readonly sourceCards: SourceCard[] = [
     { value: automationSources.none, name: 'Manual', hint: 'tick it yourself' },
@@ -114,9 +131,6 @@ export class HabitDrawer implements OnInit {
   protected readonly githubEventItems = githubEventTypeSelectItems;
   protected readonly stravaActivityItems = stravaActivityTypeSelectItems;
   protected readonly googleHealthMetricItems = googleHealthMetricSelectItems;
-
-  private readonly _$scheduleMode = signal<ScheduleMode>('daily');
-  protected readonly $scheduleMode = this._$scheduleMode.asReadonly();
 
   protected readonly $selectedTags = computed(() => {
     const ids = new Set(this._$tagIds());
@@ -140,9 +154,7 @@ export class HabitDrawer implements OnInit {
 
   ngOnInit(): void {
     this.facade.init(this.$habit());
-    this._$scheduleMode.set(this.controls.scheduleMode.value);
     this._$tagIds.set(this.controls.tagIds.value);
-    this.controls.scheduleMode.valueChanges.subscribe((mode) => this._$scheduleMode.set(mode));
     this.controls.tagIds.valueChanges.subscribe((ids) => this._$tagIds.set(ids));
   }
 

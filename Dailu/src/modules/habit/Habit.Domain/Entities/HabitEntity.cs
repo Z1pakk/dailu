@@ -17,6 +17,8 @@ public sealed class HabitEntity : BaseEntity<Id<HabitEntity>>
 
     public required Frequency Frequency { get; set; }
 
+    public required Timing Timing { get; set; }
+
     public required Target Target { get; set; }
 
     public required HabitStatus Status { get; set; }

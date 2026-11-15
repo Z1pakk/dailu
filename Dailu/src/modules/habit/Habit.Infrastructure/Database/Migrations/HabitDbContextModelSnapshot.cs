@@ -194,6 +194,12 @@ namespace Habit.Infrastructure.Database.Migrations
                                 .HasColumnType("uuid")
                                 .HasColumnName("id");
 
+                            b1.Property<int>("MonthDays")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("frequency_month_days");
+
                             b1.Property<int>("TimesPerPeriod")
                                 .HasColumnType("integer")
                                 .HasColumnName("frequency_times_per_period");
@@ -201,6 +207,10 @@ namespace Habit.Infrastructure.Database.Migrations
                             b1.Property<int>("Type")
                                 .HasColumnType("integer")
                                 .HasColumnName("frequency_type");
+
+                            b1.Property<int>("WeekDays")
+                                .HasColumnType("integer")
+                                .HasColumnName("frequency_week_days");
 
                             b1.HasKey("HabitEntityId");
 
@@ -259,12 +269,38 @@ namespace Habit.Infrastructure.Database.Migrations
                                 .HasConstraintName("fk_habits_habits_id");
                         });
 
+                    b.OwnsOne("Habit.Domain.ValueObjects.Timing", "Timing", b1 =>
+                        {
+                            b1.Property<Guid>("HabitEntityId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<TimeOnly?>("At")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("timing_at");
+
+                            b1.Property<int?>("DurationMinutes")
+                                .HasColumnType("integer")
+                                .HasColumnName("timing_duration_minutes");
+
+                            b1.HasKey("HabitEntityId");
+
+                            b1.ToTable("habits", "habits");
+
+                            b1.WithOwner()
+                                .HasForeignKey("HabitEntityId")
+                                .HasConstraintName("fk_habits_habits_id");
+                        });
+
                     b.Navigation("Frequency")
                         .IsRequired();
 
                     b.Navigation("Milestone");
 
                     b.Navigation("Target")
+                        .IsRequired();
+
+                    b.Navigation("Timing")
                         .IsRequired();
                 });
 

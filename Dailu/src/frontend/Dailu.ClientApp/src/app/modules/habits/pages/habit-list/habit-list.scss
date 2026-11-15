@@ -90,7 +90,6 @@
 .sort {
   color: var(--p-text-muted-color);
   font-size: 13px;
-  cursor: not-allowed;
 
   @include dl.down(md) {
     display: none;
@@ -100,10 +99,6 @@
 .sort-value {
   color: var(--p-text-color);
   font-weight: 500;
-
-  i {
-    font-size: 10px;
-  }
 }
 
 // ---- Clock card: sample clock (left) + real any-time lane (right) -----------------------
@@ -142,17 +137,6 @@
   }
 }
 
-.sample-tag {
-  margin-left: dl.space(4);
-  padding: 1px 6px;
-  border-radius: 99px;
-  background: var(--dl-bg-subtle);
-  color: var(--p-text-muted-color);
-  font-family: var(--dl-font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  vertical-align: middle;
-}
 
 .lane-meta {
   color: var(--p-text-muted-color);

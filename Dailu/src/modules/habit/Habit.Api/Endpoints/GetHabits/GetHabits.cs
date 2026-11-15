@@ -1,5 +1,5 @@
 using Habit.Application.Features.GetHabits;
-using Habit.Application.Models;
+using Habit.Application.Models.Response;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Habit.Api.Endpoints.GetHabits;
 
-internal sealed record GetHabitsResponse(IEnumerable<HabitModel> Habits);
+internal sealed record GetHabitsResponse(IEnumerable<HabitResponseModel> Habits);
 
 internal static class GetHabits
 {

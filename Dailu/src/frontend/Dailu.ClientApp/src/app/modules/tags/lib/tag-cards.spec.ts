@@ -16,7 +16,8 @@ const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'run',
   name: 'Morning run',
   type: habitTypes.binary,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: '' },
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -52,26 +53,37 @@ describe('tag-cards', () => {
       expect(weekProgress(habit(), entries, TODAY)).toEqual({ done: 2, expected: 7 });
     });
 
-    it('should count up to the daily target per day', () => {
-      const h = habit({ frequency: { type: frequencyTypes.daily, timesPerPeriod: 2 } });
-      const entries = [entry('run', '2026-11-09'), entry('run', '2026-11-09'), entry('run', '2026-11-09')];
-      expect(weekProgress(h, entries, TODAY)).toEqual({ done: 2, expected: 14 });
+    it('should expect the picked weekdays of a Mon/Wed/Fri habit', () => {
+      const h = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 } });
+      const entries = [entry('run', '2026-11-09'), entry('run', '2026-11-10')];
+      expect(weekProgress(h, entries, TODAY)).toEqual({ done: 1, expected: 3 });
+    });
+
+    it('should expect the picked month days that fall in this week', () => {
+      const h = habit({ frequency: { type: frequencyTypes.monthly, weekDays: [], monthDays: [1, 10], timesPerPeriod: 1 } });
+      expect(weekProgress(h, [entry('run', '2026-11-10')], TODAY)).toEqual({ done: 1, expected: 1 });
     });
 
     it('should expect Monday to Friday for a Weekdays habit and ignore the weekend', () => {
-      const h = habit({ frequency: { type: frequencyTypes.weekly, timesPerPeriod: 5 } });
+      const h = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [1, 2, 3, 4, 5], monthDays: [], timesPerPeriod: 1 } });
       const entries = [entry('run', '2026-11-09'), entry('run', '2026-11-09'), entry('run', '2026-11-08')];
       expect(weekProgress(h, entries, TODAY)).toEqual({ done: 1, expected: 5 });
     });
 
     it('should cap a weekly habit at its times per week', () => {
-      const h = habit({ frequency: { type: frequencyTypes.weekly, timesPerPeriod: 2 } });
+      const h = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 } });
       const entries = ['2026-11-09', '2026-11-10', '2026-11-11'].map((d) => entry('run', d));
       expect(weekProgress(h, entries, TODAY)).toEqual({ done: 2, expected: 2 });
     });
 
+    it('should count days, not entries, for a weekly habit', () => {
+      const h = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 } });
+      const entries = [entry('run', '2026-11-09'), entry('run', '2026-11-09')];
+      expect(weekProgress(h, entries, TODAY)).toEqual({ done: 1, expected: 2 });
+    });
+
     it('should leave monthly habits out of the week', () => {
-      const h = habit({ frequency: { type: frequencyTypes.monthly, timesPerPeriod: 4 } });
+      const h = habit({ frequency: { type: frequencyTypes.monthly, weekDays: [], monthDays: [], timesPerPeriod: 4 } });
       expect(weekProgress(h, [entry('run', '2026-11-09')], TODAY)).toEqual({ done: 0, expected: 0 });
     });
 

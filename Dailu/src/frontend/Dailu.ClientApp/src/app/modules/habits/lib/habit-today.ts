@@ -1,18 +1,15 @@
-import { isWeekend } from 'date-fns/isWeekend';
 import { parseISO } from 'date-fns/parseISO';
 import { startOfMonth } from 'date-fns/startOfMonth';
 import { startOfWeek } from 'date-fns/startOfWeek';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
 import { frequencyTypes } from '@habits/enums/frequency-type.enum';
-import { habitStatuses } from '@habits/enums/habit-status.enum';
-import { isWeekdays } from '@habits/lib/habit-schedule';
+import { hasFixedDays, hasTime, isScheduledOn, timesPerPeriod } from '@habits/lib/habit-schedule';
 import { localDay } from '@shared/lib/date/local-day';
 
 /*
- * "Any time today": habits without a time of day that are due today. Habits have no
- * times yet, so every real habit is an any-time habit. Positions use the same
- * 06:00 → 24:00 scale as the clock timeline.
+ * "Any time today": habits without a time of day that are due today; timed habits are on the
+ * clock instead. Positions use the same 06:00 → 24:00 scale as the clock timeline.
  */
 
 export interface LaneItem {
@@ -39,18 +36,6 @@ export function dayPosition(date: Date): number {
   return Math.min(1, Math.max(0, (hours - DAY_START_H) / DAY_LENGTH_H));
 }
 
-export function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0 && m > 0) {
-    return `${h} h ${m} m`;
-  }
-  if (h > 0) {
-    return `${h} h`;
-  }
-  return `${m} m`;
-}
-
 function ownEntries(habit: HabitModel, entries: readonly HabitEntryModel[]): HabitEntryModel[] {
   return entries.filter((e) => !e.isArchived && e.habitId === habit.id);
 }
@@ -71,36 +56,35 @@ function entriesOn(habit: HabitModel, entries: readonly HabitEntryModel[], day: 
   return ownEntries(habit, entries).filter((e) => localDay(e.completedAtUtc) === day);
 }
 
+/** Local days with at least one entry; a "N times" habit counts at most one session a day. */
+function daysWithEntries(entries: readonly HabitEntryModel[]): Set<string> {
+  return new Set(entries.map((e) => localDay(e.completedAtUtc)));
+}
+
 export function isDueToday(habit: HabitModel, entries: readonly HabitEntryModel[], today: string): boolean {
-  if (habit.isArchived || habit.status === habitStatuses.completed) {
+  if (!isScheduledOn(habit, today)) {
     return false;
   }
-  if (habit.frequency.type === frequencyTypes.daily) {
+  if (hasFixedDays(habit.frequency)) {
     return true;
   }
-  if (isWeekdays(habit.frequency)) {
-    return !isWeekend(parseISO(today));
-  }
-  // Custom weekly / monthly: due until the period's target is met — and still shown on the day it was met.
-  const before = periodEntries(habit, entries, today).filter((e) => localDay(e.completedAtUtc) !== today).length;
-  return before < habit.frequency.timesPerPeriod;
+  // No days picked: due until done on N days this week/month — and still shown on the day it was finished.
+  const before = [...daysWithEntries(periodEntries(habit, entries, today))].filter((d) => d !== today).length;
+  return before < timesPerPeriod(habit.frequency);
 }
 
 export function periodProgress(habit: HabitModel, entries: readonly HabitEntryModel[], today: string): number {
-  const target = Math.max(1, habit.frequency.timesPerPeriod);
-  if (habit.frequency.type === frequencyTypes.daily) {
-    return Math.min(1, entriesOn(habit, entries, today).length / target);
-  }
-  if (isWeekdays(habit.frequency)) {
+  if (hasFixedDays(habit.frequency)) {
     return entriesOn(habit, entries, today).length > 0 ? 1 : 0;
   }
-  return Math.min(1, periodEntries(habit, entries, today).length / target);
+  const needed = timesPerPeriod(habit.frequency);
+  return Math.min(needed, daysWithEntries(periodEntries(habit, entries, today)).size) / needed;
 }
 
 export function anyTimeLane(habits: readonly HabitModel[], entries: readonly HabitEntryModel[], now: Date): AnyTimeLane {
   const today = localDay(now);
   const nowPosition = dayPosition(now);
-  const due = habits.filter((h) => isDueToday(h, entries, today));
+  const due = habits.filter((h) => !hasTime(h) && isDueToday(h, entries, today));
   const done: (LaneItem & { at: number })[] = [];
   const open: LaneItem[] = [];
   for (const habit of due) {

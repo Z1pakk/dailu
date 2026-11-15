@@ -1,6 +1,7 @@
 using Habit.Application.Features.GetHabits.QueryModels;
 using Habit.Application.IntegratedServices;
 using Habit.Application.Models;
+using Habit.Application.Models.Response;
 using Habit.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;
@@ -12,7 +13,7 @@ namespace Habit.Application.Features.GetHabits;
 
 public sealed class GetHabitsQuery : IQuery<Result<GetHabitsQueryResponse>> { }
 
-public sealed record GetHabitsQueryResponse(IEnumerable<HabitModel> Habits);
+public sealed record GetHabitsQueryResponse(IEnumerable<HabitResponseModel> Habits);
 
 public sealed class GetHabitsQueryHandler(
     IHabitDbContext habitDbContext,
@@ -35,6 +36,7 @@ public sealed class GetHabitsQueryHandler(
                 Name = h.Name,
                 Description = h.Description,
                 Frequency = h.Frequency,
+                Timing = h.Timing,
                 Target = h.Target,
                 Status = h.Status,
                 Type = h.Type,
@@ -57,19 +59,20 @@ public sealed class GetHabitsQueryHandler(
         var tags = await tagService.GetByIdsAsync(tagIds, cancellationToken);
 
         var habitModels = habits
-            .Select(h => new HabitModel
+            .Select(h => new HabitResponseModel()
             {
-                Id = new Id<HabitModel>(h.Id.Value),
+                Id = new Id<HabitResponseModel>(h.Id.Value),
                 Name = h.Name,
                 Description = h.Description,
                 Type = h.Type,
-                Frequency = new FrequencyModel(h.Frequency.Type, h.Frequency.TimesPerPeriod),
-                Target = new TargetModel(h.Target.Value, h.Target.Unit),
+                Frequency = FrequencyResponseModel.FromDomain(h.Frequency),
+                Timing = TimingResponseModel.FromDomain(h.Timing),
+                Target = TargetResponseModel.FromDomain(h.Target),
                 Status = h.Status,
                 IsArchived = h.IsArchived,
                 EndDate = h.EndDate,
                 Milestone = h.Milestone is not null
-                    ? new MilestoneModel(h.Milestone.Target, h.Milestone.Current)
+                    ? MilestoneResponseModel.FromDomain(h.Milestone)
                     : null,
                 AutomationSource = h.AutomationSource,
                 AutomationFilter = h.AutomationFilter,
