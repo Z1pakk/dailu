@@ -25,7 +25,7 @@ public sealed class GoogleHealthHttpClient(
     private const string UserInfoEndpoint = "https://www.googleapis.com/oauth2/v2/userinfo";
     private const string UnauthorizedError = "UNAUTHORIZED";
 
-    public async Task<GoogleHealthTokensModel?> ExchangeAuthorizationCodeAsync(
+    public async Task<Result<GoogleHealthTokensModel>> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
     )
@@ -47,11 +47,11 @@ public sealed class GoogleHealthHttpClient(
             );
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError(
-                    "Google Health code exchange failed: {StatusCode}",
-                    response.StatusCode
+                // Google explains the failure in the body, e.g. {"error":"invalid_grant","error_description":"..."}.
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                return Result<GoogleHealthTokensModel>.Failure(
+                    $"Google Health code exchange failed: {response.StatusCode} - {body}"
                 );
-                return null;
             }
 
             var raw = await response.Content.ReadFromJsonAsync<GoogleHealthTokenResponse>(
@@ -61,19 +61,25 @@ public sealed class GoogleHealthHttpClient(
 
             if (raw is null)
             {
-                return null;
+                return Result<GoogleHealthTokensModel>.Failure(
+                    "Google Health code exchange returned an empty response."
+                );
             }
 
-            return new GoogleHealthTokensModel(
-                AccessToken: raw.AccessToken,
-                RefreshToken: raw.RefreshToken,
-                ExpiresAtUtc: timeProvider.GetUtcNow().UtcDateTime.AddSeconds(raw.ExpiresIn)
+            return Result<GoogleHealthTokensModel>.Success(
+                new GoogleHealthTokensModel(
+                    AccessToken: raw.AccessToken,
+                    RefreshToken: raw.RefreshToken,
+                    ExpiresAtUtc: timeProvider.GetUtcNow().UtcDateTime.AddSeconds(raw.ExpiresIn)
+                )
             );
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Google Health code exchange failed unexpectedly");
-            return null;
+            return Result<GoogleHealthTokensModel>.Failure(
+                "Google Health code exchange failed due to an unexpected error."
+            );
         }
     }
 

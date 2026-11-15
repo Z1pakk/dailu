@@ -49,10 +49,8 @@
 
   <footer class="actions">
     @if (card.isConnected) {
-      <!-- Syncs run on the backend's schedule; there's no endpoint to trigger one. -->
-      <span pTooltip="Coming soon" tooltipPosition="top">
-        <p-button label="Sync now" severity="secondary" [outlined]="true" [disabled]="true" />
-      </span>
+      <p-button label="Sync now" icon="pi pi-sync" severity="secondary" [outlined]="true"
+                [loading]="$isSyncing()" (onClick)="sync.emit()" />
       <p-button label="Disconnect" severity="secondary" [text]="true" [loading]="$isDisconnecting()"
                 (onClick)="confirmDisconnect($event)" />
     } @else {

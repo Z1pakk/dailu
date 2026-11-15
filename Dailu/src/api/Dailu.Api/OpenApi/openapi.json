@@ -423,6 +423,33 @@
         }
       }
     },
+    "/api/habit-user/integrations/github/sync": {
+      "post": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Sync the current authenticated user's GitHub integration now.",
+        "operationId": "SyncGithub",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncGithubIntegrationCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/habit-user/integrations/strava/connect": {
       "get": {
         "tags": [
@@ -468,6 +495,33 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/strava/sync": {
+      "post": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Sync the current authenticated user's Strava integration now.",
+        "operationId": "SyncStrava",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStravaIntegrationCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -538,6 +592,33 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/habit-user/integrations/google-health/sync": {
+      "post": {
+        "tags": [
+          "HabitUser"
+        ],
+        "description": "Sync the current authenticated user's Google Health integration now.",
+        "operationId": "SyncGoogleHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncGoogleHealthIntegrationCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -2231,6 +2312,54 @@
           },
           "profileUrl": {
             "type": "string"
+          }
+        }
+      },
+      "SyncGithubIntegrationCommandResponse": {
+        "required": [
+          "activitiesCount"
+        ],
+        "type": "object",
+        "properties": {
+          "activitiesCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "SyncGoogleHealthIntegrationCommandResponse": {
+        "required": [
+          "activitiesCount"
+        ],
+        "type": "object",
+        "properties": {
+          "activitiesCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "SyncStravaIntegrationCommandResponse": {
+        "required": [
+          "activitiesCount"
+        ],
+        "type": "object",
+        "properties": {
+          "activitiesCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

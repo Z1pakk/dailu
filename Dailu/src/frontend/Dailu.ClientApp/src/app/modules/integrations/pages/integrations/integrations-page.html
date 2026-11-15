@@ -30,7 +30,9 @@
         <app-integration-card [card]="card"
                               [isConnecting]="facade.$connecting() === card.type"
                               [isDisconnecting]="facade.$disconnecting() === card.type"
+                              [isSyncing]="facade.$syncing() === card.type"
                               (connect)="facade.connect(card.type)"
+                              (sync)="facade.sync(card.type)"
                               (disconnect)="facade.disconnect(card.type)" />
       }
     </div>

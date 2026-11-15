@@ -5,7 +5,7 @@ namespace HabitUser.Github.Services;
 
 public interface IGitHubHttpClient
 {
-    Task<string?> ExchangeAuthorizationCodeAsync(
+    Task<Result<GitHubTokensModel>> ExchangeAuthorizationCodeAsync(
         string code,
         CancellationToken cancellationToken = default
     );

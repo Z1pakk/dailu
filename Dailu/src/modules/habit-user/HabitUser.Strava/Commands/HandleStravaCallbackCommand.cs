@@ -23,15 +23,17 @@ public sealed class HandleStravaCallbackCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        var tokens = await stravaClient.ExchangeAuthorizationCodeAsync(
+        var tokensResult = await stravaClient.ExchangeAuthorizationCodeAsync(
             request.Code,
             cancellationToken
         );
 
-        if (tokens is null)
+        if (tokensResult.IsFailure)
         {
-            return Result.Failure("Failed to exchange Strava authorization code.");
+            return tokensResult.ToPlainResult();
         }
+
+        var tokens = tokensResult.Value;
 
         var habitUser = await dbContext
             .HabitUsers.AsNoTracking()

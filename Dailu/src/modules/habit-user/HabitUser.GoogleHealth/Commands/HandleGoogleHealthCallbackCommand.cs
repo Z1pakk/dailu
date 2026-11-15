@@ -23,15 +23,17 @@ public sealed class HandleGoogleHealthCallbackCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        var tokens = await googleHealthClient.ExchangeAuthorizationCodeAsync(
+        var tokensResult = await googleHealthClient.ExchangeAuthorizationCodeAsync(
             request.Code,
             cancellationToken
         );
 
-        if (tokens is null)
+        if (tokensResult.IsFailure)
         {
-            return Result.Failure("Failed to exchange Google Health authorization code.");
+            return tokensResult.ToPlainResult();
         }
+
+        var tokens = tokensResult.Value;
 
         var habitUser = await dbContext
             .HabitUsers.AsNoTracking()

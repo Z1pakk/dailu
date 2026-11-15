@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace SharedKernel.ResultPattern;
 
-public class Result<T>
+public class Result<T> : IResultBase
 {
     [MemberNotNullWhen(true, nameof(Value))]
     public bool IsSuccess { get; }

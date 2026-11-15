@@ -22,14 +22,14 @@ public sealed class HandleGithubCallbackCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        var accessToken = await githubClient.ExchangeAuthorizationCodeAsync(
+        var tokensResult = await githubClient.ExchangeAuthorizationCodeAsync(
             request.Code,
             cancellationToken
         );
 
-        if (accessToken is null)
+        if (tokensResult.IsFailure)
         {
-            return Result.Failure("Failed to exchange GitHub authorization code.");
+            return tokensResult.ToPlainResult();
         }
 
         var habitUser = await dbContext
@@ -44,7 +44,7 @@ public sealed class HandleGithubCallbackCommandHandler(
             return Result.Failure("User not found.");
         }
 
-        var config = new GithubIntegrationConfig(accessToken, ExpiresAtUtc: null);
+        var config = new GithubIntegrationConfig(tokensResult.Value.AccessToken, ExpiresAtUtc: null);
 
         var existing = await dbContext.IntegrationConfigs.FirstOrDefaultAsync(
             c => c.HabitUserId == habitUser.Id && c.Provider == IntegrationProvider.Github,
