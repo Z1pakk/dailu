@@ -1,10 +1,10 @@
-import { isWeekend } from 'date-fns/isWeekend';
+import { addDays } from 'date-fns/addDays';
 import { parseISO } from 'date-fns/parseISO';
 import { startOfWeek } from 'date-fns/startOfWeek';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
 import { frequencyTypes } from '@habits/enums/frequency-type.enum';
-import { isWeekdays } from '@habits/lib/habit-schedule';
+import { hasFixedDays, matchesDay, timesPerPeriod } from '@habits/lib/habit-schedule';
 import { TagModel } from '@tags/models/tag.model';
 import { localDay } from '@shared/lib/date/local-day';
 
@@ -70,23 +70,19 @@ function weekPerDay(habit: HabitModel, entries: readonly HabitEntryModel[], toda
 }
 
 export function weekProgress(habit: HabitModel, entries: readonly HabitEntryModel[], today: string): WeekProgress {
-  const { type, timesPerPeriod } = habit.frequency;
+  const frequency = habit.frequency;
   const perDay = weekPerDay(habit, entries, today);
-  const times = Math.max(1, timesPerPeriod);
-  if (type === frequencyTypes.daily) {
-    let done = 0;
-    for (const count of perDay.values()) {
-      done += Math.min(count, times);
-    }
-    return { done, expected: 7 * times };
+  if (hasFixedDays(frequency)) {
+    // Every day of this week the habit is scheduled on; done = those with an entry so far.
+    const monday = startOfWeek(parseISO(today), { weekStartsOn: 1 });
+    const scheduled = Array.from({ length: 7 }, (_, i) => localDay(addDays(monday, i))).filter((day) =>
+      matchesDay(frequency, day),
+    );
+    return { done: scheduled.filter((day) => perDay.has(day)).length, expected: scheduled.length };
   }
-  if (isWeekdays(habit.frequency)) {
-    const done = [...perDay.keys()].filter((day) => !isWeekend(parseISO(day))).length;
-    return { done, expected: 5 };
-  }
-  if (type === frequencyTypes.weekly) {
-    const total = [...perDay.values()].reduce((sum, count) => sum + count, 0);
-    return { done: Math.min(total, times), expected: times };
+  if (frequency.type === frequencyTypes.weekly) {
+    const times = timesPerPeriod(frequency);
+    return { done: Math.min(perDay.size, times), expected: times };
   }
   return { done: 0, expected: 0 };
 }

@@ -1,7 +1,8 @@
 <p-drawer [visible]="$visible()" (onHide)="close()" position="right" [modal]="true" [blockScroll]="true"
           [dismissible]="true" [closeOnEscape]="true" appendTo="body"
           styleClass="habit-drawer" [fullScreen]="$isMobile()"
-          [ariaLabel]="$isEdit() ? 'Edit habit' : 'New habit'">
+          [ariaLabel]="$isEdit() ? 'Edit habit' : 'New habit'"
+>
   <ng-template #headless>
     <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <header class="panel-header">
@@ -14,20 +15,20 @@
       </header>
 
       <div class="panel-body">
-        <!-- Habits have no time of day yet: every habit is an any-time habit, so it isn't placed
-             on the clock. The busy segments are the sample day (dummy data). -->
-        <div class="clock-preview" pTooltip="Sample schedule — habit times are coming soon" tooltipPosition="bottom">
+        @let preview = facade.$clockPreview();
+        <div class="clock-preview">
           <div class="clock-head">
-            <span class="clock-title">Any time today</span>
-            <span class="dl-mono-sm clock-meta">due by 24:00 · not on your clock</span>
+            <span class="clock-title">{{ preview.title }}</span>
+            <span class="dl-mono-sm clock-meta">{{ preview.meta }}</span>
           </div>
           <div class="clock-track" aria-hidden="true">
             <span class="clock-rail"></span>
-            <span class="clock-busy busy-1"></span>
-            <span class="clock-busy busy-2"></span>
-            <span class="clock-busy busy-3"></span>
-            <span class="clock-busy busy-4"></span>
-            <span class="clock-busy busy-5"></span>
+            @for (segment of preview.busy; track $index) {
+              <span class="clock-busy" [style.left.%]="segment.left" [style.width.%]="segment.width"></span>
+            }
+            @if (preview.own; as own) {
+              <span class="clock-own" [style.left.%]="own.left" [style.width.%]="own.width"></span>
+            }
             <span class="clock-tick tick-06">06</span>
             <span class="clock-tick tick-12">12</span>
             <span class="clock-tick tick-18">18</span>
@@ -59,48 +60,76 @@
         <!-- 2 Schedule -->
         <section class="section">
           <h3 class="section-title"><span class="section-num">2</span>Schedule</h3>
-          <p-selectbutton formControlName="scheduleMode" [options]="scheduleOptions" optionLabel="label"
+          <p-selectbutton formControlName="frequencyType" [options]="frequencyOptions" optionLabel="label"
                           optionValue="value" [allowEmpty]="false" ariaLabelledBy="Schedule" />
 
-          @if ($scheduleMode() === 'custom') {
-            <div class="row">
-              <div class="field">
-                <label for="habit-period">Repeat</label>
-                <p-select inputId="habit-period" formControlName="customFrequencyType" [options]="periodOptions"
-                          optionLabel="label" optionValue="value" />
-              </div>
-              <div class="field">
-                <label for="habit-times">Times</label>
-                <p-inputnumber [fluid]="true" inputId="habit-times" formControlName="customTimesPerPeriod" [min]="1" [max]="999"
-                               [showButtons]="true" [invalid]="!!errorOf('customTimesPerPeriod')" />
-                @if (errorOf('customTimesPerPeriod'); as error) {
-                  <small class="field-error">{{ error }}</small>
+          @switch (facade.$frequencyType()) {
+            @case (frequencyTypes.weekly) {
+              <div class="days" role="group" aria-label="Days of the week">
+                @for (button of weekButtons; track button.day) {
+                  <button type="button" class="day" [class.is-selected]="facade.$weekDays().includes(button.day)"
+                          [attr.aria-pressed]="facade.$weekDays().includes(button.day)" [attr.aria-label]="button.label"
+                          (click)="facade.toggleWeekDay(button.day)">{{ button.letter }}</button>
                 }
               </div>
+            }
+            @case (frequencyTypes.monthly) {
+              <div class="month-days" role="group" aria-label="Days of the month">
+                @for (day of monthDayNumbers; track day) {
+                  <button type="button" class="day" [class.is-selected]="facade.$monthDays().includes(day)"
+                          [attr.aria-pressed]="facade.$monthDays().includes(day)"
+                          (click)="facade.toggleMonthDay(day)">{{ day }}</button>
+                }
+              </div>
+            }
+          }
+
+          @if (facade.$frequencyType() !== frequencyTypes.daily && !facade.$hasFixedDays()) {
+            <div class="field times">
+              <label for="habit-times">Times per {{ facade.$periodName() }}</label>
+              <div class="stepper">
+                <p-inputnumber inputId="habit-times" formControlName="timesPerPeriod" [min]="1" [max]="facade.$maxTimes()"
+                               [showButtons]="true" buttonLayout="horizontal" incrementButtonIcon="pi pi-plus"
+                               decrementButtonIcon="pi pi-minus" [invalid]="!!errorOf('timesPerPeriod')" />
+                <span class="stepper-suffix">times a {{ facade.$periodName() }}</span>
+              </div>
+              @if (errorOf('timesPerPeriod'); as error) {
+                <small class="field-error">{{ error }}</small>
+              }
             </div>
           }
 
-          <!-- Specific weekdays aren't stored yet. -->
-          <div class="days" pTooltip="Coming soon" tooltipPosition="top">
-            @for (day of weekdays; track $index) {
-              <button type="button" class="day" [class.is-selected]="$scheduleMode() === 'weekdays' && $index < 5"
-                      [disabled]="true" [attr.aria-label]="day">{{ day }}</button>
-            }
-          </div>
+          <p class="field-hint">{{ facade.$daysHint() }}</p>
+          @if (facade.$shortMonthWarning(); as warning) {
+            <p-message severity="info" icon="pi pi-info-circle" styleClass="summary">{{ warning }}</p-message>
+          }
 
-          <!-- Only "Any time" can be saved until habits get a time of day. -->
-          <span class="time-mode" pTooltip="&quot;At a time&quot; is coming soon" tooltipPosition="top">
-            <p-selectbutton [options]="timeModes" optionLabel="label" optionValue="value" optionDisabled="disabled"
-                            [ngModel]="'any'" [ngModelOptions]="{ standalone: true }" [allowEmpty]="false"
+          <span class="time-mode" [pTooltip]="facade.$hasFixedDays() ? '' : 'Pick days to set a time'"
+                tooltipPosition="top">
+            <p-selectbutton formControlName="timeMode" [options]="$timeModeOptions()" optionLabel="label"
+                            optionValue="value" optionDisabled="disabled" [allowEmpty]="false"
                             ariaLabelledBy="Time of day" />
           </span>
-          <p class="field-hint">Due by midnight · not on your clock</p>
           <div class="row">
-            <div class="field" pTooltip="Coming soon" tooltipPosition="top">
+            @if (facade.$timeMode() === 'at') {
+              <div class="field">
+                <label for="habit-at">Start time</label>
+                <p-datepicker inputId="habit-at" formControlName="at" [timeOnly]="true" [stepMinute]="15"
+                              hourFormat="24" [fluid]="true" placeholder="07:00" appendTo="body"
+                              [invalid]="!!errorOf('at')" />
+                @if (errorOf('at'); as error) {
+                  <small class="field-error">{{ error }}</small>
+                }
+              </div>
+            }
+            <div class="field">
               <label for="habit-duration">Duration (optional)</label>
-              <p-select inputId="habit-duration" placeholder="No duration" [options]="[]" [disabled]="true" />
+              <p-select inputId="habit-duration" formControlName="durationMinutes" [options]="$durationOptions()"
+                        optionLabel="label" optionValue="value" placeholder="No duration" [showClear]="true"
+                        appendTo="body" />
             </div>
           </div>
+          <p class="field-hint">{{ facade.$timeHint() }}</p>
         </section>
 
         <!-- 3 Auto-check -->

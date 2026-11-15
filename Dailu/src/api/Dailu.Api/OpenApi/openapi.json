@@ -849,6 +849,7 @@
           "description",
           "type",
           "frequency",
+          "timing",
           "target",
           "endDate",
           "milestone",
@@ -870,10 +871,20 @@
             "$ref": "#/components/schemas/HabitType"
           },
           "frequency": {
-            "$ref": "#/components/schemas/FrequencyModel"
+            "$ref": "#/components/schemas/FrequencyRequestModel"
+          },
+          "timing": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TimingRequestModel"
+              }
+            ]
           },
           "target": {
-            "$ref": "#/components/schemas/TargetModel"
+            "$ref": "#/components/schemas/TargetRequestModel"
           },
           "endDate": {
             "type": [
@@ -888,7 +899,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/MilestoneModel"
+                "$ref": "#/components/schemas/MilestoneRequestModel"
               }
             ]
           },
@@ -911,7 +922,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/HabitAutomationFilterModel"
+                "$ref": "#/components/schemas/HabitAutomationFilterRequestModel"
               }
             ]
           }
@@ -967,7 +978,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "$ref": "#/components/schemas/IdOfHabitModel"
+            "$ref": "#/components/schemas/IdOfHabitResponseModel"
           }
         }
       },
@@ -1000,15 +1011,80 @@
           }
         }
       },
-      "FrequencyModel": {
+      "DayOfWeek": {
+        "type": "integer"
+      },
+      "FrequencyRequestModel": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/FrequencyType"
+          },
+          "weekDays": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            }
+          },
+          "monthDays": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "timesPerPeriod": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 1
+          }
+        }
+      },
+      "FrequencyResponseModel": {
         "required": [
           "type",
+          "weekDays",
+          "monthDays",
           "timesPerPeriod"
         ],
         "type": "object",
         "properties": {
           "type": {
             "$ref": "#/components/schemas/FrequencyType"
+          },
+          "weekDays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            }
+          },
+          "monthDays": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
           },
           "timesPerPeriod": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -1082,7 +1158,7 @@
           "habits": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/HabitModel"
+              "$ref": "#/components/schemas/HabitResponseModel"
             }
           }
         }
@@ -1349,32 +1425,32 @@
           }
         }
       },
-      "HabitAutomationFilterModel": {
+      "HabitAutomationFilterRequestModel": {
         "required": [
           "type"
         ],
         "type": "object",
         "anyOf": [
           {
-            "$ref": "#/components/schemas/HabitAutomationFilterModelGithubAutomationFilterModel"
+            "$ref": "#/components/schemas/HabitAutomationFilterRequestModelGithubAutomationFilterRequestModel"
           },
           {
-            "$ref": "#/components/schemas/HabitAutomationFilterModelStravaAutomationFilterModel"
+            "$ref": "#/components/schemas/HabitAutomationFilterRequestModelStravaAutomationFilterRequestModel"
           },
           {
-            "$ref": "#/components/schemas/HabitAutomationFilterModelGoogleHealthAutomationFilterModel"
+            "$ref": "#/components/schemas/HabitAutomationFilterRequestModelGoogleHealthAutomationFilterRequestModel"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
-            "github": "#/components/schemas/HabitAutomationFilterModelGithubAutomationFilterModel",
-            "strava": "#/components/schemas/HabitAutomationFilterModelStravaAutomationFilterModel",
-            "google-health": "#/components/schemas/HabitAutomationFilterModelGoogleHealthAutomationFilterModel"
+            "github": "#/components/schemas/HabitAutomationFilterRequestModelGithubAutomationFilterRequestModel",
+            "strava": "#/components/schemas/HabitAutomationFilterRequestModelStravaAutomationFilterRequestModel",
+            "google-health": "#/components/schemas/HabitAutomationFilterRequestModelGoogleHealthAutomationFilterRequestModel"
           }
         }
       },
-      "HabitAutomationFilterModelGithubAutomationFilterModel": {
+      "HabitAutomationFilterRequestModelGithubAutomationFilterRequestModel": {
         "required": [
           "repositoryId",
           "repositoryName",
@@ -1406,7 +1482,7 @@
           }
         }
       },
-      "HabitAutomationFilterModelGoogleHealthAutomationFilterModel": {
+      "HabitAutomationFilterRequestModelGoogleHealthAutomationFilterRequestModel": {
         "required": [
           "metrics"
         ],
@@ -1425,7 +1501,7 @@
           }
         }
       },
-      "HabitAutomationFilterModelStravaAutomationFilterModel": {
+      "HabitAutomationFilterRequestModelStravaAutomationFilterRequestModel": {
         "required": [
           "activityTypes"
         ],
@@ -1533,19 +1609,20 @@
       "HabitEntrySource": {
         "type": "integer"
       },
-      "HabitModel": {
+      "HabitResponseModel": {
         "required": [
           "id",
           "name",
           "type",
           "frequency",
+          "timing",
           "target",
           "status"
         ],
         "type": "object",
         "properties": {
           "id": {
-            "$ref": "#/components/schemas/IdOfHabitModel"
+            "$ref": "#/components/schemas/IdOfHabitResponseModel"
           },
           "name": {
             "type": "string"
@@ -1560,10 +1637,13 @@
             "$ref": "#/components/schemas/HabitType"
           },
           "frequency": {
-            "$ref": "#/components/schemas/FrequencyModel"
+            "$ref": "#/components/schemas/FrequencyResponseModel"
+          },
+          "timing": {
+            "$ref": "#/components/schemas/TimingResponseModel"
           },
           "target": {
-            "$ref": "#/components/schemas/TargetModel"
+            "$ref": "#/components/schemas/TargetResponseModel"
           },
           "status": {
             "$ref": "#/components/schemas/HabitStatus"
@@ -1584,7 +1664,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/MilestoneModel"
+                "$ref": "#/components/schemas/MilestoneResponseModel"
               }
             ]
           },
@@ -1635,7 +1715,7 @@
       },
       "Id": { },
       "IdOfHabitEntryModel": { },
-      "IdOfHabitModel": { },
+      "IdOfHabitResponseModel": { },
       "IdOfTagModel": { },
       "IntegrationConfig": {
         "required": [
@@ -1939,7 +2019,32 @@
           }
         }
       },
-      "MilestoneModel": {
+      "MilestoneRequestModel": {
+        "required": [
+          "target",
+          "current"
+        ],
+        "type": "object",
+        "properties": {
+          "target": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "current": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MilestoneResponseModel": {
         "required": [
           "target",
           "current"
@@ -2151,7 +2256,7 @@
           }
         }
       },
-      "TargetModel": {
+      "TargetRequestModel": {
         "required": [
           "value",
           "unit"
@@ -2171,6 +2276,72 @@
           }
         }
       },
+      "TargetResponseModel": {
+        "required": [
+          "value",
+          "unit"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "TimingRequestModel": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "durationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "TimingResponseModel": {
+        "required": [
+          "at",
+          "durationMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "durationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "UpdateHabitCommand": {
         "required": [
           "habitId",
@@ -2178,6 +2349,7 @@
           "description",
           "type",
           "frequency",
+          "timing",
           "target",
           "endDate",
           "milestone",
@@ -2187,7 +2359,7 @@
         "type": "object",
         "properties": {
           "habitId": {
-            "$ref": "#/components/schemas/IdOfHabitModel"
+            "$ref": "#/components/schemas/IdOfHabitResponseModel"
           },
           "name": {
             "type": "string"
@@ -2202,10 +2374,20 @@
             "$ref": "#/components/schemas/HabitType"
           },
           "frequency": {
-            "$ref": "#/components/schemas/FrequencyModel"
+            "$ref": "#/components/schemas/FrequencyRequestModel"
+          },
+          "timing": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TimingRequestModel"
+              }
+            ]
           },
           "target": {
-            "$ref": "#/components/schemas/TargetModel"
+            "$ref": "#/components/schemas/TargetRequestModel"
           },
           "endDate": {
             "type": [
@@ -2220,7 +2402,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/MilestoneModel"
+                "$ref": "#/components/schemas/MilestoneRequestModel"
               }
             ]
           },
@@ -2243,7 +2425,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/HabitAutomationFilterModel"
+                "$ref": "#/components/schemas/HabitAutomationFilterRequestModel"
               }
             ]
           }

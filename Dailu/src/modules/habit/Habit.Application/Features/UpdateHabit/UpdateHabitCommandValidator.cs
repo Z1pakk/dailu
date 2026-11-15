@@ -15,7 +15,13 @@ public sealed class UpdateHabitCommandValidator : AbstractValidator<UpdateHabitC
         RuleFor(x => x.Type).IsInEnum();
 
         RuleFor(x => x.Frequency.Type).IsInEnum();
-        RuleFor(x => x.Frequency.TimesPerPeriod).GreaterThan(0);
+        RuleFor(x => x.Frequency.TimesPerPeriod).InclusiveBetween(1, 31);
+        RuleForEach(x => x.Frequency.WeekDays).IsInEnum();
+        RuleForEach(x => x.Frequency.MonthDays).InclusiveBetween(1, 31);
+
+        RuleFor(x => x.Timing!.DurationMinutes)
+            .InclusiveBetween(1, 1440)
+            .When(x => x.Timing?.DurationMinutes is not null);
 
         RuleFor(x => x.Target.Value).GreaterThan(0);
 

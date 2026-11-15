@@ -53,7 +53,7 @@ export function habitOptions(
     .filter((h) => !h.isArchived)
     .map((h, index) => {
       let state: HabitOptionState = isDueToday(h, entries, today) ? 'due' : 'not-due';
-      let hint = state === 'due' ? `due · ${sourceLabel(h)}` : scheduleLabel(h.frequency);
+      let hint = state === 'due' ? `due · ${sourceLabel(h)}` : scheduleLabel(h);
       const doneAt = firstToday.get(h.id);
       if (doneAt) {
         state = 'done';

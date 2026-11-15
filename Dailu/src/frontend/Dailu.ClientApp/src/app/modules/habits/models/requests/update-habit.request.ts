@@ -2,6 +2,7 @@ import { HabitType } from '@habits/enums/habit-type.enum';
 import { AutomationSource } from '@habits/enums/automation-source.enum';
 import { FrequencyModel } from '@habits/models/frequency.model';
 import { TargetModel } from '@habits/models/target.model';
+import { TimingModel } from '@habits/models/timing.model';
 import { MilestoneModel } from '@habits/models/milestone.model';
 import { AutomationFilterModel } from '@habits/models/automation-filter.model';
 
@@ -10,6 +11,7 @@ export interface UpdateHabitRequestModel {
   description: string | null;
   type: HabitType;
   frequency: FrequencyModel;
+  timing: TimingModel;
   target: TargetModel;
   endDate: string | null;
   milestone: MilestoneModel | null;

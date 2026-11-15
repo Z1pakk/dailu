@@ -4,7 +4,7 @@ import { Menu } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitStreak, MilestoneProgress, WeekDot } from '@habits/lib/habit-progress';
-import { formatRingDuration } from '@habits/lib/sample-day';
+import { formatRingDuration } from '@habits/lib/day-timeline';
 
 export interface HabitRowView {
   habit: HabitModel;
@@ -16,7 +16,7 @@ export interface HabitRowView {
   milestone: MilestoneProgress | null;
   /** 0..1 of the current period's target. */
   progress: number;
-  /** Null until the backend stores durations: the ring then shows plain progress. */
+  /** The habit's duration; without one the ring shows plain progress. */
   durationMinutes: number | null;
 }
 

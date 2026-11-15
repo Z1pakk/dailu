@@ -1,12 +1,12 @@
-using Habit.Domain.Enums;
+﻿using Habit.Domain.Enums;
 using Habit.Domain.ValueObjects.AutomationFilters;
 using StrictId;
 
-namespace Habit.Application.Models;
+namespace Habit.Application.Models.Response;
 
-public class HabitModel
+public sealed record HabitResponseModel
 {
-    public required Id<HabitModel> Id { get; set; }
+    public required Id<HabitResponseModel> Id { get; set; }
 
     public required string Name { get; set; }
 
@@ -14,9 +14,11 @@ public class HabitModel
 
     public required HabitType Type { get; set; }
 
-    public required FrequencyModel Frequency { get; set; }
+    public required FrequencyResponseModel Frequency { get; set; }
 
-    public required TargetModel Target { get; set; }
+    public required TimingResponseModel Timing { get; set; }
+
+    public required TargetResponseModel Target { get; set; }
 
     public required HabitStatus Status { get; set; }
 
@@ -24,7 +26,7 @@ public class HabitModel
 
     public DateOnly? EndDate { get; set; }
 
-    public MilestoneModel? Milestone { get; set; }
+    public MilestoneResponseModel? Milestone { get; set; }
 
     public DateTime CreatedAtUtc { get; set; }
 

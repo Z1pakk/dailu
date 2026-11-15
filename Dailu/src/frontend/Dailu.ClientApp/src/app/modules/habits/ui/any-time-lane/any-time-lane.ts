@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { AnyTimeLane as AnyTimeLaneModel, formatDuration } from '@habits/lib/habit-today';
+import { AnyTimeLane as AnyTimeLaneModel } from '@habits/lib/habit-today';
+import { formatDuration } from '@shared/lib/date/format-duration';
 import { PercentPositionDirective } from '@shared/directives/percent-position.directive';
 
 /**

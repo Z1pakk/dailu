@@ -6,7 +6,7 @@ using StrictId;
 
 namespace Habit.Application.Features.GetHabits.QueryModels;
 
-public class GetHabitQueryModel
+public sealed class GetHabitQueryModel
 {
     public required Id<HabitEntity> Id { get; set; }
 
@@ -17,6 +17,8 @@ public class GetHabitQueryModel
     public required HabitType Type { get; set; }
 
     public required Frequency Frequency { get; set; }
+
+    public required Timing Timing { get; set; }
 
     public required Target Target { get; set; }
 

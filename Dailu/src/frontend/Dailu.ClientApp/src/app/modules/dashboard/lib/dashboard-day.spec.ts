@@ -12,6 +12,7 @@ import {
   localDay,
   milestones,
   streaks,
+  TodayHabit,
   todayHabits,
   trackedHabits,
 } from './dashboard-day';
@@ -23,7 +24,8 @@ const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'h1',
   name: 'Read',
   type: habitTypes.binary,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: '' } as HabitModel['target'],
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -70,19 +72,29 @@ describe('dashboard-day', () => {
   });
 
   describe('trackedHabits', () => {
-    it('should keep only daily, ongoing, non-archived habits', () => {
+    it('should keep only fixed-day, ongoing, non-archived habits', () => {
       const habits = [
         habit({ id: 'daily' }),
-        habit({ id: 'weekly', frequency: { type: frequencyTypes.weekly, timesPerPeriod: 1 } }),
+        habit({ id: 'mwf', frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 } }),
+        habit({ id: 'monthly-1st', frequency: { type: frequencyTypes.monthly, weekDays: [], monthDays: [1], timesPerPeriod: 1 } }),
+        habit({ id: 'weekly', frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 1 } }),
+        habit({ id: 'twice-a-week', frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 } }),
         habit({ id: 'archived', isArchived: true }),
         habit({ id: 'completed', status: habitStatuses.completed }),
       ];
-      expect(trackedHabits(habits).map((h) => h.id)).toEqual(['daily']);
+      expect(trackedHabits(habits).map((h) => h.id)).toEqual(['daily', 'mwf', 'monthly-1st']);
     });
   });
 
   describe('todayHabits', () => {
     const today = '2026-11-05';
+
+    it('should list only habits scheduled today', () => {
+      // 2026-11-05 is a Thursday.
+      const habits = [habit({ id: 'daily' }), habit({ id: 'mwf', frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 } })];
+      expect(todayHabits(habits, [], today).map((h) => h.id)).toEqual(['daily']);
+      expect(todayHabits(habits, [], '2026-11-04').map((h) => h.id)).toEqual(['daily', 'mwf']);
+    });
 
     it('should mark habits done when they have an entry today', () => {
       const habits = [habit({ id: 'a', name: 'A' }), habit({ id: 'b', name: 'B' })];
@@ -151,6 +163,19 @@ describe('dashboard-day', () => {
     it('should be zero without habits', () => {
       expect(streaks([], [], '2026-11-05')).toEqual({ current: 0, best: 0 });
     });
+
+    it('should not break on days nothing is scheduled', () => {
+      // Mon 2 – Wed 4 – Fri 6 – Mon 9 Nov; Tuesdays and the weekend have nothing scheduled.
+      const mwf = [habit({ id: 'mwf', frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 } })];
+      const entries = ['2026-11-02', '2026-11-04', '2026-11-06', '2026-11-09'].map((d) => entry('mwf', d));
+      expect(streaks(mwf, entries, '2026-11-10')).toEqual({ current: 4, best: 4 });
+    });
+
+    it('should break when a scheduled day is missed', () => {
+      const mwf = [habit({ id: 'mwf', frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 } })];
+      const entries = ['2026-11-02', '2026-11-06', '2026-11-09'].map((d) => entry('mwf', d));
+      expect(streaks(mwf, entries, '2026-11-10').current).toBe(2);
+    });
   });
 
   describe('currentWeek', () => {
@@ -203,25 +228,53 @@ describe('dashboard-day', () => {
   });
 
   describe('clockHabits', () => {
-    const today = (id: string, isDone: boolean, source: 'manual' | 'github' = 'manual') => ({
+    const today = (
+      id: string,
+      isDone: boolean,
+      timing: TodayHabit['timing'],
+      source: 'manual' | 'github' = 'manual',
+    ): TodayHabit => ({
       id,
       name: id,
       isDone,
       isAutomated: source !== 'manual',
       source,
       sourceLabel: isDone ? 'by you' : '',
+      timing,
+    });
+    const atSeven = { at: '07:00:00', durationMinutes: 45 };
+
+    it('should place a timed habit at its time for its duration', () => {
+      const [segment] = clockHabits([today('run', false, atSeven)]);
+      expect(segment).toEqual(jasmine.objectContaining({ startMinutes: 420, endMinutes: 465 }));
     });
 
-    it('should spread habits evenly from 06:00 to midnight', () => {
-      const result = clockHabits([today('a', true), today('b', false), today('c', false)]);
-      expect(result.map((h) => h.startMinutes)).toEqual([360, 720, 1080]);
-      expect(result.map((h) => h.endMinutes)).toEqual([612, 972, 1332]);
+    it('should give a time without a duration a 30-minute slot, ending at midnight at the latest', () => {
+      const [morning, late] = clockHabits([
+        today('a', false, { at: '07:00:00', durationMinutes: null }),
+        today('b', false, { at: '23:45:00', durationMinutes: null }),
+      ]);
+      expect(morning).toEqual(jasmine.objectContaining({ startMinutes: 420, endMinutes: 450 }));
+      expect(late).toEqual(jasmine.objectContaining({ startMinutes: 1425, endMinutes: 1440 }));
+    });
+
+    it('should leave untimed habits off the clock', () => {
+      const result = clockHabits([
+        today('untimed', false, { at: null, durationMinutes: null }),
+        today('duration-only', false, { at: null, durationMinutes: 30 }),
+        today('timed', false, atSeven),
+      ]);
+      expect(result.map((h) => h.id)).toEqual(['timed']);
     });
 
     it('should carry completion and label the source', () => {
-      const [done, open, auto] = clockHabits([today('a', true), today('b', false), today('c', false, 'github')]);
+      const [done, open, auto] = clockHabits([
+        today('a', true, atSeven),
+        today('b', false, atSeven),
+        today('c', false, atSeven, 'github'),
+      ]);
       expect(done).toEqual(jasmine.objectContaining({ isDone: true, doneLabel: 'by you' }));
-      expect(open).toEqual(jasmine.objectContaining({ isDone: false, waitingLabel: 'not done yet' }));
+      expect(open).toEqual(jasmine.objectContaining({ isDone: false, waitingLabel: 'at 07:00' }));
       expect(auto).toEqual(jasmine.objectContaining({ source: 'github', waitingLabel: 'waiting for GitHub' }));
     });
 

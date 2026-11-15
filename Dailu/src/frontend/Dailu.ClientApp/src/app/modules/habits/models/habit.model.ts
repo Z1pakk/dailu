@@ -1,5 +1,6 @@
 import { FrequencyModel } from '@habits/models/frequency.model';
 import { TargetModel } from '@habits/models/target.model';
+import { TimingModel } from '@habits/models/timing.model';
 import { HabitType } from '@habits/enums/habit-type.enum';
 import { HabitStatus } from '@habits/enums/habit-status.enum';
 import { AutomationSource } from '@habits/enums/automation-source.enum';
@@ -13,6 +14,7 @@ export interface HabitModel {
   description?: string;
   type: HabitType;
   frequency: FrequencyModel;
+  timing: TimingModel;
   target: TargetModel;
   status: HabitStatus;
   isArchived: boolean;

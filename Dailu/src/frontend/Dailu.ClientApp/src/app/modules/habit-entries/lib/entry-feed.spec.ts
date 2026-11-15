@@ -14,7 +14,8 @@ const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'read',
   name: 'Read',
   type: habitTypes.binary,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: 'Session' },
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -105,6 +106,24 @@ describe('entry-feed', () => {
     const feed = entryFeed([late], [], opts({ days: 3 }));
     expect(feed.days.map((d) => d.day)).toEqual(['2026-11-04']);
     expect(feed.days[0]!.rows[0]!.detail).toBe('not logged');
+  });
+
+  it('should only report a missed day when the habit was scheduled on it', () => {
+    // Tue 3 and Wed 4 Nov; a Mon/Wed/Fri habit is only expected on the Wednesday.
+    const mwf = habit({
+      id: 'mwf',
+      name: 'Gym',
+      frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 },
+    });
+    const twiceAWeek = habit({
+      id: 'flex',
+      name: 'Read',
+      frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 },
+    });
+    const feed = entryFeed([mwf, twiceAWeek], [], opts({ days: 3 }));
+    expect(feed.days.map((d) => d.day)).toEqual(['2026-11-04']);
+    expect(feed.days[0]!.rows.map((r) => r.habitId)).toEqual(['mwf']);
+    expect([feed.days[0]!.done, feed.days[0]!.total]).toEqual([0, 1]);
   });
 
   it('should count done and total daily habits per day from all entries', () => {

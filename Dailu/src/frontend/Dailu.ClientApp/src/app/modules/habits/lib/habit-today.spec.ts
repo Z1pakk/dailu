@@ -1,10 +1,11 @@
+import { FrequencyModel } from '@habits/models/frequency.model';
 import { HabitModel } from '@habits/models/habit.model';
 import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
 import { frequencyTypes } from '@habits/enums/frequency-type.enum';
 import { habitStatuses } from '@habits/enums/habit-status.enum';
 import { habitTypes } from '@habits/enums/habit-type.enum';
 import { habitEntrySources } from '@habit-entries/enums/habit-entry-source.enum';
-import { anyTimeLane, dayPosition, formatDuration, isDueToday, periodProgress } from './habit-today';
+import { anyTimeLane, dayPosition, isDueToday, periodProgress } from './habit-today';
 
 /** Local-time ISO string, so tests pass in any timezone. */
 const at = (day: string, time = '10:00') => new Date(`${day}T${time}:00`).toISOString();
@@ -13,7 +14,8 @@ const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'h1',
   name: 'Read',
   type: habitTypes.binary,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: 'Session' },
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -41,7 +43,7 @@ const entry = (habitId: string, day: string, time = '10:00', overrides: Partial<
 
 /** Thursday 2026-11-12. */
 const TODAY = '2026-11-12';
-const weekdays = { type: frequencyTypes.weekly, timesPerPeriod: 5 } as const;
+const weekdays: FrequencyModel = { type: frequencyTypes.weekly, weekDays: [1, 2, 3, 4, 5], monthDays: [], timesPerPeriod: 1 };
 
 describe('habit-today', () => {
   describe('dayPosition', () => {
@@ -53,18 +55,38 @@ describe('habit-today', () => {
     });
   });
 
-  describe('formatDuration', () => {
-    it('should format hours and minutes the way the lane shows them', () => {
-      expect(formatDuration(468)).toBe('7 h 48 m');
-      expect(formatDuration(45)).toBe('45 m');
-      expect(formatDuration(120)).toBe('2 h');
-      expect(formatDuration(0)).toBe('0 m');
-    });
-  });
-
   describe('isDueToday', () => {
     it('should always expect a daily habit', () => {
       expect(isDueToday(habit(), [], TODAY)).toBeTrue();
+    });
+
+    it('should expect a Mon/Wed/Fri habit on those days only', () => {
+      const mwf = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [1, 3, 5], monthDays: [], timesPerPeriod: 1 } });
+      expect(isDueToday(mwf, [], '2026-11-10')).toBeFalse(); // Tuesday
+      expect(isDueToday(mwf, [], '2026-11-11')).toBeTrue(); // Wednesday
+    });
+
+    it('should expect a monthly habit only on its picked days, the 31st on 30 November', () => {
+      const firstAndFifteenth = habit({ frequency: { type: frequencyTypes.monthly, weekDays: [], monthDays: [1, 15], timesPerPeriod: 1 } });
+      const thirtyFirst = habit({ frequency: { type: frequencyTypes.monthly, weekDays: [], monthDays: [31], timesPerPeriod: 1 } });
+      expect(isDueToday(firstAndFifteenth, [], '2026-11-15')).toBeTrue();
+      expect(isDueToday(firstAndFifteenth, [], '2026-11-16')).toBeFalse();
+      expect(isDueToday(thirtyFirst, [], '2026-11-30')).toBeTrue();
+      expect(isDueToday(thirtyFirst, [], '2026-11-29')).toBeFalse();
+    });
+
+    it('should not expect a habit before it was created', () => {
+      expect(isDueToday(habit({ createdAtUtc: new Date(at('2026-11-13')) }), [], TODAY)).toBeFalse();
+    });
+
+    it('should not expect a once-a-week habit after an entry earlier this week', () => {
+      const weekly = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 1 } });
+      expect(isDueToday(weekly, [entry('h1', '2026-11-09')], TODAY)).toBeFalse();
+    });
+
+    it('should count two entries on the same day as one session', () => {
+      const weekly = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 } });
+      expect(isDueToday(weekly, [entry('h1', '2026-11-09'), entry('h1', '2026-11-09', '18:00')], TODAY)).toBeTrue();
     });
 
     it('should expect a Weekdays habit on Mon–Fri only', () => {
@@ -73,13 +95,13 @@ describe('habit-today', () => {
     });
 
     it('should expect a weekly habit until its target is reached this week', () => {
-      const weekly = habit({ frequency: { type: frequencyTypes.weekly, timesPerPeriod: 2 } });
+      const weekly = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 } });
       expect(isDueToday(weekly, [entry('h1', '2026-11-09')], TODAY)).toBeTrue();
       expect(isDueToday(weekly, [entry('h1', '2026-11-09'), entry('h1', '2026-11-10')], TODAY)).toBeFalse();
     });
 
     it('should keep a weekly habit due on the day its target was reached', () => {
-      const weekly = habit({ frequency: { type: frequencyTypes.weekly, timesPerPeriod: 1 } });
+      const weekly = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 1 } });
       expect(isDueToday(weekly, [entry('h1', TODAY)], TODAY)).toBeTrue();
     });
 
@@ -112,6 +134,16 @@ describe('habit-today', () => {
       expect(lane.items.map((i) => i.id)).toEqual(['c', 'a', 'b']);
     });
 
+    it('should leave out timed habits, which are on the clock', () => {
+      const habits = [habit({ id: 'timed', timing: { at: '07:00:00', durationMinutes: 30 } }), habit({ id: 'd' })];
+      expect(anyTimeLane(habits, [], now).items.map((i) => i.id)).toEqual(['d']);
+    });
+
+    it('should keep habits with only a duration in the lane', () => {
+      const habits = [habit({ id: 'read', timing: { at: null, durationMinutes: 30 } })];
+      expect(anyTimeLane(habits, [], now).items.map((i) => i.id)).toEqual(['read']);
+    });
+
     it('should leave out habits not due today and archived entries', () => {
       const habits = [habit({ id: 'wd', frequency: weekdays }), habit({ id: 'd' })];
       const lane = anyTimeLane(habits, [entry('d', '2026-11-14', '09:00', { isArchived: true })], new Date('2026-11-14T12:00:00'));
@@ -121,14 +153,19 @@ describe('habit-today', () => {
   });
 
   describe('periodProgress', () => {
-    it('should be today’s share for a daily habit', () => {
-      const twice = habit({ frequency: { type: frequencyTypes.daily, timesPerPeriod: 2 } });
-      expect(periodProgress(twice, [entry('h1', TODAY)], TODAY)).toBe(0.5);
-      expect(periodProgress(twice, [entry('h1', TODAY), entry('h1', TODAY), entry('h1', TODAY)], TODAY)).toBe(1);
+    it('should be done or not for a daily habit, however many entries today has', () => {
+      expect(periodProgress(habit(), [], TODAY)).toBe(0);
+      expect(periodProgress(habit(), [entry('h1', TODAY), entry('h1', TODAY, '18:00')], TODAY)).toBe(1);
+    });
+
+    it('should be half done after one session of a 2× a week habit', () => {
+      const weekly = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 2 } });
+      expect(periodProgress(weekly, [entry('h1', '2026-11-09')], TODAY)).toBe(0.5);
+      expect(periodProgress(weekly, [entry('h1', '2026-11-09'), entry('h1', '2026-11-09', '18:00')], TODAY)).toBe(0.5);
     });
 
     it('should count the whole week for a weekly habit', () => {
-      const weekly = habit({ frequency: { type: frequencyTypes.weekly, timesPerPeriod: 4 } });
+      const weekly = habit({ frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 4 } });
       expect(periodProgress(weekly, [entry('h1', '2026-11-09'), entry('h1', '2026-11-11'), entry('h1', '2026-11-02')], TODAY)).toBe(0.5);
     });
 

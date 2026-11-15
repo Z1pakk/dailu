@@ -20,7 +20,8 @@ const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'h1',
   name: 'Read',
   type: habitTypes.binary,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: 'Session' },
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -171,13 +172,100 @@ describe('HabitDrawerFacadeService', () => {
     expect(facade.form.controls.targetUnit.touched).toBeTrue();
   });
 
-  it('should ignore an empty times field once Custom is no longer selected', () => {
-    facade.init(null);
-    facade.form.controls.name.setValue('Read');
-    facade.form.controls.scheduleMode.setValue('custom');
-    facade.form.controls.customTimesPerPeriod.setValue(null as unknown as number);
-    expect(facade.form.valid).toBeFalse();
-    facade.form.controls.scheduleMode.setValue('daily');
-    expect(facade.form.valid).toBeTrue();
+  describe('schedule', () => {
+    const controls = () => facade.form.controls;
+    const weeklyMonday = () =>
+      habit({
+        frequency: { type: frequencyTypes.weekly, weekDays: [1], monthDays: [], timesPerPeriod: 1 },
+        timing: { at: '07:00:00', durationMinutes: 45 },
+      });
+
+    it('should add and remove a weekday', () => {
+      facade.init(null);
+      facade.setFrequencyType(frequencyTypes.weekly);
+      facade.toggleWeekDay(1);
+      facade.toggleWeekDay(3);
+      expect(controls().weekDays.value).toEqual([1, 3]);
+      facade.toggleWeekDay(1);
+      expect(controls().weekDays.value).toEqual([3]);
+    });
+
+    it('should clear the weekdays when switching to Monthly', () => {
+      facade.init(null);
+      facade.setFrequencyType(frequencyTypes.weekly);
+      facade.toggleWeekDay(2);
+      facade.setFrequencyType(frequencyTypes.monthly);
+      expect(controls().weekDays.value).toEqual([]);
+    });
+
+    it('should drop the time when the last picked day is removed', () => {
+      facade.init(weeklyMonday());
+      expect(controls().timeMode.value).toBe('at');
+      facade.toggleWeekDay(1);
+      expect(controls().timeMode.value).toBe('any');
+      expect(controls().at.value).toBeNull();
+      expect(controls().durationMinutes.value).toBe(45);
+    });
+
+    it('should keep the count within the new period limit', () => {
+      facade.init(null);
+      facade.setFrequencyType(frequencyTypes.monthly);
+      controls().timesPerPeriod.setValue(20);
+      facade.setFrequencyType(frequencyTypes.weekly);
+      expect(controls().timesPerPeriod.value).toBe(7);
+      facade.setFrequencyType(frequencyTypes.daily);
+      expect(controls().timesPerPeriod.value).toBe(1);
+    });
+
+    it('should reset the count once a day is picked', () => {
+      facade.init(null);
+      facade.setFrequencyType(frequencyTypes.weekly);
+      controls().timesPerPeriod.setValue(3);
+      facade.toggleWeekDay(2);
+      expect(controls().timesPerPeriod.value).toBe(1);
+    });
+
+    it('should reject a count above the weekly limit', () => {
+      facade.init(null);
+      controls().name.setValue('Read');
+      facade.setFrequencyType(frequencyTypes.weekly);
+      controls().timesPerPeriod.setValue(8);
+      expect(controls().timesPerPeriod.invalid).toBeTrue();
+      controls().timesPerPeriod.setValue(7);
+      expect(facade.form.valid).toBeTrue();
+    });
+
+    it('should require a start time with "At a time"', () => {
+      facade.init(null);
+      controls().name.setValue('Read');
+      controls().timeMode.setValue('at');
+      expect(controls().at.invalid).toBeTrue();
+      controls().at.setValue(new Date(2026, 10, 16, 7, 0));
+      expect(facade.form.valid).toBeTrue();
+    });
+
+    it('should reject a time that runs past midnight', () => {
+      facade.init(null);
+      controls().timeMode.setValue('at');
+      controls().at.setValue(new Date(2026, 10, 16, 23, 30));
+      controls().durationMinutes.setValue(45);
+      expect(controls().at.getError('issue')).toContain('midnight');
+      controls().durationMinutes.setValue(30);
+      expect(controls().at.valid).toBeTrue();
+    });
+
+    it('should show the edited habit and the other timed habits today on the clock strip', () => {
+      const other = habit({ id: 'other', timing: { at: '12:00:00', durationMinutes: 60 } });
+      store.selectSignal.and.callFake(((selector: unknown) =>
+        selector === IntegrationStateSelectors.getSlices.summaries ? summaries : signal([other])) as never);
+      const withHabits = TestBed.runInInjectionContext(() => new HabitDrawerFacadeService());
+      withHabits.init(weeklyMonday());
+      withHabits.form.controls.weekDays.setValue([0, 1, 2, 3, 4, 5, 6]);
+      const preview = withHabits.$clockPreview();
+      expect(preview.meta).toBe('07:00–07:45');
+      expect(preview.own?.left).toBeCloseTo((60 / 1080) * 100, 5);
+      expect(preview.busy.length).toBe(1);
+      expect(preview.busy[0]!.left).toBeCloseTo((360 / 1080) * 100, 5);
+    });
   });
 });

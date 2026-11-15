@@ -1,9 +1,12 @@
 using Habit.Application.IntegratedServices;
 using Habit.Application.Models;
+using Habit.Application.Models.Request;
+using Habit.Application.Models.Response;
 using Habit.Application.Persistence;
 using Habit.Domain.Aggregates;
 using Habit.Domain.Entities;
 using Habit.Domain.Enums;
+using Habit.Domain.Extensions;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.CQRS;
 using SharedKernel.ResultPattern;
@@ -13,17 +16,18 @@ using StrictId;
 namespace Habit.Application.Features.UpdateHabit;
 
 public sealed record UpdateHabitCommand(
-    Id<HabitModel> HabitId,
+    Id<HabitResponseModel> HabitId,
     string Name,
     string? Description,
     HabitType Type,
-    FrequencyModel Frequency,
-    TargetModel Target,
+    FrequencyRequestModel Frequency,
+    TimingRequestModel? Timing,
+    TargetRequestModel Target,
     DateOnly? EndDate,
-    MilestoneModel? Milestone,
+    MilestoneRequestModel? Milestone,
     IEnumerable<Id<TagModel>> TagIds,
     AutomationSource? AutomationSource,
-    HabitAutomationFilterModel? AutomationFilter = null
+    HabitAutomationFilterRequestModel? AutomationFilter = null
 ) : ICommand<Result>;
 
 public sealed class UpdateHabitCommandHandler(
@@ -64,6 +68,8 @@ public sealed class UpdateHabitCommandHandler(
                 entity.Description,
                 entity.Type,
                 entity.Frequency,
+                entity.Timing,
+                entity.CreatedAtUtc,
                 entity.Target,
                 entity.Status,
                 entity.IsArchived,
@@ -83,7 +89,11 @@ public sealed class UpdateHabitCommandHandler(
                 request.Description,
                 request.Type,
                 request.Frequency.Type,
+                (request.Frequency.WeekDays ?? []).ToWeekDays(),
+                request.Frequency.MonthDays ?? [],
                 request.Frequency.TimesPerPeriod,
+                request.Timing?.At, // omitted timing = any time
+                request.Timing?.DurationMinutes,
                 request.Target.Value,
                 request.Target.Unit,
                 request.EndDate,

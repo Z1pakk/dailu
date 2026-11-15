@@ -36,12 +36,29 @@ export const HabitFrequencyTypeSchema = v.picklist(
   'Frequency Type is required',
 );
 
-export const HabitFrequencyTimesPerPeriodSchema = v.pipe(
-  v.number(),
-  v.integer(),
-  v.minValue(1, 'Times per period must be greater than 0'),
-  v.maxValue(999, 'Times per period must be less than 999'),
+/** "N times" for habits without days: at most 7 a week and 31 a month (one session a day). */
+export const habitTimesPerPeriodSchema = (max: number, period: string) =>
+  v.pipe(
+    v.number('Times is required'),
+    v.integer(),
+    v.minValue(1, 'At least once'),
+    v.maxValue(max, `At most ${max} times a ${period}`),
+  );
+
+export const HabitWeekDaysSchema = v.array(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(6)));
+
+export const HabitMonthDaysSchema = v.array(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(31)));
+
+export const HabitDurationSchema = v.nullable(
+  v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(1, 'Duration must be at least 1 minute'),
+    v.maxValue(1440, 'Duration must be at most 24 hours'),
+  ),
 );
+
+export const HabitAtSchema = v.date('Start time is required');
 
 export const HabitTargetValueSchema = v.pipe(
   v.number(),

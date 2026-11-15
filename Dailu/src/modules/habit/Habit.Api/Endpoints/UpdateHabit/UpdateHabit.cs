@@ -1,5 +1,5 @@
 using Habit.Application.Features.UpdateHabit;
-using Habit.Application.Models;
+using Habit.Application.Models.Response;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +17,7 @@ internal static class UpdateHabit
         return app.MapPut(
                 "/{id}",
                 async (
-                    Id<HabitModel> id,
+                    Id<HabitResponseModel> id,
                     UpdateHabitCommand command,
                     ISender sender,
                     CancellationToken cancellationToken
@@ -31,7 +31,7 @@ internal static class UpdateHabit
     }
 
     private static async Task<IResult> HandleAsync(
-        Id<HabitModel> id,
+        Id<HabitResponseModel> id,
         UpdateHabitCommand command,
         ISender sender,
         CancellationToken cancellationToken = default

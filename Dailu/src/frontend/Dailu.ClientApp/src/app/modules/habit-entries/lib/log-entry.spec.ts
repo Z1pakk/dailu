@@ -13,7 +13,8 @@ const habit = (overrides: Partial<HabitModel> = {}): HabitModel => ({
   id: 'read',
   name: 'Read a book',
   type: habitTypes.measurable,
-  frequency: { type: frequencyTypes.daily, timesPerPeriod: 1 },
+  frequency: { type: frequencyTypes.daily, weekDays: [], monthDays: [], timesPerPeriod: 1 },
+  timing: { at: null, durationMinutes: null },
   target: { value: 1, unit: 'chapter' },
   status: habitStatuses.ongoing,
   isArchived: false,
@@ -37,7 +38,7 @@ const gym = habit({
   id: 'gym', name: 'Exercises', type: habitTypes.binary,
   automationSource: automationSources.strava, automationFilter: { type: 'strava', activityTypes: [] },
 });
-const study = habit({ id: 'study', name: 'Study', type: habitTypes.binary, frequency: { type: frequencyTypes.weekly, timesPerPeriod: 3 } });
+const study = habit({ id: 'study', name: 'Study', type: habitTypes.binary, frequency: { type: frequencyTypes.weekly, weekDays: [], monthDays: [], timesPerPeriod: 3 } });
 const pill = habit({ id: 'pill', name: 'Take a pill', type: habitTypes.binary });
 
 describe('log-entry', () => {
@@ -55,7 +56,7 @@ describe('log-entry', () => {
       expect(hint('read')).toBe('due · by you');
       expect(hint('gym')).toBe('due · Strava');
       expect(hint('pill')).toBe('done · 08:00');
-      expect(hint('study')).toBe('3× / week');
+      expect(hint('study')).toBe('3× a week');
     });
 
     it('should leave out archived habits', () => {

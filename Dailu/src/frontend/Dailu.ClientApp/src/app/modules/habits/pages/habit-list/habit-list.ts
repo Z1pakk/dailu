@@ -36,10 +36,10 @@ import {
   sourceLabel,
   weekDots,
 } from '@habits/lib/habit-progress';
-import { scheduleLabel } from '@habits/lib/habit-schedule';
+import { clockSpan, hasTime, scheduleLabel } from '@habits/lib/habit-schedule';
 import { anyTimeLane, periodProgress } from '@habits/lib/habit-today';
 import { AnyTimeLane } from '@habits/ui/any-time-lane/any-time-lane';
-import { placeLabels, sampleTimeline } from '@habits/lib/sample-day';
+import { dayTimeline, placeLabels } from '@habits/lib/day-timeline';
 import { PercentPositionDirective } from '@shared/directives/percent-position.directive';
 import { localDay } from '@shared/lib/date/local-day';
 import { CoachButton } from '@shared/ui/coach-button/coach-button';
@@ -53,6 +53,12 @@ interface DrawerState {
 }
 
 /** Habits list (Figma `68:3394` desktop, `70:3718` mobile). */
+/** Timed habits first, by start time; untimed ones keep their order after them. */
+function sortByTimeOfDay(habits: readonly HabitModel[]): HabitModel[] {
+  const start = (h: HabitModel) => clockSpan(h.timing)?.start ?? Number.POSITIVE_INFINITY;
+  return [...habits].sort((a, b) => start(a) - start(b));
+}
+
 @Component({
   selector: 'app-habit-list',
   imports: [
@@ -86,7 +92,7 @@ export class HabitList implements OnInit {
   private readonly _now = new Date();
   private readonly _today = localDay(this._now);
 
-  protected readonly $timeline = signal(sampleTimeline(this._now)).asReadonly();
+  protected readonly $timeline = computed(() => dayTimeline(this._$habits(), this._$entries(), this._now));
 
   /** Clock labels are laid out by the track's real width so long names never overlap. */
   private readonly _clockTrack = viewChild<ElementRef<HTMLElement>>('clockTrack');
@@ -97,7 +103,7 @@ export class HabitList implements OnInit {
       return [];
     }
     const slots = this.$timeline().slots;
-    return placeLabels(slots, px).map((placed, i) => ({ ...placed, name: slots[i]!.name }));
+    return placeLabels(slots, px).map((placed, i) => ({ ...placed, id: slots[i]!.id, name: slots[i]!.name }));
   });
   protected readonly $lane = computed(() => anyTimeLane(this._$habits(), this._$entries(), this._now));
 
@@ -117,18 +123,16 @@ export class HabitList implements OnInit {
 
   protected readonly $rows = computed<HabitRowView[]>(() => {
     const entries = this._$entries();
-    return filterHabits(this._$habits(), this.$filter()).map((habit) => ({
+    return sortByTimeOfDay(filterHabits(this._$habits(), this.$filter())).map((habit) => ({
       habit,
-      // Every real habit is an any-time habit until habits get a time of day.
-      scheduleLabel: `${scheduleLabel(habit.frequency)} · any time`,
+      scheduleLabel: hasTime(habit) ? scheduleLabel(habit) : `${scheduleLabel(habit)} · any time`,
       sourceLabel: sourceLabel(habit),
       isAutomated: isAutomated(habit),
       dots: weekDots(habit, entries, this._today),
       streak: habitStreak(habit, entries, this._today),
       milestone: milestoneProgress(habit, entries),
       progress: periodProgress(habit, entries, this._today),
-      // Habits have no duration in the backend yet: plain progress ring.
-      durationMinutes: null,
+      durationMinutes: habit.timing.durationMinutes,
     }));
   });
 

@@ -16,7 +16,11 @@ public sealed record HabitAggregateCreateRequest(
     string? Description,
     HabitType Type,
     FrequencyType FrequencyType,
+    WeekDays WeekDays,
+    IReadOnlyCollection<int> MonthDays,
     int TimesPerPeriod,
+    TimeOnly? At,
+    int? DurationMinutes,
     int TargetValue,
     string TargetUnit,
     DateOnly? EndDate,
@@ -29,6 +33,27 @@ public sealed record HabitAggregateCreateRequest(
     HabitAutomationFilter? AutomationFilter = null
 );
 
+public sealed record HabitAggregateUpdateRequest(
+    string Name,
+    string? Description,
+    HabitType Type,
+    FrequencyType FrequencyType,
+    WeekDays WeekDays,
+    IReadOnlyCollection<int> MonthDays,
+    int TimesPerPeriod,
+    TimeOnly? At,
+    int? DurationMinutes,
+    int TargetValue,
+    string TargetUnit,
+    DateOnly? EndDate,
+    int? MilestoneTarget,
+    int? MilestoneCurrent,
+    IReadOnlySet<Id> TagIds,
+    IReadOnlySet<Id> ExistingTagIds,
+    AutomationSource? AutomationSource,
+    HabitAutomationFilter? AutomationFilter = null
+);
+
 public sealed record HabitAggregateRestoreRequest(
     Id<HabitAggregate> Id,
     Guid UserId,
@@ -36,6 +61,8 @@ public sealed record HabitAggregateRestoreRequest(
     string? Description,
     HabitType Type,
     Frequency Frequency,
+    Timing Timing,
+    DateTime CreatedAtUtc,
     Target Target,
     HabitStatus Status,
     bool IsArchived,
@@ -46,23 +73,6 @@ public sealed record HabitAggregateRestoreRequest(
     Guid Version,
     AutomationSource? AutomationSource,
     HabitAutomationFilter? AutomationFilter
-);
-
-public sealed record HabitAggregateUpdateRequest(
-    string Name,
-    string? Description,
-    HabitType Type,
-    FrequencyType FrequencyType,
-    int TimesPerPeriod,
-    int TargetValue,
-    string TargetUnit,
-    DateOnly? EndDate,
-    int? MilestoneTarget,
-    int? MilestoneCurrent,
-    IReadOnlySet<Id> TagIds,
-    IReadOnlySet<Id> ExistingTagIds,
-    AutomationSource? AutomationSource,
-    HabitAutomationFilter? AutomationFilter = null
 );
 
 public sealed class HabitAggregate : Aggregate
@@ -78,6 +88,10 @@ public sealed class HabitAggregate : Aggregate
     private HabitType Type { get; set; }
 
     private Frequency Frequency { get; set; } = null!;
+
+    private Timing Timing { get; set; } = null!;
+
+    private DateTime CreatedAtUtc { get; set; }
 
     private Target Target { get; set; } = null!;
 
@@ -99,6 +113,13 @@ public sealed class HabitAggregate : Aggregate
 
     private HabitAggregate() { }
 
+    public bool IsScheduledOn(DateOnly day) =>
+        day >= DateOnly.FromDateTime(CreatedAtUtc) // existed
+        && (EndDate is null || day <= EndDate)
+        && Status != HabitStatus.Completed
+        && !IsArchived
+        && Frequency.Matches(day);
+
     public static Result<HabitAggregate> Create(HabitAggregateCreateRequest request)
     {
         var tagIdList = request.TagIds.ToList();
@@ -118,10 +139,17 @@ public sealed class HabitAggregate : Aggregate
             );
         }
 
-        var frequencyResult = Frequency.Create(request.FrequencyType, request.TimesPerPeriod);
-        if (frequencyResult.IsFailure)
+        var scheduleResult = BuildSchedule(
+            request.FrequencyType,
+            request.WeekDays,
+            request.MonthDays,
+            request.TimesPerPeriod,
+            request.At,
+            request.DurationMinutes
+        );
+        if (scheduleResult.IsFailure)
         {
-            return Result<HabitAggregate>.BadRequest(frequencyResult.Error);
+            return Result<HabitAggregate>.BadRequest(scheduleResult.Error);
         }
 
         var targetResult = Target.Create(request.TargetValue, request.TargetUnit);
@@ -163,7 +191,9 @@ public sealed class HabitAggregate : Aggregate
             Name = request.Name,
             Description = request.Description,
             Type = request.Type,
-            Frequency = frequencyResult.Value,
+            Frequency = scheduleResult.Value.Frequency,
+            Timing = scheduleResult.Value.Timing,
+            CreatedAtUtc = DateTime.UtcNow,
             Target = targetResult.Value,
             Status = HabitStatus.Ongoing,
             IsArchived = false,
@@ -196,27 +226,6 @@ public sealed class HabitAggregate : Aggregate
         return Result<HabitAggregate>.Success(aggregate);
     }
 
-    public static HabitAggregate Restore(HabitAggregateRestoreRequest request) =>
-        new()
-        {
-            Id = request.Id,
-            UserId = request.UserId,
-            Name = request.Name,
-            Description = request.Description,
-            Type = request.Type,
-            Frequency = request.Frequency,
-            Target = request.Target,
-            Status = request.Status,
-            IsArchived = request.IsArchived,
-            EndDate = request.EndDate,
-            Milestone = request.Milestone,
-            LastCompletedAtUtc = request.LastCompletedAtUtc,
-            Tags = request.Tags,
-            Version = request.Version,
-            AutomationSource = request.AutomationSource,
-            AutomationFilter = request.AutomationFilter,
-        };
-
     public Result Update(HabitAggregateUpdateRequest request)
     {
         var tagIdList = request.TagIds.ToList();
@@ -234,10 +243,17 @@ public sealed class HabitAggregate : Aggregate
             return Result.NotFound($"Tags not found: {string.Join(", ", missingTagIds)}");
         }
 
-        var frequencyResult = Frequency.Create(request.FrequencyType, request.TimesPerPeriod);
-        if (frequencyResult.IsFailure)
+        var scheduleResult = BuildSchedule(
+            request.FrequencyType,
+            request.WeekDays,
+            request.MonthDays,
+            request.TimesPerPeriod,
+            request.At,
+            request.DurationMinutes
+        );
+        if (scheduleResult.IsFailure)
         {
-            return Result.BadRequest(frequencyResult.Error);
+            return Result.BadRequest(scheduleResult.Error);
         }
 
         var targetResult = Target.Create(request.TargetValue, request.TargetUnit);
@@ -287,7 +303,8 @@ public sealed class HabitAggregate : Aggregate
         Name = request.Name;
         Description = request.Description;
         Type = request.Type;
-        Frequency = frequencyResult.Value;
+        Frequency = scheduleResult.Value.Frequency;
+        Timing = scheduleResult.Value.Timing;
         Target = targetResult.Value;
         EndDate = request.EndDate;
         Milestone = milestone;
@@ -322,6 +339,48 @@ public sealed class HabitAggregate : Aggregate
         return Result.Success();
     }
 
+    private static Result<(Frequency Frequency, Timing Timing)> BuildSchedule(
+        FrequencyType frequencyType,
+        WeekDays weekDays,
+        IReadOnlyCollection<int> monthDays,
+        int timesPerPeriod,
+        TimeOnly? at,
+        int? durationMinutes
+    )
+    {
+        var monthDaysResult = MonthDays.Create(monthDays);
+        if (monthDaysResult.IsFailure)
+        {
+            return Result<(Frequency, Timing)>.BadRequest(monthDaysResult.Error);
+        }
+
+        var frequencyResult = Frequency.Create(
+            frequencyType,
+            weekDays,
+            monthDaysResult.Value,
+            timesPerPeriod
+        );
+        if (frequencyResult.IsFailure)
+        {
+            return Result<(Frequency, Timing)>.BadRequest(frequencyResult.Error);
+        }
+
+        var timingResult = Timing.Create(at, durationMinutes);
+        if (timingResult.IsFailure)
+        {
+            return Result<(Frequency, Timing)>.BadRequest(timingResult.Error);
+        }
+
+        if (timingResult.Value.HasTime && !frequencyResult.Value.HasFixedDays)
+        {
+            return Result<(Frequency, Timing)>.BadRequest(
+                "A time of day needs a daily habit or picked days."
+            );
+        }
+
+        return Result<(Frequency, Timing)>.Success((frequencyResult.Value, timingResult.Value));
+    }
+
     private static Result ValidateAutomation(
         AutomationSource? automationSource,
         HabitAutomationFilter? automationFilter
@@ -351,6 +410,29 @@ public sealed class HabitAggregate : Aggregate
         return Result.Success();
     }
 
+    public static HabitAggregate Restore(HabitAggregateRestoreRequest request) =>
+        new()
+        {
+            Id = request.Id,
+            UserId = request.UserId,
+            Name = request.Name,
+            Description = request.Description,
+            Type = request.Type,
+            Frequency = request.Frequency,
+            Timing = request.Timing,
+            CreatedAtUtc = request.CreatedAtUtc,
+            Target = request.Target,
+            Status = request.Status,
+            IsArchived = request.IsArchived,
+            EndDate = request.EndDate,
+            Milestone = request.Milestone,
+            LastCompletedAtUtc = request.LastCompletedAtUtc,
+            Tags = request.Tags,
+            Version = request.Version,
+            AutomationSource = request.AutomationSource,
+            AutomationFilter = request.AutomationFilter,
+        };
+
     public HabitEntity ToEntity()
     {
         var entity = new HabitEntity()
@@ -361,6 +443,7 @@ public sealed class HabitAggregate : Aggregate
             Description = Description,
             Type = Type,
             Frequency = Frequency,
+            Timing = Timing,
             Target = Target,
             Status = Status,
             IsArchived = IsArchived,

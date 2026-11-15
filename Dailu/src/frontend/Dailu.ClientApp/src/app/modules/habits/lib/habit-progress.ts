@@ -1,7 +1,6 @@
 import { addDays } from 'date-fns/addDays';
 import { addMonths } from 'date-fns/addMonths';
 import { addWeeks } from 'date-fns/addWeeks';
-import { isWeekend } from 'date-fns/isWeekend';
 import { parseISO } from 'date-fns/parseISO';
 import { startOfMonth } from 'date-fns/startOfMonth';
 import { startOfWeek } from 'date-fns/startOfWeek';
@@ -10,7 +9,7 @@ import { HabitEntryModel } from '@habit-entries/models/habit-entry.model';
 import { frequencyTypes } from '@habits/enums/frequency-type.enum';
 import { automationSources } from '@habits/enums/automation-source.enum';
 import { localDay } from '@shared/lib/date/local-day';
-import { isWeekdays } from '@habits/lib/habit-schedule';
+import { hasFixedDays, matchesDay, timesPerPeriod } from '@habits/lib/habit-schedule';
 
 /*
  * Per-habit progress for the habits list. Days are local calendar days
@@ -100,12 +99,9 @@ function createdDay(habit: HabitModel): string {
   return localDay(new Date(habit.createdAtUtc));
 }
 
-/** Whether a missed day is meaningful: daily habits expect every day, Weekdays habits Mon–Fri. */
+/** Whether a missed day is meaningful: only fixed-day habits expect specific days. */
 function isExpectedOn(habit: HabitModel, day: string): boolean {
-  if (habit.frequency.type === frequencyTypes.daily) {
-    return true;
-  }
-  return isWeekdays(habit.frequency) && !isWeekend(parseISO(day));
+  return hasFixedDays(habit.frequency) && matchesDay(habit.frequency, day);
 }
 
 export function weekDots(habit: HabitModel, entries: readonly HabitEntryModel[], today: string): WeekDot[] {
@@ -142,47 +138,44 @@ interface Period {
   /** Start (local day) of the period containing `day`. */
   startOf: (day: Date) => Date;
   previous: (start: Date) => Date;
-  /** Days that count toward the period; Weekdays habits skip weekends entirely. */
+  /** Days that count toward the period; fixed-day habits skip the days they're not scheduled on. */
   counts: (day: Date) => boolean;
+  /** Days with an entry needed for the period to count. */
   needed: number;
 }
 
+/** A scheduled day comes around at least once a month, so this is only a safety net. */
+const MAX_DAYS_BETWEEN_SCHEDULED = 62;
+
 function periodOf(habit: HabitModel): Period {
-  const { type, timesPerPeriod } = habit.frequency;
-  if (isWeekdays(habit.frequency)) {
+  const frequency = habit.frequency;
+  if (hasFixedDays(frequency)) {
+    const counts = (d: Date) => matchesDay(frequency, localDay(d));
     return {
       unit: 'day',
       startOf: (d) => d,
       previous: (s) => {
         let prev = addDays(s, -1);
-        while (isWeekend(prev)) {
+        for (let i = 0; i < MAX_DAYS_BETWEEN_SCHEDULED && !counts(prev); i++) {
           prev = addDays(prev, -1);
         }
         return prev;
       },
-      counts: (d) => !isWeekend(d),
+      counts,
       needed: 1,
     };
   }
-  if (type === frequencyTypes.weekly) {
-    return {
-      unit: 'week',
-      startOf: (d) => startOfWeek(d, { weekStartsOn: 1 }),
-      previous: (s) => addWeeks(s, -1),
-      counts: () => true,
-      needed: timesPerPeriod,
-    };
+  const needed = timesPerPeriod(frequency);
+  if (frequency.type === frequencyTypes.monthly) {
+    return { unit: 'month', startOf: startOfMonth, previous: (s) => addMonths(s, -1), counts: () => true, needed };
   }
-  if (type === frequencyTypes.monthly) {
-    return {
-      unit: 'month',
-      startOf: startOfMonth,
-      previous: (s) => addMonths(s, -1),
-      counts: () => true,
-      needed: timesPerPeriod,
-    };
-  }
-  return { unit: 'day', startOf: (d) => d, previous: (s) => addDays(s, -1), counts: () => true, needed: timesPerPeriod };
+  return {
+    unit: 'week',
+    startOf: (d) => startOfWeek(d, { weekStartsOn: 1 }),
+    previous: (s) => addWeeks(s, -1),
+    counts: () => true,
+    needed,
+  };
 }
 
 export function habitStreak(habit: HabitModel, entries: readonly HabitEntryModel[], today: string): HabitStreak {
@@ -195,8 +188,8 @@ export function habitStreak(habit: HabitModel, entries: readonly HabitEntryModel
     let total = 0;
     const end = localDay(nextStart(period, start));
     for (let d = start; localDay(d) < end; d = addDays(d, 1)) {
-      if (period.counts(d)) {
-        total += perDay.get(localDay(d)) ?? 0;
+      if (period.counts(d) && (perDay.get(localDay(d)) ?? 0) > 0) {
+        total++;
       }
     }
     return total >= period.needed;
@@ -204,7 +197,7 @@ export function habitStreak(habit: HabitModel, entries: readonly HabitEntryModel
 
   let cursor = period.startOf(parseISO(today));
   if (!period.counts(cursor)) {
-    // A weekend for a Weekdays habit: start from Friday, which is already over — no grace.
+    // Today isn't a scheduled day: start from the last one, which is already over — no grace.
     cursor = period.previous(cursor);
   } else if (!reached(cursor)) {
     // Only the period containing today may still be unfinished without breaking the streak.
