@@ -1,5 +1,5 @@
 #!/bin/sh
-# Starts Squid in the last used mode (run by default) and streams its logs to `docker logs`.
+# Starts Squid, always in run mode, and streams its logs to `docker logs`.
 set -eu
 
 CA_DIR=/var/lib/egress-ca
@@ -30,9 +30,9 @@ if [ ! -d /var/spool/squid/ssl_db ]; then
 fi
 chown -R proxy:proxy /var/spool/squid/ssl_db
 
-MODE="$(cat /etc/squid/mode 2>/dev/null || echo run)"
-egress-mode "$MODE" --no-reload
-echo "egress-proxy: starting in $MODE mode"
+# Always run mode: setup mode never survives a restart (its timer would be gone)
+egress-mode run --no-reload
+echo "egress-proxy: starting in run mode"
 
 touch /var/log/squid/access.log /var/log/squid/cache.log
 chown proxy:proxy /var/log/squid/access.log /var/log/squid/cache.log

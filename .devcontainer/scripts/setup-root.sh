@@ -11,6 +11,15 @@ for dir in /workspace /workspace/Dailu /workspace/Dailu/src /workspace/Dailu/src
 done
 chmod 0700 /home/dev/.ssh /home/dev/.git-credentials.d
 
+# Rider's backend lives in jb_devcontainers_shared_volume, which every JetBrains dev container on this PC shares, and
+# Rider leaves it world-writable. Make it read-only for dev, so code in this container can't change the backend
+# that another container runs. Rider writes new backends there as root, so this doesn't stop updates.
+JB_DIST=/.jbdevcontainer/JetBrains/RemoteDev/dist
+if [ -d "$JB_DIST" ]; then
+    chown -R root:root "$JB_DIST"
+    chmod -R u+rwX,go+rX,go-w "$JB_DIST"
+fi
+
 # sshd for Rider's SSH connection (sshd-devcontainer.conf): host keys once, and the privilege separation directory.
 # The host keys change when the container is recreated; ~/.ssh/config on your PC doesn't pin them (see the guide).
 ssh-keygen -A

@@ -12,7 +12,8 @@ if git -C /workspace rev-parse -q --verify HEAD > /dev/null 2>&1; then
 else
     cat <<'MSG'
 
-First run - the repo isn't in the container volume yet (the proxy must be in setup mode):
+First run - the repo isn't in the container volume yet. On the host, switch the proxy to setup mode first
+(docker exec dailu.egress-proxy egress-mode setup - it switches back by itself after 30 minutes), then here:
   workspace-init.sh
 It clones the repo (the proxy allows it) and finishes the setup, or tells you how to save your GitHub token first.
 

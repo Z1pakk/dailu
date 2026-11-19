@@ -62,4 +62,4 @@ dotnet restore Dailu/Dailu.slnx
 cd "$CLIENT_APP"
 npm ci
 
-echo "Workspace ready. Switch the proxy back to run mode on the host."
+echo "Workspace ready. On the host: docker exec dailu.egress-proxy egress-mode run (or let setup mode end by itself)."
