@@ -46,6 +46,9 @@ MSG
     fi
 fi
 
+# The image's tool versions come from versions.env; warn if the repo now asks for others
+/usr/local/bin/check-versions.sh
+
 # .NET local tools, if the repo has a tool manifest
 if [ -f .config/dotnet-tools.json ] || [ -f Dailu/.config/dotnet-tools.json ]; then
     (cd Dailu && dotnet tool restore)

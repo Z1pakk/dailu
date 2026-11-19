@@ -1,9 +1,8 @@
 # Dailu dev container image. Pin the digest and versions.
 FROM mcr.microsoft.com/dotnet/sdk:10.0.404-noble@sha256:bef136a371963aaa46ec97882845ef6f54dec15728bb4b128b1c2a400ffbc9b4
 
-# Tool versions are not set here. They are read at build time, through bind mounts that leave nothing in the image:
-# - Node (and its npm): Dailu/src/frontend/Dailu.ClientApp/.nvmrc (from the "repo" build context, see compose.yml)
-# - Claude Code: versions.env
+# Tool versions are not set here. They are read from versions.env at build time, through a bind mount that leaves
+# nothing in the image. The build reads only .devcontainer/, so it works when an editor builds from a copy of it.
 
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     DOTNET_NOLOGO=1 \
@@ -18,10 +17,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Node.js from the official tarball, checked against the published SHA-256 list
-RUN --mount=type=bind,from=repo,source=Dailu/src/frontend/Dailu.ClientApp/.nvmrc,target=/tmp/.nvmrc \
+RUN --mount=type=bind,source=versions.env,target=/tmp/versions.env \
     set -eux; \
-    # Strip line endings, spaces and a UTF-8 BOM (EF BB BF), which some Windows editors write
-    NODE_VERSION="$(tr -d '\r\n \357\273\277' < /tmp/.nvmrc)"; \
+    # Strip line endings, spaces, a UTF-8 BOM (EF BB BF, which some Windows editors write) and a leading "v"
+    NODE_VERSION="$(sed -n 's/^NODE_VERSION=//p' /tmp/versions.env | tr -d '\r\n \357\273\277')"; \
     NODE_VERSION="${NODE_VERSION#v}"; \
     test -n "${NODE_VERSION}"; \
     case "$(dpkg --print-architecture)" in \

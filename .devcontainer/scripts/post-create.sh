@@ -6,7 +6,7 @@ set -euo pipefail
 
 sudo /usr/local/bin/setup-root.sh
 
-# Re-run the setup only for a finished clone; a first clone needs the GitHub sign-in in the editor
+# Run the setup for a finished clone (an editor's "Clone Sources", or a rebuild); a first clone needs credentials first
 if git -C /workspace rev-parse -q --verify HEAD > /dev/null 2>&1; then
     /usr/local/bin/workspace-init.sh
 else
@@ -14,7 +14,7 @@ else
 
 First run - the repo isn't in the container volume yet (the proxy must be in setup mode):
   workspace-init.sh
-It tells you how to sign in to GitHub and fetch from your editor, then finishes the setup.
+It clones the repo (the proxy allows it) and finishes the setup, or tells you how to save your GitHub token first.
 
 MSG
 fi

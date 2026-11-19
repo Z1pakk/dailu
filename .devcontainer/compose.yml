@@ -10,9 +10,6 @@ services:
     build:
       context: ../.devcontainer
       dockerfile: Dockerfile
-      # The Dockerfile reads the Node version from Dailu/src/frontend/Dailu.ClientApp/.nvmrc
-      additional_contexts:
-        repo: ..
     command: sleep infinity
     networks:
       - devcontainer-internal
