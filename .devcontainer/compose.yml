@@ -38,7 +38,8 @@ services:
       no_proxy: localhost,127.0.0.1,::1
       # Node's built-in fetch ignores the proxy variables unless this is set
       NODE_USE_ENV_PROXY: "1"
-      NODE_OPTIONS: --max-old-space-size=8192
+      # ipv4first: "localhost" means 127.0.0.1, so dev servers (ng serve) listen where the editor's port forward connects
+      NODE_OPTIONS: --max-old-space-size=8192 --dns-result-order=ipv4first
       SSH_AUTH_SOCK: ""
       CLAUDE_CONFIG_DIR: /home/dev/.claude
       ASPNETCORE_ENVIRONMENT: Development
