@@ -1,0 +1,2 @@
+# Dev container files run in Linux; keep LF on Windows checkouts.
+* text eol=lf

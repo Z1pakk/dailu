@@ -1,0 +1,9 @@
+# Claude Code
+api.anthropic.com
+claude.ai
+platform.claude.com
+downloads.claude.ai
+
+# GitHub - decrypted by the proxy and limited to Z1pakk/devhabit (see squid.conf)
+github.com
+api.github.com

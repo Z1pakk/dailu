@@ -1,0 +1,18 @@
+# npm / pnpm
+registry.npmjs.org
+
+# NuGet
+api.nuget.org
+globalcdn.nuget.org
+
+# VS Code server and extensions
+marketplace.visualstudio.com
+.gallerycdn.vsassets.io
+.vscode-cdn.net
+update.code.visualstudio.com
+
+# Rider backend and plugins
+download.jetbrains.com
+download-cdn.jetbrains.com
+cache-redirector.jetbrains.com
+plugins.jetbrains.com

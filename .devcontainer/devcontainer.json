@@ -1,0 +1,38 @@
+// The repo lives in a Docker volume; this host folder only provides the configuration.
+{
+  "name": "Dailu",
+  "dockerComposeFile": ["../Dailu/docker-compose.yml", "compose.yml"],
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "dev",
+  // Keep Postgres and RabbitMQ running when the editor closes
+  "shutdownAction": "none",
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": ""
+  },
+  "forwardPorts": [4200, 5000, 5001, 15672],
+  "portsAttributes": {
+    "4200": { "label": "Angular", "protocol": "http" },
+    "5000": { "label": "API (http)", "protocol": "http" },
+    "5001": { "label": "API (https)", "protocol": "https" },
+    "15672": { "label": "RabbitMQ management", "protocol": "http" }
+  },
+  "postCreateCommand": "/usr/local/bin/post-create.sh",
+  "postStartCommand": "/usr/local/bin/post-start.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "angular.ng-template"
+      ],
+      "settings": {
+        "extensions.autoUpdate": false,
+        "extensions.autoCheckUpdates": false,
+        "http.proxy": "http://egress-proxy:3128"
+      }
+    },
+    "jetbrains": {
+      "backend": "Rider"
+    }
+  }
+}

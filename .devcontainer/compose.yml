@@ -1,0 +1,102 @@
+# Dev container services. Used together with ../Dailu/docker-compose.yml (see devcontainer.json).
+# The dev container is only on the internal network: no internet except through egress-proxy.
+# Relative paths resolve from Dailu/ (the folder of the first compose file), not from .devcontainer.
+
+# Same project name as the normal "docker compose up" in Dailu/, so Postgres and RabbitMQ and their data are shared
+name: dailu
+
+services:
+  dev:
+    build:
+      context: ../.devcontainer
+      dockerfile: Dockerfile
+      # The Dockerfile reads the Node version from Dailu/src/frontend/Dailu.ClientApp/.nvmrc
+      additional_contexts:
+        repo: ..
+    command: sleep infinity
+    networks:
+      - devcontainer-internal
+    depends_on:
+      - egress-proxy
+    volumes:
+      # The repo lives in a volume, never in a host folder
+      - dailu-src:/workspace
+      - dailu-node-modules:/workspace/Dailu/src/frontend/Dailu.ClientApp/node_modules
+      - dailu-nuget:/home/dev/.nuget/packages
+      - dailu-claude:/home/dev/.claude
+      # authorized_keys for Rider's SSH connection, kept across rebuilds
+      - dailu-ssh:/home/dev/.ssh
+      # Git credentials saved by git's store helper on the first successful fetch (see Dockerfile)
+      - dailu-git-credentials:/home/dev/.git-credentials.d
+      # Host-trusted ASP.NET Core dev certificate, read-only. Filled once from your PC (see the volume below)
+      - dailu-devcert:/devcert:ro
+      # Public certificate of the proxy's egress CA (github.com is decrypted by the proxy), read-only
+      - dailu-proxy-ca-public:/egress-ca:ro
+    environment:
+      HTTP_PROXY: http://egress-proxy:3128
+      HTTPS_PROXY: http://egress-proxy:3128
+      http_proxy: http://egress-proxy:3128
+      https_proxy: http://egress-proxy:3128
+      NO_PROXY: localhost,127.0.0.1,::1
+      no_proxy: localhost,127.0.0.1,::1
+      # Node's built-in fetch ignores the proxy variables unless this is set
+      NODE_USE_ENV_PROXY: "1"
+      NODE_OPTIONS: --max-old-space-size=8192
+      SSH_AUTH_SOCK: ""
+      CLAUDE_CONFIG_DIR: /home/dev/.claude
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /devcert/localhost.pem
+      ASPNETCORE_Kestrel__Certificates__Default__KeyPath: /devcert/localhost.key
+
+  egress-proxy:
+    build:
+      context: ../.devcontainer/proxy
+    container_name: dailu.egress-proxy
+    # Squid must not be PID 1: "squid -k reconfigure" (used by egress-mode) refuses to signal PID 1
+    init: true
+    networks:
+      - devcontainer-internal
+      - default
+    volumes:
+      # CA key and certificate: only the proxy mounts this volume
+      - dailu-proxy-ca:/var/lib/egress-ca
+      # Public certificate for the dev container
+      - dailu-proxy-ca-public:/var/lib/egress-ca-public
+    restart: unless-stopped
+
+  # Dailu's own services (Dailu/docker-compose.yml) join the internal network too, so the dev container reaches them.
+  # Listing "default" keeps them on their normal network for host use.
+  dailo.postgres:
+    networks:
+      - default
+      - devcontainer-internal
+
+  dailo.rabbitmq:
+    networks:
+      - default
+      - devcontainer-internal
+    # The dev container reaches AMQP over the internal network, so host port 5672 isn't published here: it clashes
+    # with other local stacks that publish it too. The management UI stays on the host.
+    ports: !override
+      - 15672:15672
+
+networks:
+  devcontainer-internal:
+    internal: true
+
+volumes:
+  dailu-src:
+  dailu-node-modules:
+  dailu-nuget:
+  dailu-claude:
+  dailu-ssh:
+  dailu-git-credentials:
+  dailu-proxy-ca:
+  dailu-proxy-ca-public:
+  # Created once from your PC, so Compose doesn't create an empty one:
+  #   dotnet dev-certs https --trust
+  #   dotnet dev-certs https --export-path ~/.dailu/devcert/localhost.pem --format PEM --no-password
+  #   docker run --rm -v dailu-devcert:/devcert -v ~/.dailu/devcert:/src:ro <debian image> install -m 0644 /src/localhost.pem /src/localhost.key /devcert/
+  dailu-devcert:
+    name: dailu-devcert
+    external: true
