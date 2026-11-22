@@ -18,12 +18,14 @@ its connection settings from `appsettings`.
 
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step.
 
+Status: ✓ done · - started · no mark = not started
+
 | Phase | File | What you end up with |
 |---|---|---|
-| 1 | [01-broker.md](01-broker.md) | RabbitMQ running in Docker with the management UI, a `RabbitMq` options section with an `IsEnabled` switch, and a single shared connection in the API |
-| 2 | [02-publishing.md](02-publishing.md) | Every integration event serialized to JSON and published to a topic exchange with publisher confirms; module subscriptions discovered from their handlers; a fake bus for tests |
-| 3 | [03-consuming.md](03-consuming.md) | One consumer worker with a queue consumer per module (`habit`, `habit-entry`, `habit-user`, `search`), retries with a delay and a dead-letter queue, and handlers made safe to run twice |
-| 4 | [04-policies.md](04-policies.md) | Max attempts and retry delay in `appsettings`; the delay applied as a RabbitMQ policy the API creates through the management API, so changing it needs only a restart |
+| ✓ 1 | [01-broker_done.md](01-broker_done.md) | RabbitMQ running in Docker with the management UI, a `RabbitMq` options section with an `IsEnabled` switch, and a single shared connection in the API |
+| ✓ 2 | [02-publishing_done.md](02-publishing_done.md) | Every integration event serialized to JSON and published to a topic exchange with publisher confirms; module subscriptions discovered from their handlers; a fake bus for tests |
+| ✓ 3 | [03-consuming_done.md](03-consuming_done.md) | One consumer worker with a queue consumer per module (`habit`, `habit-entry`, `habit-user`, `search`), retries with a delay and a dead-letter queue, and handlers made safe to run twice |
+| ✓ 4 | [04-policies_done.md](04-policies_done.md) | Max attempts and retry delay in `appsettings`; the delay applied as a RabbitMQ policy the API creates through the management API, so changing it needs only a restart |
 | 5 | [05-ordering.md](05-ordering.md) | Events carry a change time; `search` skips messages older than what it stored and keeps tombstones for removed entries; accumulating step totals never go down |
 
 **Do phases 2 and 3 back to back.** Once phase 2 is switched on, every integration event goes to

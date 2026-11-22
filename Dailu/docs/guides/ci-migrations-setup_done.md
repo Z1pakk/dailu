@@ -1,4 +1,4 @@
-# CI-driven database migrations (setup guide)
+# ✓ CI-driven database migrations (setup guide)
 
 How production database migrations run as a distinct, gated step before deployment,
 using a dedicated `Dailu.MigrationsRunner` project, a self-hosted `step-ca` instance,

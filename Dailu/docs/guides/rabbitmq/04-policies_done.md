@@ -1,4 +1,4 @@
-# Phase 4 — Retry settings in config, applied as a policy
+# ✓ Phase 4 — Retry settings in config, applied as a policy
 
 **Goal:** the number of attempts and the retry delay come from `appsettings`, and changing either
 takes only a restart: no queue to delete, no `PRECONDITION_FAILED`. The delay moves out of the

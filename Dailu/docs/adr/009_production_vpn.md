@@ -112,6 +112,6 @@ not a replacement for - the certificate/provisioner auth model in
 
 ## Notes (Optional)
 - Full walkthrough (tag/ACL JSON, OAuth client scopes, Hetzner firewall
-  change, step-ca SAN re-issue) is in `docs/ci-migrations-setup.md`, step 6.
+  change, step-ca SAN re-issue) is in `docs/guides/ci-migrations-setup_done.md`, step 6.
 - Related: [008_production_migrations](008_production_migrations.md) - the
   certificate/provisioner auth model this VPN layer sits on top of.

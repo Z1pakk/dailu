@@ -21,7 +21,7 @@ cancellation, dependency caching, Renovate with `osvVulnerabilityAlerts`, and
   pushes to `main` could trigger two overlapping `migrate` runs against the
   same database. Add a concurrency group scoped to the workflow - without
   `cancel-in-progress`, since cancelling mid-migration is worse than queuing.
-- [ ] **No `timeout-minutes` anywhere in `build.yml` or `deploy.yml`** -
+- [ ] **No `timeout-minutes` anywhere in `build.yml` or `deploy.yml`** (2026-11-22: only `smoke-test` has one) -
   `renovate.yml:9` already shows the pattern is known, just not carried over.
 
 ## Medium value
@@ -29,7 +29,7 @@ cancellation, dependency caching, Renovate with `osvVulnerabilityAlerts`, and
 - [ ] **Actions pinned to mutable tags** (`actions/checkout@v6`,
   `docker/build-push-action@v6`, etc.) rather than commit SHAs - same class of
   supply-chain gap as the `curl | bash` step CLI install fixed in
-  `ci-migrations-setup.md`. Renovate can auto-manage this (enable the
+  `ci-migrations-setup_done.md`. Renovate can auto-manage this (enable the
   `github-actions` manager + a digest-pinning preset) instead of pinning by
   hand.
 - [ ] **No `environment: production` gate on `migrate`/`deploy`.** A push to

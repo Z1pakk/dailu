@@ -1,8 +1,8 @@
-# Observability setup guide: OpenTelemetry + Prometheus + Tempo + Loki + Grafana
+# ✓ Observability setup guide: OpenTelemetry + Prometheus + Tempo + Loki + Grafana
 
 A step-by-step walkthrough for adding real, hand-wired observability to Dailu — first locally,
 then in production behind Dokploy. Companion documents: the design rationale is in
-[`docs/superpowers/specs/2026-08-05-observability-design.md`](superpowers/specs/2026-08-05-observability-design.md),
+[`docs/superpowers/specs/2026-08-05-observability-design.md`](../superpowers/specs/2026-08-05-observability-design.md),
 and this guide follows the same phases.
 
 Each phase below is self-contained: do it, verify it with the given command/UI check, then
@@ -11,7 +11,7 @@ are working.
 
 ---
 
-## Phase 1: Wire OpenTelemetry traces into `Dailu.Api` (viewed via the Aspire dashboard)
+## ✓ Phase 1: Wire OpenTelemetry traces into `Dailu.Api` (viewed via the Aspire dashboard)
 
 No new infrastructure yet — this just gets the SDK emitting traces somewhere you can see them.
 
@@ -97,7 +97,7 @@ No new infrastructure yet — this just gets the SDK emitting traces somewhere y
 
 ---
 
-## Phase 2: Add metrics and logs to the same pipeline
+## ✓ Phase 2: Add metrics and logs to the same pipeline
 
 Still no new infrastructure — same Aspire dashboard, now receiving all three signal types.
 
@@ -176,7 +176,7 @@ Still no new infrastructure — same Aspire dashboard, now receiving all three s
 
 ---
 
-## Phase 3: Stand up Collector + Tempo + Grafana locally, hand-wired
+## ✓ Phase 3: Stand up Collector + Tempo + Grafana locally, hand-wired
 
 First piece of real infrastructure. All config below is yours to read and understand, not a
 black box.
@@ -347,7 +347,7 @@ black box.
 
 ---
 
-## Phase 4: Add Prometheus (metrics)
+## ✓ Phase 4: Add Prometheus (metrics)
 
 1. Replace `observability/otel-collector/config.yaml` with:
 
@@ -469,7 +469,7 @@ black box.
 
 ---
 
-## Phase 5: Add Loki (logs) and trace correlation
+## ✓ Phase 5: Add Loki (logs) and trace correlation
 
 This is the phase where the three signals actually connect to each other.
 
@@ -635,7 +635,7 @@ This is the phase where the three signals actually connect to each other.
 
 ---
 
-## Phase 6: Build one dashboard by hand
+## ✓ Phase 6: Build one dashboard by hand
 
 1. Create `observability/grafana/provisioning/dashboards/dashboards.yaml`:
 
@@ -729,7 +729,7 @@ This is the phase where the three signals actually connect to each other.
 
 ---
 
-## Phase 7: Ship it to production via Dokploy
+## ✓ Phase 7: Ship it to production via Dokploy
 
 1. Create `observability/docker-compose.override.prod.yml` — a fully standalone file (matches
    how `dailu-api`/`dailu-frontend` are already deployed at the repo root, not a merge-override).
@@ -845,7 +845,7 @@ This is the phase where the three signals actually connect to each other.
    `"${TAILSCALE_IP}:3100:3000"`) — it's published normally, and access is restricted at the host
    firewall instead, scoped to the `tailscale0` interface/tailnet CIDR. That's the same mechanism
    `step-ca` (8443) and `sshd` (22) already use on this host
-   ([ADR 009](adr/009_production_vpn.md)), just applied via firewall rules rather than Docker's
+   ([ADR 009](../adr/009_production_vpn.md)), just applied via firewall rules rather than Docker's
    own IP-binding — set that rule up yourself on the Hetzner host (see step 4a). `3100`, not
    `3000`, is used for the host port since Dokploy's own UI already occupies `3000` on this host,
    same reasoning as the local Phase 3 setup. The `GF_AUTH_ANONYMOUS_ENABLED`/
@@ -879,7 +879,7 @@ This is the phase where the three signals actually connect to each other.
 
    b. Add a firewall rule restricting host port `3100` to the `tailscale0` interface/tailnet
       CIDR, the same mechanism already protecting `step-ca` (8443) and `sshd` (22)
-      ([ADR 009](adr/009_production_vpn.md)) — use whatever firewall tool those existing rules
+      ([ADR 009](../adr/009_production_vpn.md)) — use whatever firewall tool those existing rules
       use on this host, mirroring their scope for consistency. Docker publishes container ports
       by inserting its own `iptables`/nftables rules ahead of most default-deny setups, so if the
       existing rules were written assuming that ordering, verify this new one actually takes
@@ -900,7 +900,7 @@ This is the phase where the three signals actually connect to each other.
       firewall-scoped port from step (b), not Dokploy's Traefik.
 
    d. Set its environment variables (values sourced from Infisical per
-      [ADR 007](adr/007_secrets_management.md)):
+      [ADR 007](../adr/007_secrets_management.md)):
       - `OBSERVABILITY_CONFIG_IMAGE` — e.g. `ghcr.io/<owner-lowercase>/dailo-observability-config:latest`
       - `GRAFANA_ADMIN_PASSWORD` — a generated strong password
 

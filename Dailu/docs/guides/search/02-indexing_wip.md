@@ -1,4 +1,4 @@
-# Phase 2: indexing habits, tags, and entry notes
+# - Phase 2: indexing habits, tags, and entry notes
 
 Goal: habits, tags, and habit entry notes each get an **embedding** stored in
 `search.search_index` — one table, tagged by `entity_type`, not three parallel tables. New,

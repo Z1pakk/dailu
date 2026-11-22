@@ -51,7 +51,7 @@ const MON_TO_FRI = [1, 2, 3, 4, 5];
 
 describe('habit-schedule', () => {
   describe('isScheduledOn', () => {
-    // The same table as the domain's IsScheduledOn tests (docs/habit-schedule, phase 1, step 1.7).
+    // The same table as the domain's IsScheduledOn tests (docs/guides/habit-schedule, phase 1, step 1.7).
     const cases: [string, FrequencyModel, string, boolean][] = [
       ['daily', daily(), '2026-11-05', true],
       ['weekly Mon/Wed/Fri on a Tuesday', weekly(MON_WED_FRI), '2026-11-03', false],

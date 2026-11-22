@@ -1,4 +1,4 @@
-# Module isolation & microservice/Lambda-readiness improvements (punch list)
+# - Module isolation & microservice/Lambda-readiness improvements (punch list)
 
 Gaps found reviewing the module structure against the goal of keeping modules
 isolated, flexible, and cheap to extract into microservices or Lambda
@@ -34,12 +34,12 @@ module actually gets cut loose.
   package or per-consumer copies at extraction time. Write a short ADR
   addendum now stating this is an accepted, known exception - so it's a
   decision on record, not an oversight found later.
-- [ ] **Confirm module composition in `Dailu.Api/DependencyInjection.cs` is
+- [x] **Confirm module composition in `Dailu.Api/DependencyInjection.cs` is
   purely additive** (each module wired in only via its own `Setup.cs`, e.g.
   `Habit.Integrations/Setup.cs`, `Habit.DataTransfer/Setup.cs`). If so, a host
   wired with a subset of modules' `Setup.cs` calls becomes a working preview of
   an extracted service, with zero changes to module code - the most direct
-  lever for "flexible" composition.
+  lever for "flexible" composition. (2026-11-22: `Program.cs` only calls each module's `Add*Module`; nothing module-specific is wired in the host.)
 
 ## Do before extracting any specific module
 
@@ -66,9 +66,9 @@ module actually gets cut loose.
 
 ## Only matters once a module actually splits - don't build ahead of it
 
-- [ ] Swap `InMemoryIntegrationEventBus` for a real broker (SQS/EventBridge if
+- [x] Swap `InMemoryIntegrationEventBus` for a real broker (SQS/EventBridge if
   Lambda-leaning, RabbitMQ/Kafka if microservices-leaning) - ADR 004 already
-  designed the seam for this swap.
+  designed the seam for this swap. (2026-11-22: RabbitMQ behind `RabbitMq:IsEnabled`; see [rabbitmq/](rabbitmq/README.md). The outbox gap above is now live in production.)
 - [ ] Add idempotency handling once delivery becomes at-least-once.
 - [ ] Extend trace-context propagation across the real network hop -
   OpenTelemetry is already wired in-process, so this is extending existing

@@ -1,4 +1,4 @@
-# Phase 2: persistence and API
+# ✓ Phase 2: persistence and API
 
 Goal: the new schedule fields are stored (four new columns, old habits are deleted rather than
 converted), `times_per_period` is kept but only means "N times" for habits without days, and `POST /habits`, `PUT /habits/{id}` and
@@ -86,7 +86,7 @@ converting them, delete them in the app before relying on the new schedule. Unti
 - deleting is a soft delete: the row stays with `is_deleted = true` and is hidden from every
   query, so it can't cause problems later. Its entries stay, as for any deleted habit.
 
-See `docs/ci-migrations-setup.md` and ADR 008 for how this reaches production.
+See `docs/guides/ci-migrations-setup_done.md` and ADR 008 for how this reaches production.
 
 ### Optional: converting existing rows
 

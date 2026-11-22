@@ -57,7 +57,7 @@ cd Dailu/observability && docker compose up
   a Hetzner server running [Dokploy](https://dokploy.com/).
 
 Design notes live in [`Dailu/docs`](Dailu/docs), for example the
-[habit schedule guide](Dailu/docs/habit-schedule/README.md).
+[habit schedule guide](Dailu/docs/guides/habit-schedule/README.md).
 
 <details>
 <summary>Monitoring screenshots</summary>

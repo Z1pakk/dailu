@@ -1,4 +1,4 @@
-# Phase 1: foundation
+# ✓ Phase 1: foundation
 
 Goal: Ollama, pgvector, and pg_trgm run locally, the `search` module exists with its AI clients wired from
 config, and its one entity — `SearchIndexEntryEntity` — has a table in the `search` schema. There

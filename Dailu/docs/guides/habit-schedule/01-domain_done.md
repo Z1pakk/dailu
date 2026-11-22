@@ -1,4 +1,4 @@
-# Phase 1: the domain model
+# ✓ Phase 1: the domain model
 
 Goal: `Habit.Domain` can express every schedule in the README table, rejects combinations that
 don't make sense, and answers "is this habit scheduled on day X?". No database or API changes
