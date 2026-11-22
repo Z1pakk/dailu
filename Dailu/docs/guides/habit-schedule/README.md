@@ -17,12 +17,14 @@ It has one card per state below.
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step. Do it,
 commit, then move on, because later phases assume the earlier ones work.
 
+Status: ✓ done · - started · no mark = not started
+
 | Phase | File | What you end up with |
 |---|---|---|
-| 1 | [01-domain.md](01-domain.md) | `Frequency` = type + optional weekdays / month days, and `TimesPerPeriod` only for habits without days; a new `Timing` value object for time of day and duration; `IsScheduledOn(day)`; unit tests |
-| 2 | [02-persistence-api.md](02-persistence-api.md) | Four new columns (old habits are deleted, not converted; `times_per_period` kept for "N times" habits), create/update/get habit carry the new fields, `openapi.json` regenerated |
-| 3 | [03-frontend-model.md](03-frontend-model.md) | Frontend models, `isScheduledOn` mirrored from the domain, and "due today", the any-time lane, the dashboard clock, streaks and the heatmap all using the real schedule |
-| 4 | [04-drawer.md](04-drawer.md) | The drawer's Daily / Weekly / Monthly switch, weekday buttons, month-day grid, "times per week/month" stepper, time mode, time picker and duration work and save |
+| ✓ 1 | [01-domain_done.md](01-domain_done.md) | `Frequency` = type + optional weekdays / month days, and `TimesPerPeriod` only for habits without days; a new `Timing` value object for time of day and duration; `IsScheduledOn(day)`; unit tests |
+| ✓ 2 | [02-persistence-api_done.md](02-persistence-api_done.md) | Four new columns (old habits are deleted, not converted; `times_per_period` kept for "N times" habits), create/update/get habit carry the new fields, `openapi.json` regenerated |
+| ✓ 3 | [03-frontend-model_done.md](03-frontend-model_done.md) | Frontend models, `isScheduledOn` mirrored from the domain, and "due today", the any-time lane, the dashboard clock, streaks and the heatmap all using the real schedule |
+| ✓ 4 | [04-drawer_done.md](04-drawer_done.md) | The drawer's Daily / Weekly / Monthly switch, weekday buttons, month-day grid, "times per week/month" stepper, time mode, time picker and duration work and save |
 | — | [05-later.md](05-later.md) | Deliberately left out: "repeat every N", user time zone, reminders, automation time windows |
 
 ---

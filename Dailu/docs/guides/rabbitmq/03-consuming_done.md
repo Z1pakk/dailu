@@ -1,4 +1,4 @@
-# Phase 3 — Consuming, retries, dead-lettering
+# ✓ Phase 3 — Consuming, retries, dead-lettering
 
 **Goal:** one background worker that starts a consumer for every subscribed module — `habit`,
 `habit-entry`, `habit-user`, `search`. Each consumer reads its queue, calls only that module's handlers in a fresh
@@ -475,7 +475,7 @@ services.AddHostedService<RabbitMqConsumerWorker>();
   API crashes while a handler is running, the message is redelivered on the next start.
 - **New scope per message.** Handlers get a fresh `DbContext` and scoped services, like the
   `PeriodicTimer` workers (`StravaActivityWorker`). There's no HTTP request and no current user —
-  events carry `UserId` for exactly this reason (see `docs/search/02-indexing.md`).
+  events carry `UserId` for exactly this reason (see `docs/guides/search/02-indexing_wip.md`).
 - **Events published from a handler go to the broker too.** A handler that publishes through
   `IEventDispatcher` / `IIntegrationEventBus` gets the scoped `RabbitMqIntegrationEventBus`, so
   the next module receives it from its own queue. If that publish fails, the bus throws
@@ -842,7 +842,7 @@ Commit: `Consume integration events from RabbitMQ`.
   the module's `Setup.cs`, next to `AddHandlerAssembly` (phase 2, 2.7). A good exercise: at
   startup, compare the assemblies of all registered `INotificationHandler<T>` (with
   `T : IIntegrationEvent`) against the subscriptions and fail for any assembly that's missing.
-- **Retry settings in config.** [Phase 4](04-policies.md) moves `MaxAttempts` and the retry
+- **Retry settings in config.** [Phase 4](04-policies_done.md) moves `MaxAttempts` and the retry
   delay into `appsettings`, and the delay into a policy, so changing it doesn't mean deleting
   queues.
 - **Stale messages after a retry.** [Phase 5](05-ordering.md) fixes the ordering caveat from

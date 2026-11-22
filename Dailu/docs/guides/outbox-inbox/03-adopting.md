@@ -172,7 +172,7 @@ necessary." Close that loop: add `docs/adr/010_outbox_inbox.md` (from `000_templ
 that integration events from opted-in modules go through a per-module transactional outbox with
 at-least-once delivery, and consumers that need exactly-once *effects* use the inbox base class.
 Link it from ADR 004's consequences, and tick the "Close the outbox gap" item in
-[module-isolation-improvements.md](../module-isolation-improvements.md).
+[module-isolation-improvements_wip.md](../module-isolation-improvements_wip.md).
 
 ---
 

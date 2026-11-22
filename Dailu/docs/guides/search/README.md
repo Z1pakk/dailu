@@ -13,11 +13,19 @@ merges the two result lists. Typing `runn` or `Runing` finds "Morning run"; typi
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step. Do it,
 commit, then move on, because later phases assume the earlier ones work.
 
+Status: ✓ done · - started · no mark = not started
+
 | Phase | File | What you end up with |
 |---|---|---|
-| 1 | [01-foundation.md](01-foundation.md) | Ollama + pgvector + pg_trgm running locally, this module's own AI-client wiring, a new `search` module |
-| 2 | [02-indexing.md](02-indexing.md) | Habits, tags, and entry notes are stored (text + embedding) in one Postgres table, kept in sync by plain in-process integration event handlers |
+| ✓ 1 | [01-foundation_done.md](01-foundation_done.md) | Ollama + pgvector + pg_trgm running locally, this module's own AI-client wiring, a new `search` module |
+| - 2 | [02-indexing_wip.md](02-indexing_wip.md) | Habits, tags, and entry notes are stored (text + embedding) in one Postgres table, kept in sync by plain in-process integration event handlers |
 | 3 | [03-search-endpoint.md](03-search-endpoint.md) | `GET /search?q=...` with hybrid (partial/fuzzy text + semantic) matching, a search box in the UI, and `Search.DataTransfer` for other modules (ai-coach) to call |
+
+### Going to production
+
+| Phase | File | What you end up with |
+|---|---|---|
+| 5 | [05-production.md](05-production.md) | `nomic-embed-text` self-hosted in an Ollama container next to the API, a degraded-not-down health check, and a one-switch backfill/re-index of existing records |
 
 ### Post-launch hardening (optional)
 

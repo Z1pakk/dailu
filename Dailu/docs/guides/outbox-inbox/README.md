@@ -16,7 +16,7 @@ handlers. Come here when one of these is true:
   you want it off the request path and retried on failure;
 - a missed event causes a bug that nobody will notice or fix by hand (stale index, orphaned rows);
 - you're about to swap `InMemoryIntegrationEventBus` for a real broker (see
-  [module-isolation-improvements.md](../module-isolation-improvements.md)).
+  [module-isolation-improvements_wip.md](../module-isolation-improvements_wip.md)).
 
 If you've done the [RabbitMQ guide](../rabbitmq/README.md), the dispatcher below still publishes
 through `IIntegrationEventBus` — subscribed events then go from the outbox table to RabbitMQ, and
@@ -24,6 +24,8 @@ the "publish after commit" gap that guide accepts is closed. The transport decis
 reads "outbox table → dispatcher → RabbitMQ" instead of "no broker".
 
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step.
+
+Status: ✓ done · - started · no mark = not started
 
 | Phase | File | What you end up with |
 |---|---|---|

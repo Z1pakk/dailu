@@ -1,4 +1,4 @@
-# Phase 3: frontend model and schedule logic
+# ✓ Phase 3: frontend model and schedule logic
 
 Goal: everything that decides "does this habit count today?" uses the real schedule, and every
 workaround comment ("habits have no time of day yet", "weekdays stored as weekly × 5") is gone.

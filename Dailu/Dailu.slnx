@@ -26,7 +26,7 @@
     <Project Path="src/aspire/Dailu.AppHost/Dailu.AppHost.csproj" />
   </Folder>
   <Folder Name="/src/docs/">
-    <File Path="docs/ci-migrations-setup.md" />
+    <File Path="docs/guides/ci-migrations-setup_done.md" />
   </Folder>
   <Folder Name="/src/docs/ADR/">
     <File Path="docs/adr/000_template.md" />

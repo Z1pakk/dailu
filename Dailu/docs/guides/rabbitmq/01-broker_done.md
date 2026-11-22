@@ -1,4 +1,4 @@
-# Phase 1 — Broker and connection
+# ✓ Phase 1 — Broker and connection
 
 **Goal:** RabbitMQ running next to Postgres, its management UI reachable, connection settings in
 `appsettings` behind an `IsEnabled` switch, and one shared, lazily created `IConnection` in the

@@ -1,4 +1,4 @@
-# Phase 4: the habit drawer
+# ✓ Phase 4: the habit drawer
 
 Goal: the drawer's **2 Schedule** section matches the Figma spec
 **"Spec · Schedule states · Daily / Weekly / Monthly + optional days"** (file

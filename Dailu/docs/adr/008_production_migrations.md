@@ -140,9 +140,9 @@ status poll), which blocks `deploy` from ever running.
   covered separately in [009_production_vpn](009_production_vpn.md), which
   adds its own dependency on top of this one.
 - Operational setup and rationale are documented in detail in
-  `docs/ci-migrations-setup.md`; that guide, not this ADR, is the source of
+  `docs/guides/ci-migrations-setup_done.md`; that guide, not this ADR, is the source of
   truth for the exact commands to provision or rotate any part of this.
-- Known gaps, tracked in `docs/ci-cd-improvements.md` and not yet applied:
+- Known gaps, tracked in `docs/guides/ci-cd-improvements.md` and not yet applied:
   `migrate`/`deploy` have no `permissions:` block; `deploy.yml` has no
   `concurrency` group, so two quick pushes to `main` could trigger overlapping
   `migrate` runs against the same database; there is no `environment:
@@ -155,8 +155,8 @@ status poll), which blocks `deploy` from ever running.
 
 ## Notes (Optional)
 - Full step-by-step provisioning guide (step-ca install, JWK provisioner,
-  sshd `Match` block, `ci-migrate` user/scripts, Tailscale ACLs): `docs/ci-migrations-setup.md`.
-- Outstanding CI/CD hardening items for this pipeline: `docs/ci-cd-improvements.md`.
+  sshd `Match` block, `ci-migrate` user/scripts, Tailscale ACLs): `docs/guides/ci-migrations-setup_done.md`.
+- Outstanding CI/CD hardening items for this pipeline: `docs/guides/ci-cd-improvements.md`.
 - Related: [005_orm](005_orm.md) (migration ownership per bounded context),
   [007_secrets_management](007_secrets_management.md) (how
   `DOKPLOY_CA_PROVISIONER_PASSWORD` and friends are stored/rotated),

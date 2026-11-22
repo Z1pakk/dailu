@@ -1,4 +1,4 @@
-# Phase 2 — Publishing
+# ✓ Phase 2 — Publishing
 
 **Goal:** every integration event is serialized to JSON and published to the `dailu.integration`
 topic exchange, with publisher confirms. Each consuming module's subscription is discovered from

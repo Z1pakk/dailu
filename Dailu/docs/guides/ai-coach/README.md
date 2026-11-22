@@ -12,6 +12,8 @@ live there, not here; see that guide's README for why they're a separate module.
 You implement it yourself, phase by phase. Each phase ends with a **Verify** step. Do it,
 commit, then move on, because later phases assume the earlier ones work.
 
+Status: ✓ done · - started · no mark = not started
+
 | Phase | File | What you end up with |
 |---|---|---|
 | 1 | [01-foundation.md](01-foundation.md) | Chat model pulled in Ollama, a new `ai-coach` module, wired to the shared AI client and to `Search.DataTransfer` |
